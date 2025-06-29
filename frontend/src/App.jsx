@@ -1,41 +1,28 @@
-import Header from './components/Header'
-import Hero from './components/Hero'
-import MatchResults from './components/MatchResults'
-import LatestNews from './components/LatestNews'
-import PremierLeague from './components/PremierLeague'
-import NextMatch from './components/NextMatch'
-import GoalStats from './components/GoalStats'
-import TopNews from './components/TopNews'
-import SponsorBanner from './components/SponsorBanner'
-import Sponsors from './components/Sponsors'
-import Footer from './components/Footer'
+// App.jsx
+import { Outlet, useLocation } from 'react-router-dom';
+import Footer from './components/homelayout/Footer';
+import Banner from './components/homelayout/Banner';
+import PageBanner from './components/PageBanner';
+import Header from './components/homelayout/Header';
 
 function App() {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="bg-black-100 min-h-screen text-gray-900">
       <Header />
-      <Hero />
-      <MatchResults />
-
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <LatestNews />
-            <TopNews />
-          </div>
-          <div className="lg:col-span-1">
-            <PremierLeague />
-            <NextMatch />
-            <GoalStats />
-            <SponsorBanner />
-          </div>
-        </div>
-      </div>
-
-      <Sponsors />
+      
+      {/* Hiển thị Banner cho trang chủ */}
+      {isHomePage && <Banner />}
+      
+      {/* Hiển thị PageBanner cho các trang khác */}
+      {!isHomePage && <PageBanner pathname={location.pathname} />}
+      
+      <Outlet />
       <Footer />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
