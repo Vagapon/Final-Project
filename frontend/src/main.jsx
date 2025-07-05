@@ -22,6 +22,7 @@ import Highlight from "./pages/Blogs/HighLight.jsx"
 import Match from "./pages/Admin/Match.jsx"; // trang quản lý trận đấu
 import Register from "./pages/Ahthen/Register.jsx"; // trang đăng ký
 import LandingPage from "./pages/LandingPage.jsx";
+import ThreeExperience from "./pages/ThreeExperience.jsx";
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Failed to find root element");
 
@@ -49,6 +50,7 @@ createRoot(rootElement).render(
         <Route path="matches" element={<Match />} /> {/* /admin/users */}
         {/* bạn có thể thêm các route con khác tại đây */}
       </Route>
+      <Route path="/three" element={<ThreeExperience />} />
       <Route path="/chat" element={<Chat />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Register/>} />
