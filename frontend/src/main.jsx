@@ -21,6 +21,7 @@ import Challenge from "./pages/Challenges/Challenge.jsx";
 import Highlight from "./pages/Blogs/HighLight.jsx"
 import Match from "./pages/Admin/Match.jsx"; // trang quản lý trận đấu
 import Register from "./pages/Ahthen/Register.jsx"; // trang đăng ký
+import LandingPage from "./pages/LandingPage.jsx";
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Failed to find root element");
 
@@ -29,17 +30,15 @@ createRoot(rootElement).render(
     <Routes>
         {/* Route dành cho người dùng với layout App.jsx */}
       <Route path="/" element={<App />}>
-        <Route index element={<Home />} />
-        {/* <Route path="blog" element={<Blog />} /> */}
+       
+        <Route path="/home" element={<Home />} />
         <Route path="/myteam" element={<MyTeam />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/challenge" element={<Challenge />} />
         <Route path="/highlight" element={<Highlight />} />
         {/* Bạn có thể thêm các route khác tại đây */}
       </Route>
-      {/* <Route path="/home" index={<Home />} /> */}
-      {/* <Route path="/myteam" element={<MyTeam />} /> */}
-      {/* Route cho admin với layout riêng */}
+      <Route index element={<LandingPage />} />
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Overview />} /> {/* /admin */}
         <Route path="users" element={<User />} />

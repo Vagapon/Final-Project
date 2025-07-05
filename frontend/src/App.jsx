@@ -7,7 +7,7 @@ import Header from './components/homelayout/Header';
 
 function App() {
   const location = useLocation();
-  const isHomePage = location.pathname === '/';
+  const isHomePage = location.pathname === '/home';
 
   return (
     <div className="bg-black-100 min-h-screen text-gray-900">

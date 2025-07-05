@@ -15,7 +15,7 @@ import {
 
 // Constants
 const MENU_ITEMS = [
-  { name: "Home", icon: Home, path: "/" },
+  { name: "Home", icon: Home, path: "/home" },
   { name: "My Team", icon: User, path: "/myteam" },
   { name: "Challenge", icon: Trophy, path: "/challenge" },
   { name: "Blog", icon: BookOpen, path: "/blog" },
