@@ -130,7 +130,7 @@ export default class ThreejsJourney
         console.log('%cWhat are you doing here?! you sneaky developer...', 'color: #32ffce');
         console.log('%cDo you want to learn how this portfolio has been made?', 'color: #32ffce');
         console.log('%cCheckout Three.js Journey 👉 https://threejs-journey.com?c=p2', 'color: #32ffce');
-        console.log('%c— Bruno', 'color: #777777');
+        console.log('%c— Tony', 'color: #777777');
     }
 
     hide()

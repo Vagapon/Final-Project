@@ -71,13 +71,13 @@ export default class ProjectsSection
     {
         this.list = [
             {
-                name: 'Three.js Journey',
+                name: 'My Project',
                 imageSources:
                 [
-                    '/static/models/projects/threejsJourney/slideA.webp',
-                    '/static/models/projects/threejsJourney/slideB.webp',
-                    '/static/models/projects/threejsJourney/slideC.webp',
-                    '/static/models/projects/threejsJourney/slideD.webp'
+                    '/static/models/projects/threejsJourney/web1.webp',
+                    '/static/models/projects/threejsJourney/web2.webp',
+                    '/static/models/projects/threejsJourney/web3.webp',
+                    '/static/models/projects/threejsJourney/web4.webp'
                 ],
                 floorTexture: this.resources.items.projectsThreejsJourneyFloorTexture,
                 link:

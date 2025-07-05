@@ -39,7 +39,7 @@ createRoot(rootElement).render(
         <Route path="/highlight" element={<Highlight />} />
         {/* Bạn có thể thêm các route khác tại đây */}
       </Route>
-      <Route index element={<LandingPage />} />
+      <Route index element={<ThreeExperience />} />
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Overview />} /> {/* /admin */}
         <Route path="users" element={<User />} />
@@ -50,7 +50,7 @@ createRoot(rootElement).render(
         <Route path="matches" element={<Match />} /> {/* /admin/users */}
         {/* bạn có thể thêm các route con khác tại đây */}
       </Route>
-      <Route path="/three" element={<ThreeExperience />} />
+      <Route path="/" element={<ThreeExperience />} />
       <Route path="/chat" element={<Chat />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Register/>} />

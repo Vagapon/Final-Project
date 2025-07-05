@@ -89,11 +89,11 @@ export default class InformationSection
         // Options
         this.links.options = [
             {
-                href: 'https://twitter.com/bruno_simon/',
+                href: 'https://www.facebook.com/tran.van.630914',
                 labelTexture: this.resources.items.informationContactTwitterLabelTexture
             },
             {
-                href: 'https://github.com/brunosimon/',
+                href: 'https://github.com/Vagapon',
                 labelTexture: this.resources.items.informationContactGithubLabelTexture
             },
             {
@@ -101,7 +101,7 @@ export default class InformationSection
                 labelTexture: this.resources.items.informationContactLinkedinLabelTexture
             },
             {
-                href: 'mailto:simon.bruno.77@gmail.com',
+                href: 'vantran442002@gmail.com',
                 labelTexture: this.resources.items.informationContactMailLabelTexture
             }
         ]
