@@ -58,6 +58,7 @@ const Logo = ({ className = "" }) => (
     <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
       <img
         src="https://upload.wikimedia.org/wikipedia/vi/thumb/f/f2/Premier_League_Logo.svg/1200px-Premier_League_Logo.svg.png"
+        // src="/favicon/logoicon.png"
         alt="Logo"
         className="w-20 h-20 sm:w-24 sm:h-24 object-contain brightness-0 invert"
       />

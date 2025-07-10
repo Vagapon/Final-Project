@@ -1,6 +1,6 @@
-import mobileDoubleTriangle from '../../images/mobile/doubleTriangle.png'
-import mobileTriangle from '../../images/mobile/triangle.png'
-import mobileCross from '../../images/mobile/cross.png'
+import mobileDoubleTriangle from '/images/mobile/doubleTriangle.png'
+import mobileTriangle from '/images/mobile/triangle.png'
+import mobileCross from '/images/mobile/cross.png'
 import EventEmitter from '../Utils/EventEmitter'
 
 export default class Controls extends EventEmitter
