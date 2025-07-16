@@ -5,7 +5,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -24,7 +24,7 @@ export default function Register() {
     }
     console.log("Register attempt:", {
       firstName,
-      lastName,
+      phone,
       email,
       password,
       agreeTerms,
@@ -73,8 +73,8 @@ const videoRef = useRef();
             </div>
 
             {/* Social signup buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-              <button className="flex items-center justify-center px-3 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <div className="mb-6">
+              <button className="w-full flex items-center justify-center px-3 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                 <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
@@ -95,7 +95,7 @@ const videoRef = useRef();
                 </svg>
                 <span className="text-xs lg:text-sm font-medium">Google</span>
               </button>
-
+{/* 
               <button className="flex items-center justify-center px-3 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                 <svg
                   className="w-4 h-4 mr-2"
@@ -105,7 +105,7 @@ const videoRef = useRef();
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
                 <span className="text-xs lg:text-sm font-medium">X</span>
-              </button>
+              </button> */}
             </div>
 
             {/* Divider */}
@@ -135,24 +135,24 @@ const videoRef = useRef();
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="John"
+                      placeholder="Tony"
                       className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       required
                     />
                   </div>
                   <div>
                     <label
-                      htmlFor="lastName"
+                      htmlFor="phone"
                       className="block text-sm font-medium text-gray-700 mb-1"
                     >
-                      Last Name <span className="text-red-500">*</span>
+                      Phone <span className="text-red-500">*</span>
                     </label>
                     <input
-                      id="lastName"
+                      id="phone"
                       type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Doe"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="..."
                       className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       required
                     />
@@ -247,30 +247,6 @@ const videoRef = useRef();
                       </p>
                     )}
                 </div>
-
-                <div className="flex items-start">
-                  <input
-                    id="agree-terms"
-                    type="checkbox"
-                    checked={agreeTerms}
-                    onChange={(e) => setAgreeTerms(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
-                  />
-                  <label
-                    htmlFor="agree-terms"
-                    className="ml-2 block text-sm text-gray-700"
-                  >
-                    I agree to the{" "}
-                    <a href="#" className="text-blue-600 hover:text-blue-500">
-                      Terms of Service
-                    </a>{" "}
-                    and{" "}
-                    <a href="#" className="text-blue-600 hover:text-blue-500">
-                      Privacy Policy
-                    </a>
-                  </label>
-                </div>
-
                 <button
                   type="submit"
                   className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium text-sm"
