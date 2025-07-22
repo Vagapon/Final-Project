@@ -31,19 +31,19 @@ const Match = () => {
   const ActiveComponent = tabs.find((tab) => tab.id === activeTab)?.component;
 
   return (
-    <div className="min-h-screen bg-white-to-br from-gray-100 via-white to-gray-200">
+<div className="min-h-screen bg-gradient-to-br from-gray-100 via-white to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-xl md:text-4xl font-bold text-gray-700 mb-2">
+          <h1 className="text-xl md:text-4xl font-bold text-gray-700 dark:text-gray-200 mb-2 transition-colors duration-300">
             Quản lý trận đấu
           </h1>
         </div>
 
         {/* Navigation Tabs & Content */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
+        <div className="bg-white/5 dark:bg-gray-800/10 backdrop-blur-sm rounded-2xl border border-white/10 dark:border-gray-700/20 overflow-hidden transition-colors duration-300">
           {/* Navigation Tabs */}
-          <div className="bg-white/10 border-b border-white/10 mx-6">
+          <div className="bg-white/10 dark:bg-gray-700/20 border-b border-white/10 dark:border-gray-600/30 mx-6 transition-colors duration-300">
             <div className="flex">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -57,8 +57,8 @@ const Match = () => {
     border-b-2 border-transparent
     ${
       activeTab === tab.id
-        ? "text-blue-600 border-blue-600 bg-white"
-        : "text-gray-700 hover:text-blue-600 hover:bg-gray-100"
+        ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 bg-white dark:bg-gray-700"
+        : "text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-600/50"
     }
   `}
                   >

@@ -170,29 +170,29 @@ const Ranking = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 lg:p-6">
+<div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-2 sm:p-4 lg:p-6 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
             Bảng Xếp Hạng Bóng Đá
           </h1>
-          <p className="text-gray-600 text-sm sm:text-base">Quản lý và theo dõi bảng xếp hạng các giải đấu</p>
+          <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">Quản lý và theo dõi bảng xếp hạng các giải đấu</p>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-6 transition-colors duration-300">
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Season Filter */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Season
               </label>
               <div className="relative">
                 <select
                   value={selectedSeason}
                   onChange={(e) => setSelectedSeason(e.target.value)}
-                  className="w-full appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-blue-600 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 text-blue-600 dark:text-blue-400 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-300"
                 >
                   {seasons.map(season => (
                     <option key={season.id} value={season.id}>
@@ -200,20 +200,20 @@ const Ranking = () => {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-600 pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-600 dark:text-blue-400 pointer-events-none" />
               </div>
             </div>
 
             {/* Event Type Filter */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <Filter className="inline w-4 h-4 mr-1" />
                 Loại giải đấu
               </label>
               <select
                 value={selectedEvent}
                 onChange={(e) => setSelectedEvent(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-300"
               >
                 {eventTypes.map(event => (
                   <option key={event.id} value={event.id}>
@@ -225,7 +225,7 @@ const Ranking = () => {
 
             {/* Search */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <Search className="inline w-4 h-4 mr-1" />
                 Tìm kiếm
               </label>
@@ -234,37 +234,37 @@ const Ranking = () => {
                 placeholder="Nhập tên đội..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-300"
               />
             </div>
           </div>
         </div>
 
         {/* Desktop Table */}
-        <div className="hidden lg:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr className="border-b border-gray-200">
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Club</th>
-                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">MP</th>
-                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">W</th>
-                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">D</th>
-                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">L</th>
-                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">GF</th>
-                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">GA</th>
-                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">GD</th>
-                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Pts</th>
-                  <th className="px-6 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Last 5</th>
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr className="border-b border-gray-200 dark:border-gray-600">
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Club</th>
+                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">MP</th>
+                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">W</th>
+                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">D</th>
+                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">L</th>
+                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">GF</th>
+                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">GA</th>
+                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">GD</th>
+                  <th className="px-4 py-4 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Pts</th>
+                  <th className="px-6 py-4 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Last 5</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
                 {filteredData.map((team, index) => (
-                  <tr key={team.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={team.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 w-8 h-8 mr-3">
-                          <span className="text-lg font-semibold text-gray-500">{index + 1}</span>
+                          <span className="text-lg font-semibold text-gray-500 dark:text-gray-400">{index + 1}</span>
                         </div>
                         <div className="flex items-center">
                             <img 
@@ -276,22 +276,22 @@ const Ranking = () => {
                               e.target.nextSibling.style.display = 'inline-block';
                             }}
                           />
-                          <span className="text-sm font-medium text-gray-900">{team.team}</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">{team.team}</span>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">{team.mp}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">{team.w}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">{team.d}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">{team.l}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">{team.gf}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">{team.ga}</td>
+                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900 dark:text-gray-100">{team.mp}</td>
+                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900 dark:text-gray-100">{team.w}</td>
+                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900 dark:text-gray-100">{team.d}</td>
+                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900 dark:text-gray-100">{team.l}</td>
+                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900 dark:text-gray-100">{team.gf}</td>
+                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900 dark:text-gray-100">{team.ga}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
-                      <span className={team.gd >= 0 ? 'text-gray-900' : 'text-gray-900'}>
+                      <span className={team.gd >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-900 dark:text-gray-100'}>
                         {team.gd > 0 ? '+' : ''}{team.gd}
                       </span>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-900">{team.pts}</td>
+                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-900 dark:text-white">{team.pts}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex justify-center space-x-1">
                         {renderForm(team.form)}
@@ -305,39 +305,39 @@ const Ranking = () => {
         </div>
 
         {/* Tablet Table */}
-        <div className="hidden md:block lg:hidden bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="hidden md:block lg:hidden bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr className="border-b border-gray-200">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Club</th>
-                  <th className="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase">MP</th>
-                  <th className="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase">W</th>
-                  <th className="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase">D</th>
-                  <th className="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase">L</th>
-                  <th className="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase">GD</th>
-                  <th className="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase">Pts</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-500 uppercase">Form</th>
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr className="border-b border-gray-200 dark:border-gray-600">
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase">Club</th>
+                  <th className="px-3 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase">MP</th>
+                  <th className="px-3 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase">W</th>
+                  <th className="px-3 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase">D</th>
+                  <th className="px-3 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase">L</th>
+                  <th className="px-3 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase">GD</th>
+                  <th className="px-3 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase">Pts</th>
+                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase">Form</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
                 {filteredData.map((team, index) => (
-                  <tr key={team.id} className="hover:bg-gray-50">
+                  <tr key={team.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center">
-                        <span className="text-sm font-medium text-gray-500 mr-2">{index + 1}</span>
+                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-2">{index + 1}</span>
                         <span className="text-lg mr-2">{team.logo}</span>
-                        <span className="text-sm font-medium text-gray-900">{team.team}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{team.team}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-center text-sm text-gray-900">{team.mp}</td>
-                    <td className="px-3 py-3 text-center text-sm text-gray-900">{team.w}</td>
-                    <td className="px-3 py-3 text-center text-sm text-gray-900">{team.d}</td>
-                    <td className="px-3 py-3 text-center text-sm text-gray-900">{team.l}</td>
-                    <td className="px-3 py-3 text-center text-sm font-medium text-gray-900">
+                    <td className="px-3 py-3 text-center text-sm text-gray-900 dark:text-gray-100">{team.mp}</td>
+                    <td className="px-3 py-3 text-center text-sm text-gray-900 dark:text-gray-100">{team.w}</td>
+                    <td className="px-3 py-3 text-center text-sm text-gray-900 dark:text-gray-100">{team.d}</td>
+                    <td className="px-3 py-3 text-center text-sm text-gray-900 dark:text-gray-100">{team.l}</td>
+                    <td className="px-3 py-3 text-center text-sm font-medium text-gray-900 dark:text-gray-100">
                       {team.gd > 0 ? '+' : ''}{team.gd}
                     </td>
-                    <td className="px-3 py-3 text-center text-sm font-bold text-gray-900">{team.pts}</td>
+                    <td className="px-3 py-3 text-center text-sm font-bold text-gray-900 dark:text-white">{team.pts}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-center space-x-1">
                         {renderForm(team.form.slice(-3))}
@@ -353,46 +353,46 @@ const Ranking = () => {
         {/* Mobile Cards */}
         <div className="block md:hidden space-y-3">
           {filteredData.map((team, index) => (
-            <div key={team.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div key={team.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 transition-colors duration-300">
               {/* Header */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center">
-                  <span className="text-sm font-medium text-gray-500 mr-3">{index + 1}</span>
+                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-3">{index + 1}</span>
                   <span className="text-xl mr-2">{team.logo}</span>
-                  <span className="text-sm font-medium text-gray-900">{team.team}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">{team.team}</span>
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-bold text-gray-900">{team.pts}</div>
-                  <div className="text-xs text-gray-500">Pts</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">{team.pts}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Pts</div>
                 </div>
               </div>
 
               {/* Stats Grid */}
               <div className="grid grid-cols-4 gap-3 mb-3 text-center">
                 <div>
-                  <div className="text-sm font-medium text-gray-900">{team.mp}</div>
-                  <div className="text-xs text-gray-500">MP</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{team.mp}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">MP</div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-900">{team.w}</div>
-                  <div className="text-xs text-gray-500">W</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{team.w}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">W</div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-900">{team.d}</div>
-                  <div className="text-xs text-gray-500">D</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{team.d}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">D</div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-900">{team.l}</div>
-                  <div className="text-xs text-gray-500">L</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{team.l}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">L</div>
                 </div>
               </div>
 
               {/* Goals and Form */}
               <div className="flex items-center justify-between">
                 <div className="flex space-x-4 text-xs">
-                  <span className="text-gray-600">GF: <span className="font-medium text-gray-900">{team.gf}</span></span>
-                  <span className="text-gray-600">GA: <span className="font-medium text-gray-900">{team.ga}</span></span>
-                  <span className="text-gray-600">GD: <span className="font-medium text-gray-900">{team.gd > 0 ? '+' : ''}{team.gd}</span></span>
+                  <span className="text-gray-600 dark:text-gray-400">GF: <span className="font-medium text-gray-900 dark:text-gray-100">{team.gf}</span></span>
+                  <span className="text-gray-600 dark:text-gray-400">GA: <span className="font-medium text-gray-900 dark:text-gray-100">{team.ga}</span></span>
+                  <span className="text-gray-600 dark:text-gray-400">GD: <span className="font-medium text-gray-900 dark:text-gray-100">{team.gd > 0 ? '+' : ''}{team.gd}</span></span>
                 </div>
                 <div className="flex space-x-1">
                   {renderForm(team.form.slice(-3))}
@@ -404,14 +404,14 @@ const Ranking = () => {
 
         {/* Empty State */}
         {filteredData.length === 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-            <div className="text-gray-400 mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center transition-colors duration-300">
+            <div className="text-gray-400 dark:text-gray-500 mb-4">
               <Search className="w-12 h-12 mx-auto" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               Không tìm thấy kết quả
             </h3>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
             </p>
           </div>

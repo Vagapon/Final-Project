@@ -229,24 +229,24 @@ const MatchOverview = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen max-w-7xl mx-auto">
+ <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen max-w-7xl mx-auto transition-colors">
       {/* Featured Matches Slider */}
-      <div className="relative mb-8 bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="relative mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
         <div className="flex transition-transform duration-500 ease-in-out" 
              style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
           {featuredMatches.map((match, index) => (
             <div key={match.id} className="w-full flex-shrink-0">
               <div className="max-w-3xl mx-auto p-6 text-center">
                 {/* Header */}
-                <h2 className="text-2xl font-semibold mb-4 text-left">Featured Match</h2>
+                <h2 className="text-2xl font-semibold mb-4 text-left text-gray-900 dark:text-white">Featured Match</h2>
 
                 {/* Subheading */}
-                <p className="text-sm text-gray-500 mb-2 text-left">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 text-left">
                   {match.tournament}
                 </p>
 
                 {/* Teams & Score */}
-                <div className="flex items-center justify-between text-center py-6 border-b border-gray-200">
+                <div className="flex items-center justify-between text-center py-6 border-b border-gray-200 dark:border-gray-700">
                   {/* Team 1 */}
                   <div className="flex flex-col items-center gap-2 w-1/3">
                     <img
@@ -254,11 +254,11 @@ const MatchOverview = () => {
                       alt={match.homeTeam}
                       className="w-12 h-12 object-contain"
                     />
-                    <span className="font-medium text-gray-800">{match.homeTeam}</span>
+                    <span className="font-medium text-gray-800 dark:text-gray-200">{match.homeTeam}</span>
                   </div>
 
                   {/* Score */}
-                  <div className="flex items-center gap-3 text-3xl font-bold text-gray-900">
+                  <div className="flex items-center gap-3 text-3xl font-bold text-gray-900 dark:text-white">
                     <span>{match.homeScore}</span>
                     <span>-</span>
                     <span>{match.awayScore}</span>
@@ -271,17 +271,17 @@ const MatchOverview = () => {
                       alt={match.awayTeam}
                       className="w-12 h-12 object-contain"
                     />
-                    <span className="font-medium text-gray-800">{match.awayTeam}</span>
+                    <span className="font-medium text-gray-800 dark:text-gray-200">{match.awayTeam}</span>
                   </div>
                 </div>
 
                 {/* Match Info */}
-                <p className="text-sm text-gray-500 my-2">
+                <p className="text-sm text-gray-500 dark:text-gray-400 my-2">
                   {match.stage}
                 </p>
 
                 {/* Scorers */}
-                <div className="flex justify-between text-sm text-gray-800 border-t pt-4">
+                <div className="flex justify-between text-sm text-gray-800 dark:text-gray-200 border-t border-gray-200 dark:border-gray-700 pt-4">
                   {/* Left scorers */}
                   <div className="text-left">
                     {match.homeScorers.map((scorer, i) => (
@@ -290,7 +290,7 @@ const MatchOverview = () => {
                   </div>
 
                   {/* Match minute */}
-                  <div className="flex items-center justify-center text-green-600 text-sm">
+                  <div className="flex items-center justify-center text-green-600 dark:text-green-400 text-sm">
                     <span className="font-bold">{match.minute}</span>
                   </div>
 
@@ -306,7 +306,7 @@ const MatchOverview = () => {
 
                 {/* Watch button */}
                 <div className="my-6">
-                  <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-100 transition mx-auto">
+                  <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition mx-auto text-gray-900 dark:text-gray-100">
                     🔍 Watch live
                   </button>
                 </div>
@@ -318,15 +318,15 @@ const MatchOverview = () => {
         {/* Navigation Buttons */}
         <button
           onClick={prevSlide}
-          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-md transition-all"
+          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 rounded-full p-2 shadow-md transition-all"
         >
-          <ChevronLeft className="w-6 h-6 text-gray-600" />
+          <ChevronLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
         </button>
         <button
           onClick={nextSlide}
-          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-md transition-all"
+          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 rounded-full p-2 shadow-md transition-all"
         >
-          <ChevronRight className="w-6 h-6 text-gray-600" />
+          <ChevronRight className="w-6 h-6 text-gray-600 dark:text-gray-300" />
         </button>
 
         {/* Dots indicator */}
@@ -336,7 +336,7 @@ const MatchOverview = () => {
               key={index}
               onClick={() => goToSlide(index)}
               className={`w-2 h-2 rounded-full transition-all ${
-                index === currentSlide ? 'bg-blue-600' : 'bg-gray-300'
+                index === currentSlide ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
               }`}
             />
           ))}
@@ -345,8 +345,8 @@ const MatchOverview = () => {
 
       {/* Header */}
       <div className="mb-2 p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Lịch thi đấu</h1>
-        <p className="text-gray-600">Quản lý các trận đấu sắp tới</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Lịch thi đấu</h1>
+        <p className="text-gray-600 dark:text-gray-400">Quản lý các trận đấu sắp tới</p>
       </div>
  
       {/* Matches Grid - 2 columns layout */}
@@ -354,7 +354,7 @@ const MatchOverview = () => {
         {matches.map((match) => (
           <div
             key={match.id}
-            className="group bg-white rounded-none border border-gray-200 p-3 hover:shadow-lg cursor-pointer transition-all duration-200 hover:border-blue-300"
+            className="group bg-white dark:bg-gray-800 rounded-none border border-gray-200 dark:border-gray-700 p-3 hover:shadow-lg cursor-pointer transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-500"
             onClick={() => handleMatchClick(match)}
           >
             <div className="flex items-center justify-between">
@@ -369,7 +369,7 @@ const MatchOverview = () => {
                       className="w-full h-full object-contain"
                     />
                   </div>
-                  <span className="text-sm font-medium">{match.homeTeam}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{match.homeTeam}</span>
                 </div>
 
                 {/* Away Team */}
@@ -381,15 +381,15 @@ const MatchOverview = () => {
                       className="w-full h-full object-contain"
                     />
                   </div>
-                  <span className="text-sm font-medium">{match.awayTeam}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{match.awayTeam}</span>
                 </div>
               </div>
-              <hr className="w-px h-20 bg-gray-300 mx-4" />
+              <hr className="w-px h-20 bg-gray-300 dark:bg-gray-600 mx-4" />
 
               {/* Right side - Date & Time */}
               <div className="text-right mr-3">
-                <div className="text-gray-500 text-xs mb-1">{match.date}</div>
-                <div className="text-gray-900 font-bold text-sm">
+                <div className="text-gray-500 dark:text-gray-400 text-xs mb-1">{match.date}</div>
+                <div className="text-gray-900 dark:text-white font-bold text-sm">
                   {match.time}
                 </div>
               </div>
@@ -398,14 +398,14 @@ const MatchOverview = () => {
               <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
                   onClick={(e) => handleEditClick(match, e)}
-                  className="text-gray-400 hover:text-blue-600 transition-colors duration-200 p-1"
+                  className="text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 p-1"
                   title="Chỉnh sửa"
                 >
                   <Edit className="w-4 h-4" />
                 </button>
                 <button
                   onClick={(e) => handleDelete(match.id, e)}
-                  className="text-gray-400 hover:text-red-600 transition-colors duration-200 p-1"
+                  className="text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200 p-1"
                   title="Xóa"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -424,7 +424,7 @@ const MatchOverview = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700  mb-1">
               Đội chủ nhà
             </label>
             <input
@@ -433,11 +433,11 @@ const MatchOverview = () => {
               onChange={(e) =>
                 setEditFormData({ ...editFormData, homeTeam: e.target.value })
               }
-              className="w-full p-2 border border-gray-300 rounded-md text-gray-900"
+              className="w-full p-2 border border-gray-300  rounded-md text-gray-900  bg-white da focus:ring-2 focus:ring-blue-500  focus:border-transparent"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700  mb-1">
               Đội khách
             </label>
             <input
@@ -446,11 +446,11 @@ const MatchOverview = () => {
               onChange={(e) =>
                 setEditFormData({ ...editFormData, awayTeam: e.target.value })
               }
-              className="w-full p-2 border border-gray-300 rounded-md text-gray-900"
+              className="w-full p-2 border border-gray-300  rounded-md text-gray-900  bg-white  focus:ring-2 focus:ring-blue-500  focus:border-transparent"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700  mb-1">
               Ngày thi đấu
             </label>
             <input
@@ -459,11 +459,11 @@ const MatchOverview = () => {
               onChange={(e) =>
                 setEditFormData({ ...editFormData, date: e.target.value })
               }
-              className="w-full p-2 border border-gray-300 rounded-md text-gray-900"
+              className="w-full p-2 border border-gray-300  rounded-md text-gray-900  bg-white  focus:ring-2 focus:ring-blue-500  focus:border-transparent"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700  mb-1">
               Giờ thi đấu
             </label>
             <input
@@ -472,19 +472,19 @@ const MatchOverview = () => {
               onChange={(e) =>
                 setEditFormData({ ...editFormData, time: e.target.value })
               }
-              className="w-full p-2 border border-gray-300 rounded-md text-gray-900"
+              className="w-full p-2 border border-gray-300  rounded-md text-gray-900  bg-white  focus:ring-2 focus:ring-blue-500  focus:border-transparent"
             />
           </div>
           <div className="flex gap-2 justify-end pt-4">
             <button
               onClick={() => setShowEditModal(false)}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+              className="px-4 py-2 text-gray-600  border border-gray-300  rounded-md hover:bg-gray-50  transition-colors"
             >
               Hủy
             </button>
             <button
               onClick={handleSaveEdit}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+              className="px-4 py-2 bg-blue-600  text-white rounded-md hover:bg-blue-700  flex items-center gap-2 transition-colors"
             >
               <Save className="w-4 h-4" />
               Lưu
@@ -504,41 +504,41 @@ const MatchOverview = () => {
             <div className="text-center">
               <div className="flex items-center justify-center gap-4 mb-4">
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                  <div className="w-12 h-12 bg-gray-100  rounded-full flex items-center justify-center mb-2">
                     <span className="text-xl">{selectedMatch.homeFlag}</span>
                   </div>
-                  <div className="font-semibold text-gray-900">
+                  <div className="font-semibold text-gray-900 ">
                     {selectedMatch.homeTeam}
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-gray-400">VS</div>
+                <div className="text-2xl font-bold text-gray-400 ">VS</div>
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                  <div className="w-12 h-12 bg-gray-100  rounded-full flex items-center justify-center mb-2">
                     <span className="text-xl">{selectedMatch.awayFlag}</span>
                   </div>
-                  <div className="font-semibold text-gray-900">
+                  <div className="font-semibold text-gray-900 ">
                     {selectedMatch.awayTeam}
                   </div>
                 </div>
               </div>
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="bg-gray-50  p-4 rounded-lg">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium text-gray-600">Ngày:</span>
-                  <div className="text-gray-900">{selectedMatch.date}</div>
+                  <span className="font-medium text-gray-600 ">Ngày:</span>
+                  <div className="text-gray-900 ">{selectedMatch.date}</div>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-600">Giờ:</span>
-                  <div className="text-gray-900">{selectedMatch.time}</div>
+                  <span className="font-medium text-gray-600 ">Giờ:</span>
+                  <div className="text-gray-900 ">{selectedMatch.time}</div>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-600">Trạng thái:</span>
-                  <div className="text-gray-900">Sắp diễn ra</div>
+                  <span className="font-medium text-gray-600 ">Trạng thái:</span>
+                  <div className="text-gray-900 ">Sắp diễn ra</div>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-600">ID:</span>
-                  <div className="text-gray-900">#{selectedMatch.id}</div>
+                  <span className="font-medium text-gray-600 ">ID:</span>
+                  <div className="text-gray-900 ">#{selectedMatch.id}</div>
                 </div>
               </div>
             </div>
