@@ -182,35 +182,50 @@ export default function Login() {
     showToast("Đang xác thực thông tin...", "info", 10000);
 
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/login", {
-        email,
-        password,
-      });
-      const {token, user} = response.data;
-      
-      // Lưu token và user info
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-      
-      console.log("Login successful:", response.data);
-      
-      // Đóng toast loading và hiển thị toast thành công
-      hideToast();
-      setTimeout(() => {
-        showToast(`Chào mừng ${user.name || 'bạn'} trở lại! 🎉`, "success", 3000);
-      }, 100);
-      
-      // Hiển thị toast chúc mừng
-      setTimeout(() => {
-        showToast("✨ Chúc bạn có một ngày tuyệt vời!", "info", 2000);
-      }, 2000);
-      
-      // Chuyển hướng sau 3 giây
-      setTimeout(() => {
-        navigate("/admin");
-      }, 3000);
-      
-    } catch (error) {
+  const response = await axios.post("http://localhost:5000/api/auth/login", {
+    email,
+    password,
+  });
+
+  const { token } = response.data;
+
+  // Lưu token tạm thời
+  localStorage.setItem("token", token);
+
+  // Gọi API /api/me để lấy thông tin user kèm role
+  const meRes = await axios.get("http://localhost:5000/api/auth/me", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const userData = meRes.data;
+
+  // Ghi đè lại user info có role
+  localStorage.setItem("user", JSON.stringify(userData));
+
+  console.log("Login successful:", userData);
+
+  // Đóng toast loading và hiển thị toast thành công
+  hideToast();
+  setTimeout(() => {
+    showToast(`Chào mừng ${userData.name || "bạn"} trở lại! 🎉`, "success", 3000);
+  }, 100);
+
+  setTimeout(() => {
+    showToast("✨ Chúc bạn có một ngày tuyệt vời!", "info", 2000);
+  }, 2000);
+
+  // Chuyển hướng sau 3 giây
+  setTimeout(() => {
+    if (userData.role === "ADMIN") {
+      navigate("/admin");
+    } else {
+      navigate("/home");
+    }
+  }, 3000);
+
+} catch (error) {
       console.error("Login failed:", error.response?.data || error.message);
       
       // Đóng toast loading

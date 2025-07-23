@@ -23,37 +23,49 @@ import Match from "./pages/Admin/Match.jsx"; // trang quản lý trận đấu
 import Register from "./pages/Ahthen/Register.jsx"; // trang đăng ký
 import LandingPage from "./pages/LandingPage.jsx";
 import ThreeExperience from "./pages/ThreeExperience.jsx";
+import ProtectedRoute from "./routes/ProtectedRoute.jsx"; // route bảo vệ
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Failed to find root element");
 
 createRoot(rootElement).render(
-  <BrowserRouter>
-    <Routes>
-        {/* Route dành cho người dùng với layout App.jsx */}
+<BrowserRouter>
+  <Routes>
+    {/* Trang landing */}
+    <Route index element={<ThreeExperience />} />
+
+    {/* Layout mặc định App: dành cho user */}
+    <Route element={<ProtectedRoute/>}>
       <Route path="/" element={<App />}>
-       
         <Route path="/home" element={<Home />} />
         <Route path="/myteam" element={<MyTeam />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/challenge" element={<Challenge />} />
         <Route path="/highlight" element={<Highlight />} />
-        {/* Bạn có thể thêm các route khác tại đây */}
       </Route>
-      <Route index element={<ThreeExperience />} />
+    </Route>
+
+    {/* Layout admin */}
+    <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
       <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<Overview />} /> {/* /admin */}
+        <Route index element={<Overview />} />
         <Route path="users" element={<User />} />
-        <Route path="events" element={<Event />} /> {/* /admin/users */}
+        <Route path="events" element={<Event />} />
         <Route path="profile" element={<Profile />} />
-        <Route path="teams" element={<Team />} /> {/* /admin/users */}
-        <Route path="ranks" element={<Ranking />} /> {/* /admin/users */}
-        <Route path="matches" element={<Match />} /> {/* /admin/users */}
-        {/* bạn có thể thêm các route con khác tại đây */}
+        <Route path="teams" element={<Team />} />
+        <Route path="ranks" element={<Ranking />} />
+        <Route path="matches" element={<Match />} />
       </Route>
-      <Route path="/" element={<ThreeExperience />} />
-      <Route path="/chat" element={<Chat />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Register/>} />
-    </Routes>
-  </BrowserRouter>
+    </Route>
+
+    {/* Chat dùng chung? */}
+    <Route path="/chat" element={<Chat />} />
+
+    {/* Login/Register */}
+    <Route path="/login" element={<Login />} />
+    <Route path="/signup" element={<Register />} />
+
+    {/* Unauthorized route */}
+    <Route path="/unauthorized" element={<h1>Không có quyền truy cập!</h1>} />
+  </Routes>
+</BrowserRouter>
 );

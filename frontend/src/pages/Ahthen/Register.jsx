@@ -1,15 +1,16 @@
 import React, { useState, useRef } from "react";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [firstName, setFirstName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [agreeTerms, setAgreeTerms] = useState(false);
+  // const [agreeTerms, setAgreeTerms] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
@@ -18,27 +19,33 @@ export default function Register() {
       alert("Passwords do not match!");
       return;
     }
-    if (!agreeTerms) {
-      alert("Please agree to the terms and conditions!");
-      return;
-    }
-    console.log("Register attempt:", {
-      firstName,
-      phone,
-      email,
-      password,
-      agreeTerms,
-    });
-  };
-
-const videoRef = useRef();
-
-  const handlePlayWithSound = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = false;
-      videoRef.current.play();
+    // if (!agreeTerms) {
+    //   alert("Please agree to the terms and conditions!");
+    //   return;
+    // }
+    try {
+      const response = axios.post("http://localhost:5000/api/auth/register", {
+        name: fullName,
+        email,
+        password,
+        confirmPassword,
+        phone_number: phone,
+      });
+      alert("Registration successful!");
+      navigate("/login");
+    } catch (error) {
+      alert("Registration failed: " + error.response.data.message);
     }
   };
+
+  const videoRef = useRef();
+
+  // const handlePlayWithSound = () => {
+  //   if (videoRef.current) {
+  //     videoRef.current.muted = false;
+  //     videoRef.current.play();
+  //   }
+  // };
   const [isMuted, setIsMuted] = useState(true);
   const handleToggleMute = () => {
     if (videoRef.current) {
@@ -94,18 +101,7 @@ const videoRef = useRef();
                   />
                 </svg>
                 <span className="text-xs lg:text-sm font-medium">Google</span>
-              </button>
-{/* 
-              <button className="flex items-center justify-center px-3 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                <svg
-                  className="w-4 h-4 mr-2"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-                <span className="text-xs lg:text-sm font-medium">X</span>
-              </button> */}
+              </button>           
             </div>
 
             {/* Divider */}
@@ -128,13 +124,13 @@ const videoRef = useRef();
                       htmlFor="firstName"
                       className="block text-sm font-medium text-gray-700 mb-1"
                     >
-                      First Name <span className="text-red-500">*</span>
+                      Full Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       id="firstName"
                       type="text"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
                       placeholder="Tony"
                       className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       required
@@ -272,7 +268,7 @@ const videoRef = useRef();
 
       {/* Right side - Video background cố định */}
       <div className="hidden lg:flex flex-1 relative bg-transparent overflow-hidden">
-          <video
+        <video
           ref={videoRef}
           autoPlay
           muted
@@ -281,7 +277,10 @@ const videoRef = useRef();
           preload="auto"
           className="absolute inset-0 w-full h-full object-cover brightness-100 contrast-110"
         >
-          <source src="https://res.cloudinary.com/dlespzsu6/video/upload/v1751071400/worldcups_qdnpuw.mp4" type="video/mp4" />
+          <source
+            src="https://res.cloudinary.com/dlespzsu6/video/upload/v1751071400/worldcups_qdnpuw.mp4"
+            type="video/mp4"
+          />
         </video>
         <button
           onClick={handleToggleMute}
