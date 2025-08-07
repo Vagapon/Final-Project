@@ -19,7 +19,7 @@ const MENU_ITEMS = [
   { name: "My Team", icon: User, path: "/myteam" },
   { name: "Challenge", icon: Trophy, path: "/challenge" },
   { name: "Blog", icon: BookOpen, path: "/blog" },
-  { name: "Highlight", icon: Sparkles, path: "/highlight" },
+  { name: "Book Field", icon: Sparkles, path: "/book" },
 ];
 
 const NOTIFICATIONS = [

@@ -11,18 +11,16 @@ import User from "./pages/Admin/User.jsx"; // trang /admin/users
 import Event from "./pages/Admin/Event.jsx"; // ví dụ trang khác
 import Profile from "./pages/Admin/Profile.jsx";
 import Chat from "./components/Chat/ChatApp.jsx"; // ví dụ trang khác
-import Login from "./pages/Ahthen/Login.jsx"; // trang đăng nhập
+import Login from "./pages/Authen/Login.jsx"; // trang đăng nhập
 import Team from "./pages/Admin/Team.jsx"; // trang team
 import Ranking from "./pages/Admin/Ranking.jsx";
 import Home from "./pages/HomePage/Home.jsx";
 import MyTeam from "./pages/MyTeam/TeamPage.jsx";
 import Blog from "./pages/Blogs/Blog.jsx"; // trang blog, nếu có
 import Challenge from "./pages/Challenges/Challenge.jsx";
-import Highlight from "./pages/Blogs/HighLight.jsx"
+import Booking from "./pages/Blogs/FieldBooking.jsx"
 import Match from "./pages/Admin/Match.jsx"; // trang quản lý trận đấu
-import Register from "./pages/Ahthen/Register.jsx"; // trang đăng ký
-import LandingPage from "./pages/LandingPage.jsx";
-import ThreeExperience from "./pages/ThreeExperience.jsx";
+import Register from "./pages/Authen/Register.jsx"; // trang đăng ký
 import ProtectedRoute from "./routes/ProtectedRoute.jsx"; // route bảo vệ
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Failed to find root element");
@@ -31,16 +29,16 @@ createRoot(rootElement).render(
 <BrowserRouter>
   <Routes>
     {/* Trang landing */}
-    <Route index element={<ThreeExperience />} />
+    {/* <Route index element={<ThreeExperience />} /> */}
 
     {/* Layout mặc định App: dành cho user */}
     <Route element={<ProtectedRoute/>}>
       <Route path="/" element={<App />}>
-        <Route path="/home" element={<Home />} />
+        <Route index element={<Home />} />
         <Route path="/myteam" element={<MyTeam />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/challenge" element={<Challenge />} />
-        <Route path="/highlight" element={<Highlight />} />
+        <Route path="/book" element={<Booking />} />
       </Route>
     </Route>
 
