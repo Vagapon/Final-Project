@@ -58,9 +58,16 @@ export default function Register() {
     <div className="h-screen flex overflow-hidden">
       {/* Left side - Register form với scroll riêng */}
       <div className="flex-1  bg-white">
-        <div className="min-h-full flex flex-col justify-center px-4 sm:px-6 lg:px-16 xl:px-20 py-8">
+        <div className="min-h-full flex flex-col justify-start px-4 sm:px-6 lg:px-16 xl:px-20 py-8">
           <div className="mx-auto w-full max-w-sm lg:max-w-md">
             {/* Back button */}
+            <div className="flex justify-center mb-6 lg:hidden">
+              <img
+                src="favicon/logoicon.png" // ✅ Đường dẫn tới ảnh logo (nên để trong public/)
+                alt="Logo"
+                className="h-16 w-auto" // Bạn có thể điều chỉnh kích thước
+              />
+            </div>
             <button
               onClick={() => navigate("/")}
               className="flex items-center text-gray-600 hover:text-gray-800 mb-6 transition-colors"
@@ -101,7 +108,7 @@ export default function Register() {
                   />
                 </svg>
                 <span className="text-xs lg:text-sm font-medium">Google</span>
-              </button>           
+              </button>
             </div>
 
             {/* Divider */}

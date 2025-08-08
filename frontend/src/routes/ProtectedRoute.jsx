@@ -1,20 +1,20 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from '../pages/Authen/AuthContext';
 
 const ProtectedRoute = ({ allowedRoles }) => {
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user"));
+  const { user } = useAuth();
 
-  if (!token || !user) {
+  if (!user) {
+    // Chưa đăng nhập -> chuyển đến trang login
     return <Navigate to="/login" replace />;
   }
 
-  // Nếu không có role hoặc không nằm trong allowedRoles thì chặn
-  if (allowedRoles && allowedRoles.length > 0) {
-    if (!user.role || !allowedRoles.includes(user.role)) {
-      return <Navigate to="/unauthorized" replace />;
-    }
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // Không có quyền truy cập -> chuyển đến trang unauthorized
+    return <Navigate to="/unauthorized" replace />;
   }
 
+  // Có quyền truy cập -> render các route con
   return <Outlet />;
 };
 

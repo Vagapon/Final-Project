@@ -1,10 +1,25 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Eye, EyeOff, ArrowLeft, CheckCircle, XCircle, AlertCircle, X } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  ArrowLeft,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  X,
+} from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "./AuthContext";
 import axios from "axios";
 
 // Toast Component with Progress Bar
-const Toast = ({ message, type = "success", isVisible, onClose, duration = 4000 }) => {
+const Toast = ({
+  message,
+  type = "success",
+  isVisible,
+  onClose,
+  duration = 4000,
+}) => {
   const [progress, setProgress] = useState(100);
   const [isPaused, setIsPaused] = useState(false);
   const progressRef = useRef(null);
@@ -18,9 +33,9 @@ const Toast = ({ message, type = "success", isVisible, onClose, duration = 4000 
         const elapsed = Date.now() - startTimeRef.current;
         const remaining = Math.max(0, remainingTimeRef.current - elapsed);
         const newProgress = (remaining / duration) * 100;
-        
+
         setProgress(newProgress);
-        
+
         if (remaining <= 0) {
           clearInterval(interval);
           onClose();
@@ -34,7 +49,10 @@ const Toast = ({ message, type = "success", isVisible, onClose, duration = 4000 
   const handleMouseEnter = () => {
     setIsPaused(true);
     if (startTimeRef.current) {
-      remainingTimeRef.current = Math.max(0, remainingTimeRef.current - (Date.now() - startTimeRef.current));
+      remainingTimeRef.current = Math.max(
+        0,
+        remainingTimeRef.current - (Date.now() - startTimeRef.current)
+      );
     }
   };
 
@@ -44,8 +62,9 @@ const Toast = ({ message, type = "success", isVisible, onClose, duration = 4000 
   };
 
   const getToastStyles = () => {
-    const baseStyles = "fixed top-6 left-1/2 transform -translate-x-1/2 z-50 rounded-xl shadow-2xl backdrop-blur-md border transition-all duration-500 ease-out max-w-md w-full mx-4 overflow-hidden";
-    
+    const baseStyles =
+      "fixed top-6 left-1/2 transform -translate-x-1/2 z-50 rounded-xl shadow-2xl backdrop-blur-md border transition-all duration-500 ease-out max-w-md w-full mx-4 overflow-hidden";
+
     switch (type) {
       case "success":
         return `${baseStyles} bg-green-50/95 border-green-200`;
@@ -117,7 +136,7 @@ const Toast = ({ message, type = "success", isVisible, onClose, duration = 4000 
     >
       {/* Progress Bar */}
       <div className="absolute top-0 left-0 w-full h-1 bg-gray-200/50">
-        <div 
+        <div
           ref={progressRef}
           className={`h-full transition-all duration-75 ease-linear ${getProgressColor()}`}
           style={{ width: `${progress}%` }}
@@ -129,7 +148,9 @@ const Toast = ({ message, type = "success", isVisible, onClose, duration = 4000 
         <div className="flex items-center space-x-3">
           {getIcon()}
           <div className="flex-1">
-            <p className={`text-sm font-medium leading-relaxed ${getTextColor()}`}>
+            <p
+              className={`text-sm font-medium leading-relaxed ${getTextColor()}`}
+            >
               {message}
             </p>
           </div>
@@ -147,11 +168,11 @@ const Toast = ({ message, type = "success", isVisible, onClose, duration = 4000 
 
 // Custom Hook for Toast
 const useToast = () => {
-  const [toast, setToast] = useState({ 
-    message: "", 
-    type: "success", 
+  const [toast, setToast] = useState({
+    message: "",
+    type: "success",
     isVisible: false,
-    duration: 4000
+    duration: 4000,
   });
 
   const showToast = (message, type = "success", duration = 4000) => {
@@ -159,7 +180,7 @@ const useToast = () => {
   };
 
   const hideToast = () => {
-    setToast(prev => ({ ...prev, isVisible: false }));
+    setToast((prev) => ({ ...prev, isVisible: false }));
   };
 
   return { toast, showToast, hideToast };
@@ -173,6 +194,8 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast, showToast, hideToast } = useToast();
+  const { login } = useAuth();
+  const { user } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -182,78 +205,104 @@ export default function Login() {
     showToast("Đang xác thực thông tin...", "info", 10000);
 
     try {
-  const response = await axios.post("http://localhost:5000/api/auth/login", {
-    email,
-    password,
-  });
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        {
+          email,
+          password,
+        }
+      );
 
-  const { token } = response.data;
+      const { token } = response.data;
 
-  // Lưu token tạm thời
-  localStorage.setItem("token", token);
+      // Lưu token tạm thời
+      // localStorage.setItem("token", token);
 
-  // Gọi API /api/me để lấy thông tin user kèm role
-  const meRes = await axios.get("http://localhost:5000/api/auth/me", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+      // Gọi API /api/me để lấy thông tin user kèm role
+      const meRes = await axios.get("http://localhost:5000/api/auth/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-  const userData = meRes.data;
+      const userData = meRes.data;
+      login(userData, token); // Sử dụng hook login để lưu user và token
+      // Ghi đè lại user info có role
+      // localStorage.setItem("user", JSON.stringify(userData));
 
-  // Ghi đè lại user info có role
-  localStorage.setItem("user", JSON.stringify(userData));
+      console.log("Login successful:", userData);
 
-  console.log("Login successful:", userData);
+      // Đóng toast loading và hiển thị toast thành công
+      hideToast();
+      setTimeout(() => {
+        showToast(
+          `Chào mừng ${userData.name || "bạn"} trở lại! 🎉`,
+          "success",
+          3000
+        );
+      }, 100);
 
-  // Đóng toast loading và hiển thị toast thành công
-  hideToast();
-  setTimeout(() => {
-    showToast(`Chào mừng ${userData.name || "bạn"} trở lại! 🎉`, "success", 3000);
-  }, 100);
+      setTimeout(() => {
+        showToast("✨ Chúc bạn có một ngày tuyệt vời!", "info", 2000);
+      }, 2000);
 
-  setTimeout(() => {
-    showToast("✨ Chúc bạn có một ngày tuyệt vời!", "info", 2000);
-  }, 2000);
-
-  // Chuyển hướng sau 3 giây
-  setTimeout(() => {
-    if (userData.role === "ADMIN") {
-      navigate("/admin");
-    } else {
-      navigate("/home");
-    }
-  }, 3000);
-
-} catch (error) {
+      // Chuyển hướng sau 3 giây
+      setTimeout(() => {
+        if (userData.role === "ADMIN") {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
+      }, 3000);
+    } catch (error) {
       console.error("Login failed:", error.response?.data || error.message);
-      
+
       // Đóng toast loading
       hideToast();
-      
+
       // Hiển thị toast lỗi với thời gian phù hợp
       setTimeout(() => {
         const errorMessage = error.response?.data?.message;
-        
+
         if (error.response?.status === 404) {
-          showToast("Email không tồn tại! Vui lòng kiểm tra lại.", "error", 5000);
+          showToast(
+            "Email không tồn tại! Vui lòng kiểm tra lại.",
+            "error",
+            5000
+          );
         } else if (error.response?.status === 401) {
-          showToast("Mật khẩu không chính xác! Vui lòng thử lại.", "error", 5000);
+          showToast(
+            "Mật khẩu không chính xác! Vui lòng thử lại.",
+            "error",
+            5000
+          );
         } else if (error.response?.status === 403) {
-          showToast("Tài khoản bị khóa! Liên hệ admin để được hỗ trợ.", "warning", 6000);
+          showToast(
+            "Tài khoản bị khóa! Liên hệ admin để được hỗ trợ.",
+            "warning",
+            6000
+          );
         } else {
-          showToast(errorMessage || "Đăng nhập thất bại. Vui lòng thử lại.", "error", 4000);
+          showToast(
+            errorMessage || "Đăng nhập thất bại. Vui lòng thử lại.",
+            "error",
+            4000
+          );
         }
       }, 100);
     } finally {
       setIsLoading(false);
     }
   };
-
+  useEffect(() => {
+    if (user) {
+      navigate(user.role === "ADMIN" ? "/admin" : "/", { replace: true });
+    }
+  }, [user, navigate]);
   // Video functionality
   const videoRef = useRef();
   const [isMuted, setIsMuted] = useState(true);
-  
+
   const handleToggleMute = () => {
     if (videoRef.current) {
       videoRef.current.muted = !isMuted;
@@ -274,11 +323,20 @@ export default function Login() {
 
       {/* Left side - Login form */}
       <div className="flex-1 bg-white">
-        <div className="min-h-full flex flex-col justify-center px-4 sm:px-6 lg:px-16 xl:px-20 py-8">
+        <div className="min-h-full flex flex-col justify-start px-4 sm:px-6 lg:px-16 xl:px-20 py-8">
           {/* Back button */}
+          {/* Logo */}
+          <div className="flex justify-center mb-6 lg:hidden">
+            <img
+              src="favicon/logoicon.png" // ✅ Đường dẫn tới ảnh logo (nên để trong public/)
+              alt="Logo"
+              className="h-16 w-auto" // Bạn có thể điều chỉnh kích thước
+            />
+          </div>
+
           <div className="mx-auto w-full max-w-sm lg:max-w-md">
             <button
-              onClick={() => navigate("/home")}
+              onClick={() => navigate("/")}
               className="flex items-center text-gray-600 hover:text-gray-800 mb-8 transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -345,6 +403,7 @@ export default function Login() {
                   placeholder="info@gmail.com"
                   className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
+                  autoComplete="off"
                 />
               </div>
 
@@ -364,6 +423,7 @@ export default function Login() {
                     placeholder="Enter your password"
                     className="w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"

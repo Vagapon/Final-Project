@@ -22,25 +22,30 @@ import Booking from "./pages/Blogs/FieldBooking.jsx"
 import Match from "./pages/Admin/Match.jsx"; // trang quản lý trận đấu
 import Register from "./pages/Authen/Register.jsx"; // trang đăng ký
 import ProtectedRoute from "./routes/ProtectedRoute.jsx"; // route bảo vệ
+import { AuthProvider } from './pages/Authen/AuthContext.jsx';
+import Unauthorized from "./pages/Authen/Unauthorized.jsx";
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Failed to find root element");
 
 createRoot(rootElement).render(
 <BrowserRouter>
+  <AuthProvider>
   <Routes>
     {/* Trang landing */}
     {/* <Route index element={<ThreeExperience />} /> */}
 
     {/* Layout mặc định App: dành cho user */}
-    <Route element={<ProtectedRoute/>}>
+    {/* <Route element={<ProtectedRoute/>}> */}
       <Route path="/" element={<App />}>
         <Route index element={<Home />} />
+        <Route element={<ProtectedRoute/>}>
         <Route path="/myteam" element={<MyTeam />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/challenge" element={<Challenge />} />
         <Route path="/book" element={<Booking />} />
+        </Route>
       </Route>
-    </Route>
+    {/* </Route> */}
 
     {/* Layout admin */}
     <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
@@ -63,7 +68,8 @@ createRoot(rootElement).render(
     <Route path="/signup" element={<Register />} />
 
     {/* Unauthorized route */}
-    <Route path="/unauthorized" element={<h1>Không có quyền truy cập!</h1>} />
+    <Route path="/unauthorized" element={<Unauthorized/>} />
   </Routes>
+  </AuthProvider>
 </BrowserRouter>
 );
