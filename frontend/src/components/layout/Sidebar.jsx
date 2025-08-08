@@ -1,17 +1,26 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  ChevronDown, BarChart3, Calendar, User, CheckSquare,
-  FileText, Table, X
-} from 'lucide-react';
+  ChevronDown,
+  BarChart3,
+  Calendar,
+  User,
+  CheckSquare,
+  FileText,
+  Table,
+  X,
+  UserPlus,
+} from "lucide-react";
+import { useAuth } from "../../pages/Authen/AuthContext";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const [openMenus, setOpenMenus] = useState({
     dashboard: true,
     task: false,
     forms: false,
-    setting: false
+    setting: false,
   });
+  const { user } = useAuth();
 
   const toggleMenu = (menu) => {
     setOpenMenus((prev) => ({ ...prev, [menu]: !prev[menu] }));
@@ -19,75 +28,92 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   const menuItems = [
     {
-      id: 'dashboard',
+      id: "dashboard",
       icon: BarChart3,
-      label: 'Dashboard',
+      label: "Dashboard",
       submenu: [
-        { label: 'Overview', path: '/admin' },
-        { label: 'Analytics', path: '/admin/analytics', badge: 'PRO' },
-        { label: 'CRM', path: '/admin/crm', badge: 'PRO' }
-      ]
+        { label: "Overview", path: "/admin" },
+        { label: "Analytics", path: "/admin/analytics", badge: "PRO" },
+        { label: "CRM", path: "/admin/crm", badge: "PRO" },
+      ],
     },
-      {
-      id: 'teams',
+    {
+      id: "teams",
       icon: FileText,
-      label: 'Teams',
+      label: "Teams",
       submenu: [
-        { label: 'Team list', path: '/admin/teams/' },
-        { label: 'Ranking', path: '/admin/ranks/' }
-      ]
+        { label: "Team list", path: "/admin/teams/" },
+        { label: "Ranking", path: "/admin/ranks/" },
+      ],
     },
-    
+
     {
-      id: 'profile',
+      id: "profile",
       icon: User,
-      label: 'Manage User',
-      path: '/admin/users'
+      label: "Manage User",
+      path: "/admin/users",
     },
+    // Thêm menu Create Staff chỉ cho Admin
+    ...(user?.role === 'ADMIN' ? [{
+      id: "create-staff",
+      icon: UserPlus,
+      label: "Create Staff",
+      path: "/admin/create-staff",
+    }] : []),
     {
-      id: 'task',
+      id: "task",
       icon: CheckSquare,
-      label: 'Event',
+      label: "Event",
       submenu: [
-        { label: 'All Events', path: '/admin/events' },
-        { label: 'Match Manager', path: '/admin/matches' }
-      ]
-    },
-{
-      id: 'calendar',
-      icon: Calendar,
-      label: 'Calendar',
-      path: '/admin/calendar'
+        { label: "All Events", path: "/admin/events" },
+        { label: "Match Manager", path: "/admin/matches" },
+      ],
     },
     {
-      id: 'setting',
+      id: "calendar",
+      icon: Calendar,
+      label: "Calendar",
+      path: "/admin/calendar",
+    },
+    {
+      id: "setting",
       icon: Table,
-      label: 'Setting',
+      label: "Setting",
       submenu: [
-        { label: 'Profile', path: '/admin/profile' },
-        { label: 'Security', path: '/admin/settings/security' }
-      ]
-    }
+        { label: "Profile", path: "/admin/profile" },
+        { label: "Security", path: "/admin/settings/security" },
+      ],
+    },
   ];
 
   return (
     <>
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden" onClick={toggleSidebar} />
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
+          onClick={toggleSidebar}
+        />
       )}
       <div
         className={`fixed left-0 top-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out z-30 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <div className="w-4 h-4 bg-white rounded-sm"></div>
-            </div>
-            <span className="text-xl font-bold text-gray-800 dark:text-white">TailAdmin</span>
+        <div className="flex items-center justify-between p-5 border-b dark:border-gray-700">
+          <div className="flex items-center">
+            <img
+              src="/favicon/logoicon.png"
+              alt="Logo"
+              className="h-8 w-auto"
+            />
+            <span className="ml-3 text-xl font-bold text-gray-800 dark:text-white">
+              GreenWich
+            </span>
           </div>
-          <button onClick={toggleSidebar} className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
+          <button
+            onClick={toggleSidebar}
+            className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -108,11 +134,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                     >
                       <div className="flex items-center space-x-3">
                         <item.icon className="w-5 h-5 flex-shrink-0" />
-                        <span className="text-sm font-medium truncate">{item.label}</span>
+                        <span className="text-sm font-medium truncate">
+                          {item.label}
+                        </span>
                       </div>
                       <ChevronDown
                         className={`w-4 h-4 transition-transform flex-shrink-0 ${
-                          openMenus[item.id] ? 'rotate-180' : ''
+                          openMenus[item.id] ? "rotate-180" : ""
                         }`}
                       />
                     </button>
@@ -141,7 +169,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                     className="flex items-center space-x-3 px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
                     <item.icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="text-sm font-medium truncate">{item.label}</span>
+                    <span className="text-sm font-medium truncate">
+                      {item.label}
+                    </span>
                   </Link>
                 )}
               </div>

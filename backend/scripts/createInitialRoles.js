@@ -8,6 +8,7 @@ const Role = require("../src/models/UserModel/Role"); // 👈 đường dẫn đ
 
     const roles = [
       { name: "Admin", code: "ADMIN" },
+      { name: "Staff", code: "STAFF" },
       { name: "User", code: "USER" },
     ];
 

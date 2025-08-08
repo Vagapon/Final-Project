@@ -24,6 +24,8 @@ import Register from "./pages/Authen/Register.jsx"; // trang đăng ký
 import ProtectedRoute from "./routes/ProtectedRoute.jsx"; // route bảo vệ
 import { AuthProvider } from './pages/Authen/AuthContext.jsx';
 import Unauthorized from "./pages/Authen/Unauthorized.jsx";
+import CreateStaff from "./pages/Admin/CreateStaff.jsx"; // trang tạo staff
+
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Failed to find root element");
 
@@ -56,6 +58,17 @@ createRoot(rootElement).render(
         <Route path="profile" element={<Profile />} />
         <Route path="teams" element={<Team />} />
         <Route path="ranks" element={<Ranking />} />
+        <Route path="matches" element={<Match />} />
+        <Route path="create-staff" element={<CreateStaff />} />
+      </Route>
+    </Route>
+
+    {/* Layout staff */}
+    <Route element={<ProtectedRoute allowedRoles={["ADMIN", "STAFF"]} />}>
+      <Route path="/staff" element={<AdminLayout />}>
+        <Route index element={<Overview />} />
+        <Route path="events" element={<Event />} />
+        <Route path="profile" element={<Profile />} />
         <Route path="matches" element={<Match />} />
       </Route>
     </Route>

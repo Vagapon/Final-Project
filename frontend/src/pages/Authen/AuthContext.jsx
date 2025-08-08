@@ -37,7 +37,14 @@ checkAuth();
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.setItem('token', token);
 
-    const redirectTo = userData.role === 'ADMIN' ? '/admin' : '/';
+    // Cập nhật redirect logic cho STAFF
+    let redirectTo = '/';
+    if (userData.role === 'ADMIN') {
+      redirectTo = '/admin';
+    } else if (userData.role === 'STAFF') {
+      redirectTo = '/staff';
+    }
+    
     navigate(redirectTo, { replace: true });
   };
 
@@ -49,7 +56,15 @@ checkAuth();
   };
 useEffect(() => {
     if (user && location.pathname === '/login') {
-        navigate(user.role === 'ADMIN' ? '/admin' : '/', { replace: true });
+        // Cập nhật redirect logic cho STAFF
+        let redirectTo = '/';
+        if (user.role === 'ADMIN') {
+          redirectTo = '/admin';
+        } else if (user.role === 'STAFF') {
+          redirectTo = '/staff';
+        }
+        
+        navigate(redirectTo, { replace: true });
     }
     }, [user, location, navigate]);
 if(loading) {

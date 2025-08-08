@@ -42,6 +42,55 @@ exports.register = async (req, res) => {
   }
 };
 
+// Thêm function tạo Staff (chỉ Admin mới được)
+exports.createStaff = async (req, res) => {
+  const { name, email, password, phone_number } = req.body;
+
+  try {
+    // Kiểm tra email đã tồn tại chưa
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ message: "Email đã tồn tại" });
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Tạo user mới
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
+      phone_number
+    });
+
+    await newUser.save();
+
+    // Tìm role STAFF
+    const staffRole = await Role.findOne({ code: "STAFF" });
+    if (!staffRole) {
+      return res.status(500).json({ message: "Không tìm thấy vai trò Staff" });
+    }
+
+    // Tạo UserRole cho Staff
+    await new UserRole({
+      user_id: newUser._id,
+      role_id: staffRole._id
+    }).save();
+
+    res.status(201).json({
+      message: "Tạo tài khoản Staff thành công",
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        phone_number: newUser.phone_number,
+        role: "STAFF"
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi server", error: err.message });
+  }
+};
+
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
