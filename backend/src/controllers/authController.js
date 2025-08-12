@@ -4,6 +4,8 @@ const Role = require("../models/UserModel/Role");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+
+
 exports.register = async (req, res) => {
   const { name, email, password, confirmPassword, phone_number } = req.body;
 
@@ -90,6 +92,34 @@ exports.createStaff = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: err.message });
   }
 };
+
+// // Thêm function tạo roles (chỉ Admin mới được)
+// exports.createRoles = async (req, res) => {
+//   try {
+//     const roles = [
+//       { name: "Admin", code: "ADMIN" },
+//       { name: "Staff", code: "STAFF" },
+//       { name: "User", code: "USER" },
+//     ];
+
+//     const createdRoles = [];
+//     for (const role of roles) {
+//       const exists = await Role.findOne({ code: role.code });
+//       if (!exists) {
+//         const newRole = await Role.create(role);
+//         createdRoles.push(newRole);
+//       }
+//     }
+
+//     res.status(201).json({
+//       message: "Tạo roles thành công",
+//       created: createdRoles.length,
+//       roles: createdRoles
+//     });
+//   } catch (err) {
+//     res.status(500).json({ message: "Lỗi server", error: err.message });
+//   }
+// };
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;

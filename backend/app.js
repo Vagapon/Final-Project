@@ -2,9 +2,20 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const mongoose = require("mongoose");
+const path = require("path");
 
-dotenv.config();
+
+
+// Routes
+const authRoutes = require("./src/routes/authRoutes");
+const userRoutes = require("./src/routes/userRoutes");
+
+
+
 const app = express();
+dotenv.config();
+
 
 // Middleware
 app.use(cors());
@@ -16,7 +27,7 @@ require("./src/models/UserModel/Role");
 require("./src/models/UserModel/UserRole");
 
 // Routes
-const authRoutes = require("./src/routes/authRoutes");
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 
 module.exports = app;
