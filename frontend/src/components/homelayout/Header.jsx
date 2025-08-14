@@ -463,7 +463,8 @@ const Header = () => {
     <>
       {/* Navigation Header */}
       <nav className="absolute top-0 left-0 right-0 z-40">
-        <div className="container mx-auto px-4 sm:px-6 py-4">
+       <div className="container mx-auto px-2 sm:px-3 py-4">
+
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center">
@@ -482,8 +483,6 @@ const Header = () => {
                 </Link>
               ))}
             </div>
-
-            {/* Right Icons */}
             <div className="flex items-center space-x-3 sm:space-x-4">
               {/* Mobile Menu Toggle */}
               <button
@@ -565,7 +564,7 @@ const Header = () => {
 
                       {/* Name với truncate */}
                       <span className="text-sm font-medium hidden md:block truncate min-w-0 flex-1">
-                        {user.name}
+                         {user.name.split(" ").slice(-1)[0]}
                       </span>
                       <ChevronDown
                         className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 ${

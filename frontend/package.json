@@ -15,6 +15,7 @@
     "axios": "^1.10.0",
     "cannon": "^0.6.2",
     "dat.gui": "^0.7.9",
+    "firebase": "^12.1.0",
     "framer-motion": "^12.19.2",
     "gsap": "^3.13.0",
     "howler": "^2.2.4",

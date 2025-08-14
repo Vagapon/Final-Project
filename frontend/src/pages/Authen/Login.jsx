@@ -11,7 +11,8 @@ import {
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import axios from "axios";
-
+import { signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "../../firebaseconfigurations/config";
 // Toast Component with Progress Bar
 const Toast = ({
   message,
@@ -214,11 +215,6 @@ export default function Login() {
       );
 
       const { token } = response.data;
-
-      // Lưu token tạm thời
-      // localStorage.setItem("token", token);
-
-      // Gọi API /api/me để lấy thông tin user kèm role
       const meRes = await axios.get("http://localhost:5000/api/auth/me", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -310,6 +306,33 @@ export default function Login() {
     }
   };
 
+  async function handleGoogleLogin() { 
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      
+      // Lấy Google ID token
+      const idToken = await user.getIdToken();
+      
+      // Gửi token lên backend để verify và lấy user info
+      const response = await axios.post('http://localhost:5000/api/auth/firebase-login', {
+        idToken: idToken
+      });
+      
+      // Lưu user info vào AuthContext
+      const userData = response.data.user;
+      const token = response.data.token;
+      
+      // Sử dụng login function từ AuthContext
+      login(userData, token);
+      
+      // Navigate về home
+      navigate("/");
+    } catch (error) {
+      console.error("Google login error:", error);
+      // Có thể hiển thị toast error ở đây
+    }
+  }
   return (
     <div className="min-h-screen flex">
       {/* Toast Notification with Progress Bar */}
@@ -353,7 +376,7 @@ export default function Login() {
 
             {/* Social login buttons */}
             <div className="mb-6">
-              <button className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              <button onClick={handleGoogleLogin} className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"

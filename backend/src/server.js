@@ -1,4 +1,7 @@
 // backend/server.js
+require('dotenv').config();
+// console.log(process.env.FIREBASE_PRIVATE_KEY ? "✅ Firebase key loaded" : "❌ Missing Firebase key");
+
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const app = require('../app'); // import app từ app.js

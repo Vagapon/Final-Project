@@ -19,7 +19,7 @@ const User = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`http://localhost:5000/api/user?page=${currentPage}&limit=10`, {
+      const response = await axios.get(`http://localhost:5000/api/user?page=${currentPage}&limit=8`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -73,9 +73,9 @@ const User = () => {
           <div>
             <p className="text-sm text-gray-700 dark:text-gray-300">
               Showing{" "}
-              <span className="font-medium">{((currentPage - 1) * 10) + 1}</span> to{" "}
+              <span className="font-medium">{((currentPage - 1) * 8) + 1}</span> to{" "}
               <span className="font-medium">
-                {Math.min(currentPage * 10, totalUsers)}
+                {Math.min(currentPage * 8, totalUsers)}
               </span>{" "}
               of <span className="font-medium">{totalUsers}</span>{" "}
               results
@@ -179,7 +179,7 @@ const User = () => {
               <tr key={user._id}>
                 <td className="px-4 py-3 whitespace-nowrap">
                   <div className="text-sm text-gray-900 dark:text-white">
-                    {((currentPage - 1) * 10) + index + 1}
+                    {((currentPage - 1) * 8) + index + 1}
                   </div>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
