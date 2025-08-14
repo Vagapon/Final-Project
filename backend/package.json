@@ -6,6 +6,7 @@
     "dotenv": "^17.0.0",
     "express": "^5.1.0",
     "express-validator": "^7.2.1",
+    "firebase-admin": "^13.4.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.1"
   },
@@ -14,6 +15,7 @@
   },
   "scripts": {
     "start": "node ./src/server.js",
-    "dev": "nodemon ./src/server.js"
+    "dev": "nodemon ./src/server.js",
+    "test:google": "node test-google-oauth.js"
   }
 }
