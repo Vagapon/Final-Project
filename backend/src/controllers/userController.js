@@ -200,6 +200,34 @@ const userController = {
             });
         }
     }
+    // editUser: async (req, res) => {
+    //     try {
+    //         const { userId } = req.params;
+    //         const { name, email, phone_number, avatar, isActive } = req.body;
+
+    //         const updatedUser = await User.findByIdAndUpdate(
+    //             userId,
+    //             { name, email, phone_number, avatar, isActive },
+    //             { new: true }
+    //         ).select('-password');
+
+    //         if (!updatedUser) {
+    //             return res.status(404).json({ message: "User not found" });
+    //         }
+
+    //         res.status(200).json({
+    //             success: true,
+    //             data: updatedUser,
+    //             message: "User updated successfully"
+    //         });
+    //     } catch (error) {
+    //         res.status(500).json({
+    //             success: false,
+    //             message: "Error updating user",
+    //             error: error.message
+    //         });
+    //     }
+    // }
 };
 
 module.exports = userController;

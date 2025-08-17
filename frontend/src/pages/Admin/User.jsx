@@ -66,6 +66,24 @@ const User = () => {
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
+const handleDelete = async (userId) => {
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      try {
+        const token = localStorage.getItem("token");
+        await axios.delete(`http://localhost:5000/api/user/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setUsers(users.filter((user) => user._id !== userId));
+        alert("User deleted successfully");
+      } catch (err) {
+        console.error("Error deleting user:", err);
+        alert("Failed to delete user");
+      }
+    }
+  }
+
   const Pagination = () => {
     return (
       <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
@@ -228,7 +246,7 @@ const User = () => {
                   <button className="text-indigo-600 hover:text-indigo-900 mr-3">
                     <Pencil className="w-5 h-5" />
                   </button>
-                  <button className="text-red-600 hover:text-red-900">
+                  <button onClick={() => handleDelete(user._id)} className="text-red-600 hover:text-red-900">
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </td>
@@ -278,7 +296,7 @@ const User = () => {
                 <button className="text-indigo-600 hover:text-indigo-900">
                   <Pencil className="w-5 h-5" />
                 </button>
-                <button className="text-red-600 hover:text-red-900">
+                <button onClick={() => handleDelete(user._id)} className="text-red-600 hover:text-red-900">
                   <Trash2 className="w-5 h-5" />
                 </button>
               </div>

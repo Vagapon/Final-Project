@@ -33,8 +33,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       label: "Dashboard",
       submenu: [
         { label: "Overview", path: "/admin" },
-        { label: "Analytics", path: "/admin/analytics", badge: "PRO" },
-        { label: "CRM", path: "/admin/crm", badge: "PRO" },
+        // { label: "Analytics", path: "/admin/analytics", badge: "PRO" },
+        // { label: "CRM", path: "/admin/crm", badge: "PRO" },
       ],
     },
     {
