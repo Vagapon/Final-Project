@@ -103,9 +103,7 @@ const Blog = () => {
   const sports = ["Bóng đá", "Cầu lông", "Bóng rổ", "Tennis", "Bóng chuyền", "Bóng bàn"];
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-
+    <div className="min-h-screen bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100">
       <div className="w-full">
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
@@ -120,12 +118,8 @@ const Blog = () => {
                 </div>
                 
                 <div className="flex items-center space-x-3 mb-4 pb-4 border-b">
-                  <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100 flex items-center justify-center">
                     <User className="w-6 h-6 text-gray-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Bạn</h3>
-                    <p className="text-sm text-gray-500">Thanh Hóa</p>
                   </div>
                 </div>
                 
@@ -158,16 +152,8 @@ const Blog = () => {
         <div className="flex">
           {/* Desktop Sidebar */}
           <div className="w-64 space-y-4 hidden lg:block flex-shrink-0 p-4">
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
-                  <User className="w-6 h-6 text-gray-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Bạn</h3>
-                  <p className="text-sm text-gray-500">Thanh Hóa</p>
-                </div>
-              </div>
+            <div className="p-4">
+
               <nav className="space-y-2">
                 {sidebarItems.map((item, index) => (
                   <button
@@ -191,7 +177,7 @@ const Blog = () => {
             </div>
 
             {/* Quick Stats */}
-            <div className="bg-white rounded-lg shadow-sm p-4">
+            <div className="p-4">
               <h3 className="font-semibold text-gray-900 mb-3">Thống kê</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
@@ -211,11 +197,12 @@ const Blog = () => {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 min-w-0 px-3 sm:px-4 py-4 lg:py-6 space-y-4 lg:space-y-6">
+          <div className="flex-1 min-w-0 max-w-3xl mx-auto px-3 sm:px-4 py-4 lg:py-6 space-y-4 lg:space-y-6">
             {/* Create Post */}
-            <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4">
+           <div className="bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.15)] p-3 sm:p-4">
+
               <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100 flex items-center justify-center flex-shrink-0">
                   <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -262,7 +249,7 @@ const Blog = () => {
             {/* Posts */}
             <div className="space-y-4 lg:space-y-6">
               {posts.map((post) => (
-                <div key={post.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div key={post.id} className="bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.15)] p-3 sm:p-4 overflow-hidden">
                   {/* Post Header */}
                   <div className="p-3 sm:p-4 border-b border-gray-100">
                     <div className="flex items-center justify-between">
@@ -350,7 +337,7 @@ const Blog = () => {
                   {/* Comment Section */}
                   <div className="px-3 sm:px-4 pb-3 sm:pb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100 flex items-center justify-center flex-shrink-0">
                         <User className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
                       </div>
                       <div className="flex-1 flex items-center space-x-2">
@@ -373,7 +360,7 @@ const Blog = () => {
           {/* Right Sidebar - Hidden on mobile and tablet */}
           <div className="w-80 space-y-4 hidden xl:block flex-shrink-0 p-4">
             {/* Sponsored Events */}
-            <div className="bg-white rounded-lg shadow-sm p-4">
+            <div className="p-4">
               <h3 className="font-semibold text-gray-900 mb-3">Sự kiện nổi bật</h3>
               <div className="space-y-3">
                 <div className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
@@ -398,7 +385,7 @@ const Blog = () => {
             </div>
 
             {/* Active Users */}
-            <div className="bg-white rounded-lg shadow-sm p-4">
+            <div className="p-4">
               <h3 className="font-semibold text-gray-900 mb-3">Đang hoạt động</h3>
               <div className="space-y-3">
                 {[1, 2, 3, 4].map((user) => (

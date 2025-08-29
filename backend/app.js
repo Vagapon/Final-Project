@@ -10,6 +10,8 @@ const path = require("path");
 // Routes
 const authRoutes = require("./src/routes/authRoutes");
 const userRoutes = require("./src/routes/userRoutes");
+const seasonRoutes = require("./src/routes/seasonRoutes");
+const eventRoutes = require("./src/routes/eventRoutes");
 
 
 
@@ -25,9 +27,18 @@ app.use(express.json());
 require("./src/models/UserModel/User");
 require("./src/models/UserModel/Role");
 require("./src/models/UserModel/UserRole");
+require("./src/models/Event/Season");
+require("./src/models/Event/Event");
+require("./src/models/Event/EventRegistration");
+require("./src/models/Event/SportType")
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/season", seasonRoutes);
+app.use("/api/event", eventRoutes);
+app.use("/api/sport-types", seasonRoutes)
+
+
 
 module.exports = app;

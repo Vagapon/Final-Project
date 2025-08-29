@@ -24,17 +24,15 @@ const User = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      
-      // console.log("Response:", response.data); // Debug log
+
       
       setUsers(response.data.data || []);
-      
-      // Handle different response structures
+
       if (response.data.pagination && response.data.pagination.total) {
         setTotalUsers(response.data.pagination.total);
         setTotalPages(response.data.totalPages || 1);
       } else {
-        // Fallback if pagination structure is missing
+
         setTotalUsers(response.data.data?.length || 0);
         setTotalPages(1);
       }

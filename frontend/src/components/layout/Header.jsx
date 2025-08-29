@@ -73,7 +73,7 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
             onClick={toggleSidebar}
             className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-5 h-5 dark:text-white" />
           </button>
           <div className="relative hidden sm:block">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -93,9 +93,9 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             {darkMode ? (
-              <Sun className="w-5 h-5" />
+              <Sun className="w-5 h-5 dark:text-yellow-500" />
             ) : (
-              <Moon className="w-5 h-5" />
+              <Moon className="w-5 h-5 dark:text-white" />
             )}
           </button>
           <div className="relative">
@@ -103,7 +103,7 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
               onClick={() => setShowNotifications(!showNotifications)}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 relative"
             >
-              <Bell className="w-5 h-5" />
+              <Bell className="w-5 h-5 dark:text-white" />
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
             </button>
             {showNotifications && (

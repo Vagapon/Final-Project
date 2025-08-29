@@ -4,6 +4,7 @@ const Role = require("../models/UserModel/Role");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const admin = require("../config/firebase");
+const { staffUpload } = require("../config/cloudinary");
 
 const firebaseLogin = async (req, res) => {
   try {
@@ -104,6 +105,9 @@ const register = async (req, res) => {
 const createStaff = async (req, res) => {
   const { name, email, password, phone_number } = req.body;
   try {
+    console.log("Body:", req.body);
+    console.log("File:", req.file);
+
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: "Email đã tồn tại" });
 
@@ -114,11 +118,13 @@ const createStaff = async (req, res) => {
       email,
       password: hashedPassword,
       phone_number,
+      avatar: req.file?.path || "",
     });
 
     await newUser.save();
 
-    const staffRole = await Role.findOne({ code: "STAFF" });
+    // ⚠️ Kiểm tra field Role thực sự trong DB
+    const staffRole = await Role.findOne({ name: "Staff" });
     if (!staffRole) {
       return res.status(500).json({ message: "Không tìm thấy vai trò Staff" });
     }
@@ -132,13 +138,18 @@ const createStaff = async (req, res) => {
         name: newUser.name,
         email: newUser.email,
         phone_number: newUser.phone_number,
-        role: "STAFF",
+        avatar: newUser.avatar || "",
+        created_date: newUser.created_date,
+        updated_date: newUser.updated_date,
+        role: "Staff",
       },
     });
   } catch (err) {
+    console.error("CreateStaff error:", err); // 👉 log chi tiết
     res.status(500).json({ message: "Lỗi server", error: err.message });
   }
 };
+
 
 const login = async (req, res) => {
   const { email, password } = req.body;

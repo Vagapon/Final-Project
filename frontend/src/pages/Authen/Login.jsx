@@ -244,7 +244,7 @@ export default function Login() {
 
       // Chuyển hướng sau 3 giây
       setTimeout(() => {
-        if (userData.role === "ADMIN") {
+        if (userData.role === "ADMIN" || userData.role === "STAFF") {
           navigate("/admin");
         } else {
           navigate("/");
@@ -292,7 +292,7 @@ export default function Login() {
   };
   useEffect(() => {
     if (user) {
-      navigate(user.role === "ADMIN" ? "/admin" : "/", { replace: true });
+      navigate(user.role === "ADMIN"|| user.role === "STAFF" ? "/admin" : "/", { replace: true });
     }
   }, [user, navigate]);
   // Video functionality

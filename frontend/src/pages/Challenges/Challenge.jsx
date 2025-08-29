@@ -152,7 +152,7 @@ const Challenge = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100">
       {/* Header Section */}
 
 

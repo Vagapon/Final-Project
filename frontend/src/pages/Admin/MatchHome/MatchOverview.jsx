@@ -231,14 +231,14 @@ const MatchOverview = () => {
 return (
   <div className="p-3 sm:p-4 md:p-6 bg-gray-50 dark:bg-gray-900 min-h-screen max-w-7xl mx-auto transition-colors">
     {/* Featured Matches Slider */}
-    <div className="relative mb-6 sm:mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+    <div className="relative mb-6 sm:mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-xl overflow-hidden">
       <div 
         className="flex transition-transform duration-500 ease-in-out" 
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
         {featuredMatches.map((match, index) => (
-          <div key={match.id} className="w-full flex-shrink-0">
-            <div className="max-w-3xl mx-auto p-3 sm:p-4 md:p-6 text-center">
+          <div key={match.id} className="w-full flex-shrink-0 ">
+            <div className="max-w-3xl mx-auto p-3 sm:p-4 md:p-6 text-center ">
               {/* Header */}
               <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-3 sm:mb-4 text-left text-gray-900 dark:text-white">
                 Featured Match

@@ -10,5 +10,8 @@ const eventRegistrationSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
+// Prevent duplicate registrations of the same team for the same event
+eventRegistrationSchema.index({ teamId: 1, eventId: 1 }, { unique: true });
+
 const EventRegistration = mongoose.model('EventRegistration', eventRegistrationSchema);
 module.exports = EventRegistration;

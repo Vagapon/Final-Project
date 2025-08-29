@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   ChevronDown,
   BarChart3,
-  Calendar,
+  CreditCard,
   User,
   CheckSquare,
   FileText,
@@ -31,12 +31,21 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       id: "dashboard",
       icon: BarChart3,
       label: "Dashboard",
-      submenu: [
-        { label: "Overview", path: "/admin" },
-        // { label: "Analytics", path: "/admin/analytics", badge: "PRO" },
-        // { label: "CRM", path: "/admin/crm", badge: "PRO" },
-      ],
+      submenu: [{ label: "Overview", path: "/admin" }],
     },
+      ...(user?.role === "ADMIN"
+        ? [
+            {
+              id: "profile",
+              icon: User,
+              label: "Manage User",
+              submenu: [
+                { label: "List User", path: "/admin/users/" },
+                { label: "New Staff", path: "/admin/create-staff/" },
+              ],
+            },
+          ]
+        : []),
     {
       id: "teams",
       icon: FileText,
@@ -46,20 +55,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         { label: "Ranking", path: "/admin/ranks/" },
       ],
     },
-
-    {
-      id: "profile",
-      icon: User,
-      label: "Manage User",
-      path: "/admin/users",
-    },
-    // Thêm menu Create Staff chỉ cho Admin
-    ...(user?.role === 'ADMIN' ? [{
-      id: "create-staff",
-      icon: UserPlus,
-      label: "Create Staff",
-      path: "/admin/create-staff",
-    }] : []),
     {
       id: "task",
       icon: CheckSquare,
@@ -67,13 +62,14 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       submenu: [
         { label: "All Events", path: "/admin/events" },
         { label: "Match Manager", path: "/admin/matches" },
+        { label: "Season Manager", path: "/admin/seasons" },
       ],
     },
     {
-      id: "calendar",
-      icon: Calendar,
-      label: "Calendar",
-      path: "/admin/calendar",
+      id: "booking",
+      icon: CreditCard,
+      label: "Booking",
+      path: "/admin/booking",
     },
     {
       id: "setting",
@@ -99,7 +95,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between p-5 border-b dark:border-gray-700">
+        <div className="flex items-center justify-between p-5 border-none dark:border-gray-700">
           <div className="flex items-center">
             <img
               src="/favicon/logoicon.png"
@@ -114,7 +110,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             onClick={toggleSidebar}
             className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
           >
-            <X className="w-5 h-5" />
+            {/* <X className="w-5 h-5" /> */}
           </button>
         </div>
 

@@ -1,8 +1,8 @@
 // src/pages/Admin/Overview.jsx
 import React from 'react';
-import VenueMap from '../../components/chart/VenueMap';
-import Chart from '../../components/chart/Charts';
-import Statistics from '../../components/chart/Statistics';
+import VenueMap from '../../../components/chart/VenueMap';
+import Chart from '../../../components/chart/Charts';
+import Statistics from '../../../components/chart/Statistics';
 import { Users, Calendar, Trophy, TrendingUp } from 'lucide-react';
 
 const Overview = () => {

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/authController"); 
 const authMiddleware = require("../middlewares/authMiddleware"); 
+const {staffUpload} = require("../config/cloudinary"); // Import staff upload middleware
 const {
   firebaseLogin,
   register,
@@ -16,7 +17,7 @@ router.post("/register", register);
 router.post("/login", login);
 router.post("/firebase-login", firebaseLogin);
 // router.get("/google-status", checkGoogleOAuthStatus); // Route kiểm tra trạng thái Google OAuth
-router.post("/create-staff", verifyToken, isAuthenticated, checkRole(["Admin"]), createStaff);
+router.post("/create-staff" , verifyToken, isAuthenticated, checkRole(["Admin"]), staffUpload.single("avatar"), createStaff);
 router.get("/admin", verifyToken, isAuthenticated,checkRole(["Admin"]),  (req, res) => {
   res.json({ message: "Welcome Admin" });
   });               

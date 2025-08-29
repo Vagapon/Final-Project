@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../pages/Authen/AuthContext";
 import {
   MessageCircle,
@@ -58,15 +58,33 @@ const NOTIFICATIONS = [
   },
 ];
 
+// Định nghĩa các trang có nền tối (sử dụng màu chữ trắng)
+const DARK_BACKGROUND_PAGES = ["/", "/home"];
+
+// Helper function để xác định màu chữ dựa trên trang hiện tại
+const getTextColors = (pathname) => {
+  const isDarkBackground = DARK_BACKGROUND_PAGES.includes(pathname);
+  
+  return {
+    primary: isDarkBackground ? "text-white" : "text-gray-900",
+    secondary: isDarkBackground ? "text-gray-300" : "text-gray-600",
+    hover: isDarkBackground ? "hover:text-green-400" : "hover:text-blue-600",
+    menuIcon: isDarkBackground ? "text-white hover:text-green-400" : "text-gray-900 hover:text-blue-600",
+    logo: isDarkBackground ? "brightness-0 invert" : "brightness-100",
+    background: isDarkBackground ? "hover:bg-white/10" : "hover:bg-gray-100",
+  };
+};
+
 // Logo Component
-const Logo = ({ className = "" }) => (
+const Logo = ({ className = "", isDarkBackground }) => (
   <div className={`rounded-full p-2 sm:p-3 ${className}`}>
     <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
       <img
         src="https://upload.wikimedia.org/wikipedia/vi/thumb/f/f2/Premier_League_Logo.svg/1200px-Premier_League_Logo.svg.png"
-        // src="/favicon/logoicon.png"
         alt="Logo"
-        className="w-20 h-20 sm:w-24 sm:h-24 object-contain brightness-0 invert"
+        className={`w-20 h-20 sm:w-24 sm:h-24 object-contain ${
+          isDarkBackground ? "brightness-0 invert" : "brightness-100"
+        }`}
       />
     </div>
   </div>
@@ -229,7 +247,7 @@ const MobileMenu = ({
   unreadCount,
   onNotificationOpen,
 }) => {
-  const { user, logout } = useAuth(); // Thêm dòng này
+  const { user, logout } = useAuth();
 
   return (
     <div
@@ -244,12 +262,10 @@ const MobileMenu = ({
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Menu Header - Thay đổi phần này */}
+        {/* Menu Header */}
         <div className="border-b border-gray-700 ml-6 mt-4 mb-4">
           {user ? (
-            // Hiển thị thông tin user khi đã đăng nhập
             <div className="p-4">
-              {/* User Info */}
               <div className="flex items-center space-x-4 mb-4">
                 {user.avatar ? (
                   <img
@@ -271,18 +287,15 @@ const MobileMenu = ({
                   <p className="text-gray-400 text-sm truncate">{user.email}</p>
                 </div>
               </div>
-
-              {/* Quick Actions */}
             </div>
           ) : (
-            // Hiển thị logo khi chưa đăng nhập
             <div className="p-2">
-              <Logo />
+              <Logo isDarkBackground={true} />
             </div>
           )}
         </div>
 
-        {/* Menu Items - Giữ nguyên */}
+        {/* Menu Items */}
         <div className="px-6 py-4">
           <nav className="space-y-2">
             {menuItems.map((item, index) => {
@@ -308,7 +321,7 @@ const MobileMenu = ({
           </nav>
         </div>
 
-        {/* Menu Footer - Giữ nguyên */}
+        {/* Menu Footer */}
         <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-700 bg-gradient-to-t from-black to-transparent">
           <div className="grid grid-cols-3 gap-3 mb-4">
             {[
@@ -414,13 +427,17 @@ const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation(); // Thêm hook để lấy thông tin trang hiện tại
   const notificationRef = useRef(null);
   const { user, logout } = useAuth();
   const unreadCount = NOTIFICATIONS.filter((n) => n.isUnread).length;
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const userDropdownRef = useRef(null);
 
-  // Thêm vào useEffect để handle click outside
+  // Lấy màu sắc dựa trên trang hiện tại
+  const colors = getTextColors(location.pathname);
+  const isDarkBackground = DARK_BACKGROUND_PAGES.includes(location.pathname);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -429,7 +446,6 @@ const Header = () => {
       ) {
         setNotificationOpen(false);
       }
-      // Thêm dòng này
       if (
         userDropdownRef.current &&
         !userDropdownRef.current.contains(event.target)
@@ -441,6 +457,7 @@ const Header = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
   // Handle outside clicks
   useOutsideClick(
     [notificationRef],
@@ -463,12 +480,11 @@ const Header = () => {
     <>
       {/* Navigation Header */}
       <nav className="absolute top-0 left-0 right-0 z-40">
-       <div className="container mx-auto px-2 sm:px-3 py-4">
-
+        <div className="container mx-auto px-2 sm:px-3 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center">
-              <Logo />
+              <Logo isDarkBackground={isDarkBackground} />
             </div>
 
             {/* Desktop Menu */}
@@ -477,17 +493,18 @@ const Header = () => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className="text-white hover:text-green-400 font-medium transition-colors duration-300 text-sm xl:text-base"
+                  className={`${colors.primary} ${colors.hover} font-medium transition-colors duration-300 text-sm xl:text-base`}
                 >
                   {item.name}
                 </Link>
               ))}
             </div>
+            
             <div className="flex items-center space-x-3 sm:space-x-4">
               {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="menu-toggle lg:hidden text-white hover:text-green-400 transition-all duration-300 p-2 rounded-lg hover:bg-white/10 relative z-50 flex items-center justify-center order-first"
+                className={`menu-toggle lg:hidden ${colors.menuIcon} transition-all duration-300 p-2 rounded-lg ${colors.background} relative z-50 flex items-center justify-center order-first`}
               >
                 {menuOpen ? (
                   <X className="w-6 h-6 transition-all duration-300" />
@@ -496,13 +513,13 @@ const Header = () => {
                 )}
               </button>
 
-              {/* Desktop Icons - Fixed height container */}
+              {/* Desktop Icons */}
               <div className="hidden sm:flex items-center space-x-3">
                 {/* Chat Icon */}
                 <div className="flex items-center justify-center h-10">
                   <button
                     onClick={() => navigate("/chat")}
-                    className="relative text-white hover:text-green-400 transition-colors duration-300 p-2"
+                    className={`relative ${colors.primary} ${colors.hover} transition-colors duration-300 p-2`}
                   >
                     <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
                     <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
@@ -518,7 +535,7 @@ const Header = () => {
                 >
                   <button
                     onClick={() => setNotificationOpen(!notificationOpen)}
-                    className="relative text-white hover:text-green-400 transition-colors duration-300 p-2"
+                    className={`relative ${colors.primary} ${colors.hover} transition-colors duration-300 p-2`}
                   >
                     <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
                     {unreadCount > 0 && (
@@ -542,12 +559,10 @@ const Header = () => {
                     className="relative flex items-center justify-center h-10"
                     ref={userDropdownRef}
                   >
-                    {/* User Button with fixed max width */}
                     <button
                       onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                      className="flex items-center space-x-2 text-white hover:text-green-400 transition-colors duration-300 px-2 py-1 rounded-lg hover:bg-white/10 max-w-[160px]"
+                      className={`flex items-center space-x-2 ${colors.primary} ${colors.hover} transition-colors duration-300 px-2 py-1 rounded-lg ${colors.background} max-w-[160px]`}
                     >
-                      {/* Avatar */}
                       {user.avatar ? (
                         <img
                           src={user.avatar}
@@ -562,7 +577,6 @@ const Header = () => {
                         </div>
                       )}
 
-                      {/* Name với truncate */}
                       <span className="text-sm font-medium hidden md:block truncate min-w-0 flex-1">
                          {user.name.split(" ").slice(-1)[0]}
                       </span>
@@ -573,10 +587,9 @@ const Header = () => {
                       />
                     </button>
 
-                    {/* Dropdown Menu */}
+                    {/* User Dropdown Menu */}
                     {userDropdownOpen && (
                       <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 top-full">
-                        {/* User Info Header */}
                         <div className="px-4 py-3 border-b border-gray-100">
                           <p className="text-sm font-medium text-gray-900 truncate">
                             {user.name}
@@ -586,7 +599,6 @@ const Header = () => {
                           </p>
                         </div>
 
-                        {/* Menu Items */}
                         <div className="py-1">
                           <button
                             onClick={() => {
@@ -610,7 +622,6 @@ const Header = () => {
                             Cài đặt
                           </button>
 
-                          {/* Divider */}
                           <div className="border-t border-gray-100 my-1"></div>
 
                           <button
@@ -631,7 +642,7 @@ const Header = () => {
                   <div className="flex items-center justify-center h-10">
                     <button
                       onClick={() => navigate("/login")}
-                      className="text-white hover:text-green-400 transition-colors duration-300 p-2"
+                      className={`${colors.primary} ${colors.hover} transition-colors duration-300 p-2`}
                     >
                       <User className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
