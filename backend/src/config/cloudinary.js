@@ -23,8 +23,16 @@ const eventStorage = new CloudinaryStorage({
     allowed_formats: ["jpg", "jpeg", "png"],
   },
 });
+  const teamStrorage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+      folder: "team",
+      allowed_formats: ["jpg", "jpeg", "png"],
+    },
+  });
 
 const staffUpload = multer({ storage: staffStorage });
 const eventUpload = multer({ storage: eventStorage });
+const teamUpload = multer({ storage: teamStrorage });
 
-module.exports = { cloudinary, staffUpload, eventUpload };
+module.exports = { cloudinary, staffUpload, eventUpload, teamUpload };

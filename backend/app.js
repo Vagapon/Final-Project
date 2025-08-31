@@ -12,7 +12,8 @@ const authRoutes = require("./src/routes/authRoutes");
 const userRoutes = require("./src/routes/userRoutes");
 const seasonRoutes = require("./src/routes/seasonRoutes");
 const eventRoutes = require("./src/routes/eventRoutes");
-
+const teamRoutes = require("./src/routes/teamRoutes");
+// const TeamMatch = require("./src/models/Team/TeamMatch");
 
 
 const app = express();
@@ -31,14 +32,15 @@ require("./src/models/Event/Season");
 require("./src/models/Event/Event");
 require("./src/models/Event/EventRegistration");
 require("./src/models/Event/SportType")
-
+require("./src/models/Team/Team");
+require("./src/models/Team/TeamMatch");
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/season", seasonRoutes);
 app.use("/api/event", eventRoutes);
 app.use("/api/sport-types", seasonRoutes)
-
+app.use("/api/team", teamRoutes);
 
 
 module.exports = app;

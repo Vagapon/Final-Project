@@ -1,340 +1,322 @@
-import React, { useState, useEffect } from 'react';
-import { X, Upload, Users, Trophy, Edit3, Camera, User, Phone, Mail, Plus, Crown } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { X, Upload, Camera, User, Phone, Mail, Crown } from "lucide-react";
 
-const ModalTeam = ({ isOpen, onClose, onSubmit }) => {
-  const [user] = useState({
-    name: 'Nguyễn Văn A',
-    email: 'nguyenvana@email.com',
-    phone: '0123456789',
-    avatar: null
-  });
-  
+const ModalTeam = ({ isOpen, onClose, team, onUpdated }) => {
+  const [user, setUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+
   const [formData, setFormData] = useState({
-    teamName: '',
-    shortName: '',
-    description: '',
-    playerCount: '11',
-    formation: '4-4-2',
-    logo: null
+    name: "",
+    shortName: "",
+    description: "",
+    avatar: null,
   });
 
-  const [logoPreview, setLogoPreview] = useState(null);
-  const [members, setMembers] = useState([
-    { id: 1, name: '', avatar: null },
-    { id: 2, name: '', avatar: null }
-  ]);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  // Prefill khi edit
+  useEffect(() => {
+    if (team) {
+      setFormData({
+        name: team.name || "",
+        shortName: team.shortName || "",
+        description: team.description || "",
+        avatar: null,
+      });
+      setAvatarPreview(team.avatar || null);
+    }
+  }, [team]);
 
-  const handleFileUpload = (file, callback) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => callback(e.target.result);
-    reader.readAsDataURL(file);
-  };
+  // Fetch user info (manager)
+  useEffect(() => {
+    if (isOpen) {
+      const fetchUser = async () => {
+        try {
+          const token = window.localStorage.getItem("token");
+          const res = await fetch("http://localhost:5000/api/auth/me", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setUser(data);
+          }
+        } catch (error) {
+          console.error("Error fetching user:", error);
+        } finally {
+          setLoadingUser(false);
+        }
+      };
+      fetchUser();
+    }
+  }, [isOpen]);
 
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData(prev => ({ ...prev, logo: file }));
-      handleFileUpload(file, setLogoPreview);
+  const handleChange = (e) => {
+    if (e.target.name === "avatar") {
+      const file = e.target.files[0];
+      setFormData({ ...formData, avatar: file });
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => setAvatarPreview(e.target.result);
+        reader.readAsDataURL(file);
+      }
+    } else {
+      setFormData({ ...formData, [e.target.name]: e.target.value });
     }
   };
 
-  const updateMember = (id, field, value) => {
-    setMembers(prev => prev.map(m => m.id === id ? { ...m, [field]: value } : m));
+  const removeAvatar = () => {
+    setFormData({ ...formData, avatar: null });
+    setAvatarPreview(null);
+    const fileInput = document.getElementById("avatar");
+    if (fileInput) fileInput.value = "";
   };
 
-  const addMember = () => {
-    const newId = Math.max(...members.map(m => m.id)) + 1;
-    setMembers(prev => [...prev, { id: newId, name: '', avatar: null }]);
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
 
-  const removeMember = (id) => {
-    if (members.length > 1) {
-      setMembers(prev => prev.filter(m => m.id !== id));
+    try {
+      const token = window.localStorage.getItem("token");
+      const data = new FormData();
+      data.append("name", formData.name);
+      data.append("shortName", formData.shortName);
+      data.append("description", formData.description);
+      if (formData.avatar) data.append("avatar", formData.avatar);
+
+      const url = team
+        ? `http://localhost:5000/api/team/${team._id}`
+        : "http://localhost:5000/api/team";
+      const method = team ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${token}` },
+        body: data,
+      });
+
+      if (response.ok) {
+        const teamData = await response.json();
+        setMessage(`✅ ${team ? "Update" : "Create"} team success!`);
+
+        if (onUpdated) onUpdated(teamData); // update UI
+        onClose();
+      } else {
+        throw new Error("API Error");
+      }
+    } catch (error) {
+      setMessage(`❌ Lỗi: ${error.message || "Có lỗi xảy ra"}`);
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const handleSubmit = () => {
-    if (!formData.teamName) {
-      alert('Vui lòng điền tên đội bóng');
-      return;
-    }
-    
-    const submissionData = {
-      ...formData,
-      captain: user?.name || '',
-      phone: user?.phone || '',
-      email: user?.email || '',
-      members
-    };
-    
-    onSubmit && onSubmit(submissionData);
-    onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-6">
-      <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-hidden shadow-xl">
-        
-        {/* Header - Clean & Simple */}
-        <div className="px-8 py-6 border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-900">Create new team</h2>
-              <p className="text-gray-500 text-sm mt-1">Fill in the information to create a team for the tournament</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-            >
-              <X size={20} className="text-gray-400" />
-            </button>
-          </div>
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden shadow-2xl flex flex-col">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-100 relative text-center">
+          <h2 className="text-xl font-bold text-gray-900">
+            {team ? "Edit Team" : "Create New Team"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="absolute right-6 top-4 w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+          >
+            <X size={20} className="text-gray-500" />
+          </button>
         </div>
 
-        <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-          <div className="grid lg:grid-cols-2 gap-8 p-8">
-            
-            {/* LEFT SIDE - Team Information */}
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Team details</h3>
-
-                {/* Logo Upload - Minimalist */}
-                <div className="text-center mb-8">
-                  <div className="relative inline-block">
-                    {logoPreview ? (
-                      <img 
-                        src={logoPreview} 
-                        alt="Team Logo" 
-                        className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid lg:grid-cols-5 gap-6 p-6">
+            {/* LEFT - Manager info */}
+                    <div className="lg:col-span-2">
+              <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                {/* Top background section */}
+                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-24 relative">
+                  <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2">
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt="Manager Avatar"
+                        className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover"
                       />
                     ) : (
-                      <div className="w-20 h-20 bg-gray-100 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
-                        <Camera size={20} className="text-gray-400" />
+                      <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
+                        <User size={28} className="text-blue-500" />
                       </div>
                     )}
-                    <label className="absolute -bottom-1 -right-1 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-700 transition">
-                      <Upload size={12} className="text-white" />
+                  </div>
+                </div>
+
+                {/* Info */}
+                {user ? (
+                  <>
+                    <div className="pt-12 pb-4 px-4 text-center">
+                      <div className="inline-flex items-center px-2.5 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full mb-2">
+                        <Crown size={11} className="mr-1" />
+                        Manager
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900">
+                        {user.name}
+                      </h3>
+                      <p className="text-gray-500 text-xs">Team Creator</p>
+                    </div>
+
+                    {/* Contact Info */}
+                    <div className="px-4 pb-6 space-y-3">
+                      <div className="flex items-center p-3 bg-gray-50 rounded-xl">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                          <Mail size={14} className="text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[11px] font-medium text-gray-500 uppercase">
+                            Email
+                          </p>
+                          <p className="text-gray-900 text-sm font-medium">
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center p-3 bg-gray-50 rounded-xl">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                          <Phone size={14} className="text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[11px] font-medium text-gray-500 uppercase">
+                            Phone
+                          </p>
+                          <p className="text-gray-900 text-sm font-medium">
+                            {user.phone}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-gray-500 text-sm text-center py-4">
+                    Loading...
+                  </p>
+                )}
+              </div>
+
+              {/* About Section */}
+            </div>
+
+            {/* RIGHT - Team Form */}
+            <div className="lg:col-span-3">
+              <div className="max-w-xl mx-auto">
+                <div className="mb-6 text-center">
+                  <div className="relative inline-block mb-4">
+                    {avatarPreview ? (
+                      <img
+                        src={avatarPreview}
+                        alt="Team Logo"
+                        className="w-28 h-28 rounded-xl object-cover border border-gray-200"
+                      />
+                    ) : (
+                      <div className="w-28 h-28 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center">
+                        <Camera size={28} className="text-gray-400" />
+                      </div>
+                    )}
+                    <label className="absolute -bottom-2 -right-2 w-10 h-10 bg-gray-900 hover:bg-gray-800 rounded-full flex items-center justify-center cursor-pointer transition-colors shadow-md">
+                      <Upload size={14} className="text-white" />
                       <input
                         type="file"
+                        id="avatar"
+                        name="avatar"
                         accept="image/*"
-                        onChange={handleLogoUpload}
+                        onChange={handleChange}
                         className="hidden"
                       />
                     </label>
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">Upload team logo</p>
+
+                  {avatarPreview && (
+                    <button
+                      type="button"
+                      onClick={removeAvatar}
+                      className="text-xs text-red-500 hover:underline block mx-auto"
+                    >
+                      Remove Logo
+                    </button>
+                  )}
                 </div>
 
-                {/* Form Fields - Clean Style */}
-                <div className="space-y-5">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Team name *
+                {/* Inputs */}
+                <div className="space-y-6">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="col-span-2">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        Team Name
                       </label>
                       <input
                         type="text"
-                        name="teamName"
-                        value={formData.teamName}
-                        onChange={handleInputChange}
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
                         required
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        className="w-full px-0 py-3 border-b-2 border-gray-200 focus:border-gray-900 focus:outline-none"
                         placeholder="Enter team name"
                       />
                     </div>
-
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Short name
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        Short Name
                       </label>
                       <input
                         type="text"
                         name="shortName"
                         value={formData.shortName}
-                        onChange={handleInputChange}
+                        onChange={handleChange}
                         maxLength="3"
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                        placeholder="e.g. MAN"
+                        className="w-full px-0 py-3 border-b-2 border-gray-200 focus:border-gray-900 focus:outline-none text-center"
+                        placeholder="ABC"
                       />
                     </div>
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Team Description
                     </label>
                     <textarea
                       name="description"
                       value={formData.description}
-                      onChange={handleInputChange}
+                      onChange={handleChange}
                       rows="3"
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
-                      placeholder="Describe your team..."
+                      className="w-full px-0 py-3 border-b-2 border-gray-200 focus:border-gray-900 focus:outline-none resize-none text-sm"
+                      placeholder="Tell us about your team..."
                     />
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* RIGHT SIDE - Members List */}
-            <div className="space-y-6">
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    Team members
-                    <span className="ml-2 text-sm font-normal text-gray-500">({members.length})</span>
-                  </h3>
-                  
-                  <button
-                    type="button"
-                    onClick={addMember}
-                    className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-medium text-sm"
-                  >
-                    <Plus size={14} className="mr-1" />
-                    Add member
-                  </button>
-                </div>
-
-                {/* Members List - Clean Cards */}
-                <div className="space-y-3 max-h-80 overflow-y-auto">
-                  {members.map((member, index) => (
-                    <div key={member.id} className="group bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition border">
-                      <div className="flex items-center space-x-4">
-                        {/* Avatar */}
-                        <div className="relative flex-shrink-0">
-                          {member.avatar ? (
-                            <img 
-                              src={member.avatar} 
-                              alt={`Member ${index + 1}`} 
-                              className="w-10 h-10 rounded-full object-cover border border-gray-200"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                              <User size={14} className="text-gray-500" />
-                            </div>
-                          )}
-                          
-                          <label className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-700 transition">
-                            <Camera size={6} className="text-white" />
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleFileUpload(e.target.files[0], (result) => updateMember(member.id, 'avatar', result))}
-                              className="hidden"
-                            />
-                          </label>
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1">
-                          <div className="text-xs text-gray-500 mb-1">Member #{index + 1}</div>
-                          <input
-                            type="text"
-                            placeholder="Enter member name..."
-                            value={member.name}
-                            onChange={(e) => updateMember(member.id, 'name', e.target.value)}
-                            className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition text-sm"
-                          />
-                        </div>
-
-                        {/* Remove Button */}
-                        {members.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeMember(member.id)}
-                            className="opacity-0 group-hover:opacity-100 w-6 h-6 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md flex items-center justify-center transition"
-                          >
-                            <X size={12} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Captain Info - Clean Card */}
-                <div className="mt-8 border-t pt-6">
-                  <h4 className="text-base font-medium text-gray-900 mb-4">Team captain</h4>
-                  
-                  {user ? (
-                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                      <div className="flex items-center space-x-4">
-                        {/* Avatar */}
-                        <div className="relative">
-                          {user.avatar ? (
-                            <img 
-                              src={user.avatar} 
-                              alt="Captain Avatar" 
-                              className="w-12 h-12 rounded-full object-cover border-2 border-blue-300"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                              <User size={20} className="text-blue-600" />
-                            </div>
-                          )}
-                          {/* Captain Badge */}
-                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                            <Crown size={10} className="text-white" />
-                          </div>
-                        </div>
-
-                        {/* Captain Details */}
-                        <div className="flex-1">
-                          <h5 className="font-medium text-gray-900">{user.name}</h5>
-                          
-                          <div className="space-y-1 mt-2">
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Mail size={12} className="mr-2 text-gray-400" />
-                              <span>{user.email}</span>
-                            </div>
-                            
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Phone size={12} className="mr-2 text-gray-400" />
-                              <span>{user.phone}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-gray-50 rounded-lg p-6 text-center border border-gray-200">
-                      <User size={24} className="mx-auto text-gray-400 mb-2" />
-                      <p className="text-gray-600 text-sm">No user information found</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
           </div>
+        </div>
 
-          {/* Action Buttons - Clean Style */}
-          <div className="border-t bg-gray-50 px-8 py-4">
-            <div className="flex gap-3 justify-end">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-medium"
-              >
-                Create team
-              </button>
-            </div>
-          </div>
+        {/* Actions */}
+        <div className="border-t border-gray-100 px-6 py-4 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2.5 text-gray-600 text-sm font-medium hover:text-gray-900"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-lg"
+          >
+            {loading ? "Saving..." : team ? "Update Team" : "Create Team"}
+          </button>
         </div>
       </div>
     </div>

@@ -6,6 +6,7 @@ const teamMemberSchema = new mongoose.Schema({
   teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', required: true },
   avatar: { type: String, default: "" },
   nameMember: { type: String, required: true },
+  isCaptain : { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

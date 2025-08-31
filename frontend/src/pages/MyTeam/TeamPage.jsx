@@ -1,46 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Edit } from 'lucide-react';
 import Formation from './Formation';
 import PlayerList from './PlayerList';
 import TeamInfo from './TeamInfo';
 import ModalTeam from './ModalTeam';
 
-const TeamPage = ({ teamData = null }) => {
+const TeamPage = () => {
   const [activeTab, setActiveTab] = useState('formation');
-  const [availablePlayers, setAvailablePlayers] = useState([
-    { id: 1, name: 'Nguyễn Văn A', position: 'GK', number: 1 },
-    { id: 2, name: 'Trần Văn B', position: 'CB', number: 2 },
-    { id: 3, name: 'Lê Văn C', position: 'CB', number: 3 },
-    { id: 4, name: 'Phạm Văn D', position: 'LB', number: 4 },
-    { id: 5, name: 'Hoàng Văn E', position: 'RB', number: 5 },
-    { id: 6, name: 'Đặng Văn F', position: 'CM', number: 6 },
-    { id: 7, name: 'Vũ Văn G', position: 'CM', number: 7 },
-    { id: 8, name: 'Bùi Văn H', position: 'LW', number: 8 },
-    { id: 9, name: 'Đỗ Văn I', position: 'RW', number: 9 },
-    { id: 10, name: 'Ngô Văn J', position: 'CF', number: 10 },
-    { id: 11, name: 'Cao Văn K', position: 'CF', number: 11 }
-  ]);
+  const [availablePlayers, setAvailablePlayers] = useState([]);
+  const [team, setTeam] = useState(null);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+
   const handleAddPlayer = (player) => {
     setAvailablePlayers(prev => [...prev, player]);
   };
 
-  const [team, setTeam] = useState(teamData || null);
-  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  // 🟢 Gọi API lấy team của user hiện tại
+  const fetchMyTeam = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/team/myteam", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTeam(data);
+      } else if (res.status === 404) {
+        setTeam(null);
+      }
+    } catch (err) {
+      console.error("Fetch team error:", err);
+    }
+  };
 
-  
+  useEffect(() => {
+    fetchMyTeam(); // load khi mở trang
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        {/* <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                {team?.shortName || (team?.teamName ? team.teamName.substring(0, 2).toUpperCase() : 'CLB')}
+                {team?.shortName || (team?.name ? team.name.substring(0, 2).toUpperCase() : 'CLB')}
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-800">{team?.teamName || 'Chưa có đội'}</h1>
+                <h1 className="text-3xl font-bold text-gray-800">{team?.name || 'Chưa có đội'}</h1>
                 <p className="text-gray-600">{team?.description || 'Hãy tạo đội để bắt đầu quản lý.'}</p>
               </div>
             </div>
@@ -52,7 +60,7 @@ const TeamPage = ({ teamData = null }) => {
               <span>{team ? 'Chỉnh sửa' : 'Tạo đội'}</span>
             </button>
           </div>
-        </div>
+        </div> */}
 
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow-sm mb-6">
@@ -113,10 +121,16 @@ const TeamPage = ({ teamData = null }) => {
                 )}
 
                 {activeTab === 'players' && (
-                  <PlayerList
-                    players={availablePlayers}
-                    onAddClick={() => setActiveTab('formation')}
-                  />
+                  availablePlayers.length > 0 ? (
+                    <PlayerList
+                      players={availablePlayers}
+                      onAddClick={() => setActiveTab('formation')}
+                    />
+                  ) : (
+                    <div className="text-center py-12 text-gray-500 text-lg">
+                      Chưa có thành viên nào
+                    </div>
+                  )
                 )}
 
                 {activeTab === 'info' && (
@@ -127,20 +141,15 @@ const TeamPage = ({ teamData = null }) => {
           </div>
         </div>
       </div>
+
+      {/* Modal tạo/chỉnh sửa đội */}
       <ModalTeam
         isOpen={isTeamModalOpen}
         onClose={() => setIsTeamModalOpen(false)}
-        onSubmit={(data) => {
-          setTeam(prev => ({
-            ...prev,
-            teamName: data.teamName || prev?.teamName,
-            shortName: data.shortName || prev?.shortName,
-            description: data.description || prev?.description,
-            captain: data.captain || prev?.captain,
-            phone: data.phone || prev?.phone,
-            email: data.email || prev?.email,
-            logo: data.logo || prev?.logo
-          }));
+        onSubmit={() => {
+          setIsTeamModalOpen(false);
+          fetchMyTeam();   // 🟢 gọi lại API để refresh team thật
+          setActiveTab('info');
         }}
       />
     </div>

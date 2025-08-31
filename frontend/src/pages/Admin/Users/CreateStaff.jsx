@@ -316,10 +316,10 @@ const CreateStaff = () => {
                 {/* Info Preview */}
                 <div className="space-y-4">
                   <div className="bg-gray-50 rounded-xl p-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">Thông tin nhân viên</h4>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Staff Information</h4>
                     <div className="space-y-3">
                       <div>
-                        <span className="text-xs text-gray-500">Họ tên:</span>
+                        <span className="text-xs text-gray-500">Name</span>
                         <p className="text-sm font-medium text-gray-900 mt-1">
                           {formData.name || "Chưa nhập"}
                         </p>
