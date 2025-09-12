@@ -457,8 +457,8 @@ const Header = () => {
     isOpen={profileModalOpen}
     onClose={() => setProfileModalOpen(false)}
     user={user}
-    updateUser={updateUser} // nếu bạn có trong AuthContext
-  />
+    onUpdate={updateUser} 
+  />    
 )}
 
     </>

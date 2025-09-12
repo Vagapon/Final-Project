@@ -63,7 +63,6 @@ const CreateStaff = () => {
       data.append("phone_number", formData.phone_number);
       data.append("avatar", formData.avatar);
 
-      // Simulate API call (thay thế axios vì không có trong môi trường này)
       const response = await fetch("http://localhost:5000/api/auth/create-staff", {
         method: "POST",
         headers: {

@@ -1,5 +1,5 @@
-const Season = require('../models/Event/Season');
-const SportType = require('../models/Event/SportType');
+const Season = require('../../models/Event/Season');
+const SportType = require('../../models/Event/SportType');
 const mongoose = require('mongoose');
 
 // Utility: escape regex special chars for safe exact, case-insensitive match

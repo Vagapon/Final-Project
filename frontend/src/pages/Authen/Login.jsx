@@ -13,179 +13,7 @@ import { useAuth } from "./AuthContext";
 import axios from "axios";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../../firebaseconfigurations/config";
-// Toast Component with Progress Bar
-const Toast = ({
-  message,
-  type = "success",
-  isVisible,
-  onClose,
-  duration = 4000,
-}) => {
-  const [progress, setProgress] = useState(100);
-  const [isPaused, setIsPaused] = useState(false);
-  const progressRef = useRef(null);
-  const startTimeRef = useRef(null);
-  const remainingTimeRef = useRef(duration);
-
-  useEffect(() => {
-    if (isVisible && !isPaused) {
-      startTimeRef.current = Date.now();
-      const interval = setInterval(() => {
-        const elapsed = Date.now() - startTimeRef.current;
-        const remaining = Math.max(0, remainingTimeRef.current - elapsed);
-        const newProgress = (remaining / duration) * 100;
-
-        setProgress(newProgress);
-
-        if (remaining <= 0) {
-          clearInterval(interval);
-          onClose();
-        }
-      }, 16); // ~60fps
-
-      return () => clearInterval(interval);
-    }
-  }, [isVisible, isPaused, duration, onClose]);
-
-  const handleMouseEnter = () => {
-    setIsPaused(true);
-    if (startTimeRef.current) {
-      remainingTimeRef.current = Math.max(
-        0,
-        remainingTimeRef.current - (Date.now() - startTimeRef.current)
-      );
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setIsPaused(false);
-    startTimeRef.current = Date.now();
-  };
-
-  const getToastStyles = () => {
-    const baseStyles =
-      "fixed top-6 left-1/2 transform -translate-x-1/2 z-50 rounded-xl shadow-2xl backdrop-blur-md border transition-all duration-500 ease-out max-w-md w-full mx-4 overflow-hidden";
-
-    switch (type) {
-      case "success":
-        return `${baseStyles} bg-green-50/95 border-green-200`;
-      case "error":
-        return `${baseStyles} bg-red-50/95 border-red-200`;
-      case "warning":
-        return `${baseStyles} bg-yellow-50/95 border-yellow-200`;
-      case "info":
-        return `${baseStyles} bg-blue-50/95 border-blue-200`;
-      default:
-        return `${baseStyles} bg-white/95 border-gray-200`;
-    }
-  };
-
-  const getProgressColor = () => {
-    switch (type) {
-      case "success":
-        return "bg-green-500";
-      case "error":
-        return "bg-red-500";
-      case "warning":
-        return "bg-yellow-500";
-      case "info":
-        return "bg-blue-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  const getTextColor = () => {
-    switch (type) {
-      case "success":
-        return "text-green-800";
-      case "error":
-        return "text-red-800";
-      case "warning":
-        return "text-yellow-800";
-      case "info":
-        return "text-blue-800";
-      default:
-        return "text-gray-800";
-    }
-  };
-
-  const getIcon = () => {
-    switch (type) {
-      case "success":
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case "error":
-        return <XCircle className="w-5 h-5 text-red-500" />;
-      case "warning":
-        return <AlertCircle className="w-5 h-5 text-yellow-500" />;
-      case "info":
-        return <AlertCircle className="w-5 h-5 text-blue-500" />;
-      default:
-        return <CheckCircle className="w-5 h-5 text-gray-500" />;
-    }
-  };
-
-  if (!isVisible) return null;
-
-  return (
-    <div
-      className={`${getToastStyles()} ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
-      }`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* Progress Bar */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gray-200/50">
-        <div
-          ref={progressRef}
-          className={`h-full transition-all duration-75 ease-linear ${getProgressColor()}`}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-
-      {/* Toast Content */}
-      <div className="px-6 py-4">
-        <div className="flex items-center space-x-3">
-          {getIcon()}
-          <div className="flex-1">
-            <p
-              className={`text-sm font-medium leading-relaxed ${getTextColor()}`}
-            >
-              {message}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Custom Hook for Toast
-const useToast = () => {
-  const [toast, setToast] = useState({
-    message: "",
-    type: "success",
-    isVisible: false,
-    duration: 4000,
-  });
-
-  const showToast = (message, type = "success", duration = 4000) => {
-    setToast({ message, type, isVisible: true, duration });
-  };
-
-  const hideToast = () => {
-    setToast((prev) => ({ ...prev, isVisible: false }));
-  };
-
-  return { toast, showToast, hideToast };
-};
+import { message } from "antd";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -194,16 +22,18 @@ export default function Login() {
   const [keepLoggedIn, setKeepLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast, showToast, hideToast } = useToast();
   const { login } = useAuth();
   const { user } = useAuth();
+  const videoRef = useRef();
+  const [isMuted, setIsMuted] = useState(true);
+
+  const [messageApi, contextHolder] = message.useMessage();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Hiển thị toast loading
-    showToast("Đang xác thực thông tin...", "info", 10000);
+    const hide = messageApi.loading({ content: "Đang xác thực thông tin...", duration: 0 });
 
     try {
       const response = await axios.post(
@@ -222,27 +52,12 @@ export default function Login() {
       });
 
       const userData = meRes.data;
-      login(userData, token); // Sử dụng hook login để lưu user và token
-      // Ghi đè lại user info có role
-      // localStorage.setItem("user", JSON.stringify(userData));
+      login(userData, token);
 
-      console.log("Login successful:", userData);
+      hide();
+      messageApi.success(`Chào mừng ${userData.name || "bạn"} trở lại! 🎉`, 3);
+      setTimeout(() => messageApi.info("✨ Chúc bạn có một ngày tuyệt vời!", 2), 2000);
 
-      // Đóng toast loading và hiển thị toast thành công
-      hideToast();
-      setTimeout(() => {
-        showToast(
-          `Chào mừng ${userData.name || "bạn"} trở lại! 🎉`,
-          "success",
-          3000
-        );
-      }, 100);
-
-      setTimeout(() => {
-        showToast("✨ Chúc bạn có một ngày tuyệt vời!", "info", 2000);
-      }, 2000);
-
-      // Chuyển hướng sau 3 giây
       setTimeout(() => {
         if (userData.role === "ADMIN" || userData.role === "STAFF") {
           navigate("/admin");
@@ -252,52 +67,29 @@ export default function Login() {
       }, 3000);
     } catch (error) {
       console.error("Login failed:", error.response?.data || error.message);
-
-      // Đóng toast loading
-      hideToast();
-
-      // Hiển thị toast lỗi với thời gian phù hợp
+      hide();
       setTimeout(() => {
         const errorMessage = error.response?.data?.message;
-
         if (error.response?.status === 404) {
-          showToast(
-            "Email không tồn tại! Vui lòng kiểm tra lại.",
-            "error",
-            5000
-          );
+          messageApi.error("Email không tồn tại! Vui lòng kiểm tra lại.", 5);
         } else if (error.response?.status === 401) {
-          showToast(
-            "Mật khẩu không chính xác! Vui lòng thử lại.",
-            "error",
-            5000
-          );
+          messageApi.error("Mật khẩu không chính xác! Vui lòng thử lại.", 5);
         } else if (error.response?.status === 403) {
-          showToast(
-            "Tài khoản bị khóa! Liên hệ admin để được hỗ trợ.",
-            "warning",
-            6000
-          );
+          messageApi.warning("Tài khoản bị khóa! Liên hệ admin để được hỗ trợ.", 6);
         } else {
-          showToast(
-            errorMessage || "Đăng nhập thất bại. Vui lòng thử lại.",
-            "error",
-            4000
-          );
+          messageApi.error(errorMessage || "Đăng nhập thất bại. Vui lòng thử lại.", 4);
         }
       }, 100);
     } finally {
       setIsLoading(false);
     }
   };
+
   useEffect(() => {
     if (user) {
       navigate(user.role === "ADMIN"|| user.role === "STAFF" ? "/admin" : "/", { replace: true });
     }
   }, [user, navigate]);
-  // Video functionality
-  const videoRef = useRef();
-  const [isMuted, setIsMuted] = useState(true);
 
   const handleToggleMute = () => {
     if (videoRef.current) {
@@ -306,44 +98,62 @@ export default function Login() {
     }
   };
 
-  async function handleGoogleLogin() { 
+  async function handleGoogleLogin() {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
+      messageApi.info("Đang mở cửa sổ đăng nhập Google...", 3);
+      const loginPromise = signInWithPopup(auth, googleProvider);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('timeout')), 60000);
+      });
+      const result = await Promise.race([loginPromise, timeoutPromise]);
+
       const user = result.user;
-      
-      // Lấy Google ID token
       const idToken = await user.getIdToken();
-      
-      // Gửi token lên backend để verify và lấy user info
+
+      const hideGoogle = messageApi.loading({ content: "Đang xác thực tài khoản...", duration: 0 });
       const response = await axios.post('http://localhost:5000/api/auth/firebase-login', {
         idToken: idToken
       });
-      
-      // Lưu user info vào AuthContext
       const userData = response.data.user;
       const token = response.data.token;
-      
-      // Sử dụng login function từ AuthContext
       login(userData, token);
-      
-      // Navigate về home
-      navigate("/");
+
+      hideGoogle();
+      messageApi.success(`Chào mừng ${userData.fullName || 'bạn'} đã trở lại! 🎉`, 2);
+
+      setTimeout(() => {
+        if (userData.role === "ADMIN" || userData.role === "STAFF") {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
+      }, 2000);
+
     } catch (error) {
       console.error("Google login error:", error);
-      // Có thể hiển thị toast error ở đây
+      messageApi.destroy();
+      switch(error.code) {
+        case 'auth/popup-blocked':
+          messageApi.warning("Trình duyệt đã chặn popup. Vui lòng cho phép popup và thử lại", 5);
+          break;
+        case 'auth/cancelled-popup-request':
+          messageApi.info("Bạn đã đóng cửa sổ đăng nhập. Vui lòng thử lại", 4);
+          break;
+        case 'auth/popup-closed-by-user':
+          messageApi.info("Cửa sổ đăng nhập đã bị đóng. Vui lòng thử lại", 4);
+          break;
+        case 'timeout':
+          messageApi.error("Đăng nhập đã hết thời gian. Vui lòng thử lại", 4);
+          break;
+        default:
+          messageApi.error("Đăng nhập thất bại. Vui lòng thử lại sau", 4);
+      }
     }
   }
+
   return (
     <div className="min-h-screen flex">
-      {/* Toast Notification with Progress Bar */}
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={hideToast}
-        duration={toast.duration}
-      />
-
+      {contextHolder}
       {/* Left side - Login form */}
       <div className="flex-1 bg-white">
         <div className="min-h-full flex flex-col justify-start px-4 sm:px-6 lg:px-16 xl:px-20 py-8">
@@ -351,9 +161,9 @@ export default function Login() {
           {/* Logo */}
           <div className="flex justify-center mb-6 lg:hidden">
             <img
-              src="favicon/logoicon.png" // ✅ Đường dẫn tới ảnh logo (nên để trong public/)
+              src="favicon/logoicon.png"
               alt="Logo"
-              className="h-16 w-auto" // Bạn có thể điều chỉnh kích thước
+              className="h-16 w-auto"
             />
           </div>
 

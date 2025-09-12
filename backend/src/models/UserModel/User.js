@@ -13,9 +13,9 @@ const userSchema = new mongoose.Schema({
   firebaseUid: { type: String },
   provider: { type: String, default: "local" },
 
-  phone_number: String,
+  phone_number: String, 
   avatar: { type: String, default: "" },
-  address: String,
+  address: { type: String, default: "" },
   created_date: { type: Date, default: Date.now },
   updated_date: { type: Date, default: Date.now },
 });

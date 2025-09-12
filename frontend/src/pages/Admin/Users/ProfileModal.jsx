@@ -1,15 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Save, Edit3, User, Mail, Phone, MapPin, Calendar, Briefcase } from 'lucide-react';
-
-const ProfileModal = ({ isOpen, onClose, user, onUpdateUser }) => {
+import axios from 'axios';
+const ProfileModal = ({ isOpen, onClose, user }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: user?.phone || '',
-    location: user?.location || '',
-    bio: user?.bio || '',
-    jobTitle: user?.jobTitle || '',
+    phone_number: user?.phone_number || '',
+    address: user?.address || '',
     avatar: user?.avatar || ''
   });
   const [previewAvatar, setPreviewAvatar] = useState(user?.avatar || '');
@@ -17,36 +15,84 @@ const ProfileModal = ({ isOpen, onClose, user, onUpdateUser }) => {
 
   if (!isOpen) return null;
 
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
-
-  const handleAvatarChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+       if (file) {
+      setFormData(prev => ({
+        ...prev,
+        avatar: file
+      }));
+      
       const reader = new FileReader();
       reader.onload = (e) => {
-        const newAvatar = e.target.result;
-        setPreviewAvatar(newAvatar);
-        setFormData(prev => ({ ...prev, avatar: newAvatar }));
+        setPreviewAvatar(e.target.result);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSave = () => {
-    onUpdateUser(formData);
-    setIsEditing(false);
-  };
+const handleSave = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const formDataToSend = new FormData();
+    formDataToSend.append('name', formData.name);
+    formDataToSend.append('email', formData.email);
+    formDataToSend.append('phone_number', formData.phone_number);
+    formDataToSend.append('address', formData.address);
+    if (formData.avatar instanceof File) {
+      formDataToSend.append('avatar', formData.avatar); // gửi file
+    }
 
+    const response = await axios.put(
+      'http://localhost:5000/api/user/profile',
+      formDataToSend,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    );
+
+    if (response.data.success) {
+      if(typeof onUpdate === 'function') {
+        onUpdate(response.data.data);
+      }
+      setIsEditing(false);
+      onClose();
+      alert('Update successful!');
+    }
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    alert('Không thể cập nhật thông tin. Vui lòng thử lại!');
+  }
+};
+  useEffect (() => {
+    if(user){
+       console.log("User data in modal:", user); 
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phone_number: user.phone_number || '',
+        address: user.address || '',
+        avatar: user.avatar || ''
+      });
+      setPreviewAvatar(user.avatar || '');
+    }
+  }, [user]);
   const handleCancel = () => {
     setFormData({
       name: user?.name || '',
       email: user?.email || '',
-      phone: user?.phone || '',
-      location: user?.location || '',
-      bio: user?.bio || '',
-      jobTitle: user?.jobTitle || '',
+      phone_number: user?.phone_number || '',
+      address: user?.address || '',
       avatar: user?.avatar || ''
     });
     setPreviewAvatar(user?.avatar || '');
@@ -56,9 +102,8 @@ const ProfileModal = ({ isOpen, onClose, user, onUpdateUser }) => {
   const formFields = [
     { key: 'name', label: 'Họ và tên', icon: User, type: 'text', required: true },
     { key: 'email', label: 'Email', icon: Mail, type: 'email', required: true },
-    { key: 'phone', label: 'Số điện thoại', icon: Phone, type: 'tel' },
-    { key: 'location', label: 'Địa chỉ', icon: MapPin, type: 'text' },
-    { key: 'jobTitle', label: 'Chức vụ', icon: Briefcase, type: 'text' },
+    { key: 'phone_number', label: 'Số điện thoại', icon: Phone, type: 'tel' },
+    { key: 'address', label: 'Địa chỉ', icon: MapPin, type: 'text' },
   ];
 
   return (
@@ -71,7 +116,7 @@ const ProfileModal = ({ isOpen, onClose, user, onUpdateUser }) => {
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-300">
         
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 flex items-center justify-between text-white">
+        <div className="sticky top-0 bg-gradient-to-r bg-blue-600 px-6 py-4 flex items-center justify-between text-white">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-white/20 rounded-full">
               <User className="w-5 h-5" />
@@ -176,9 +221,10 @@ const ProfileModal = ({ isOpen, onClose, user, onUpdateUser }) => {
                     
                     {isEditing ? (
                       <input
+                        name={field.key}
                         type={field.type}
                         value={formData[field.key]}
-                        onChange={(e) => handleInputChange(field.key, e.target.value)}
+                        onChange={handleInputChange}
                         required={field.required}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
                         placeholder={`Nhập ${field.label.toLowerCase()}`}
@@ -193,27 +239,7 @@ const ProfileModal = ({ isOpen, onClose, user, onUpdateUser }) => {
               })}
             </div>
 
-            {/* Bio Section */}
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
-                <Edit3 className="w-4 h-4 text-gray-500" />
-                <span>Giới thiệu bản thân</span>
-              </label>
-              
-              {isEditing ? (
-                <textarea
-                  value={formData.bio}
-                  onChange={(e) => handleInputChange('bio', e.target.value)}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white resize-none"
-                  placeholder="Viết vài dòng giới thiệu về bản thân..."
-                />
-              ) : (
-                <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 min-h-[100px]">
-                  {formData.bio || <span className="text-gray-400 italic">Chưa có giới thiệu</span>}
-                </div>
-              )}
-            </div>
+
 
             {/* Additional Info */}
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 space-y-2">

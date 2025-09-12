@@ -6,6 +6,7 @@ const eventSchema = new mongoose.Schema({
   description: { type: String },
   sportTypeId: { type: mongoose.Schema.Types.ObjectId, ref: 'SportType', required: true },
   seasonId: { type: mongoose.Schema.Types.ObjectId, ref: 'Season', required: true },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   maxTeams: { type: Number, default: null, min: 0 },
   startDate: {
     type: Date,
@@ -34,6 +35,7 @@ eventSchema.index(
   { unique: true, collation: { locale: "en", strength: 2 } }
 );
 eventSchema.index({ sportTypeId: 1, seasonId: 1 });
+eventSchema.index({ createdBy: 1 });
 
 // Middleware auto update `updatedAt`
 eventSchema.pre("save", function (next) {

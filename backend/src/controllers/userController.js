@@ -27,10 +27,11 @@ const userController = {
 
     updateMyProfile: async (req, res) => {
         try {
-            const { name, phone_number, avatar } = req.body;
+            const { name, phone_number, address } = req.body;
+            const avatar = req.file ? req.file.path : req.body.avatar;
             const updatedUser = await User.findByIdAndUpdate(
                 req.user.id,
-                { name, phone_number, avatar },
+                { name, phone_number, avatar, address },
                 { new: true }
             ).select('-password');
             

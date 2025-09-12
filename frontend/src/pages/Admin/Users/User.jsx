@@ -163,7 +163,7 @@ const handleDelete = async (userId) => {
       </div>
 
       {/* Table for desktop */}
-      <div className="hidden sm:block w-full overflow-x-auto">
+      <div className="hidden sm:block w-full overflow-x-auto h-[calc(100vh-250px)]">
         <table className="min-w-[700px] w-full">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>

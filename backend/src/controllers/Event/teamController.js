@@ -1,5 +1,5 @@
-const Team = require('../models/Team/Team');
-const TeamMatch = require('../models/Team/TeamMatch');
+const Team = require('../../models/Team/Team');
+const TeamMatch = require('../../models/Team/TeamMatch');
 const mongoose = require('mongoose');
 
 const teamController = {

@@ -105,8 +105,8 @@ const register = async (req, res) => {
 const createStaff = async (req, res) => {
   const { name, email, password, phone_number } = req.body;
   try {
-    console.log("Body:", req.body);
-    console.log("File:", req.file);
+    // console.log("Body:", req.body);
+    // console.log("File:", req.file);
 
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: "Email đã tồn tại" });
@@ -119,6 +119,7 @@ const createStaff = async (req, res) => {
       password: hashedPassword,
       phone_number,
       avatar: req.file?.path || "",
+      address: req.body.address || "",
     });
 
     await newUser.save();
@@ -139,6 +140,7 @@ const createStaff = async (req, res) => {
         email: newUser.email,
         phone_number: newUser.phone_number,
         avatar: newUser.avatar || "",
+        address: newUser.address || "",
         created_date: newUser.created_date,
         updated_date: newUser.updated_date,
         role: "Staff",
@@ -197,6 +199,7 @@ const getMe = async (req, res) => {
       email: user.email,
       phone_number: user.phone_number,
       avatar: user.avatar || "",
+      address: user.address || "",
       created_date: user.created_date,
       updated_date: user.updated_date,
       role: roleName,

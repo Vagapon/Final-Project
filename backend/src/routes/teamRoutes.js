@@ -1,6 +1,6 @@
 const express = require('express');
 
-const teamController = require('../controllers/teamController');
+const teamController = require('../controllers/Event/teamController');
 const {teamUpload} = require('../config/cloudinary'); 
 const { verifyToken, isAuthenticated } = require('../middlewares/authMiddleware');
 const router = express.Router();

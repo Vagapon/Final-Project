@@ -4,15 +4,144 @@ import Formation from './Formation';
 import PlayerList from './PlayerList';
 import TeamInfo from './TeamInfo';
 import ModalTeam from './ModalTeam';
+import PlayerModal from './PlayerModal';
+import axios from 'axios';
 
 const TeamPage = () => {
   const [activeTab, setActiveTab] = useState('formation');
   const [availablePlayers, setAvailablePlayers] = useState([]);
   const [team, setTeam] = useState(null);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
+  const [editingPlayer, setEditingPlayer] = useState(null);
 
-  const handleAddPlayer = (player) => {
-    setAvailablePlayers(prev => [...prev, player]);
+
+  useEffect(() => {
+    if (team?._id) {
+      fetchTeamPlayers();
+    }
+  }, [team?._id]);
+
+  // Add function to fetch team players
+    const fetchTeamPlayers = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `http://localhost:5000/api/member/team/${team._id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      const raw = response.data?.data || response.data || [];
+      const normalized = raw.map((p) => ({
+        ...p,
+        name: p.name ?? p.nameMember ?? '',
+        avatar: p.avatar ?? '',
+      }));
+      setAvailablePlayers(normalized);
+    } catch (error) {
+      console.error("Error fetching players:", error.response?.data || error.message);
+    }
+  };
+
+   const handleAddPlayer = async (playerData) => {
+    try {
+      const token = localStorage.getItem("token");
+      const hasFile = Boolean(playerData?.avatarFile);
+      let body;
+      let headers = { Authorization: `Bearer ${token}` };
+
+      if (hasFile) {
+        body = new FormData();
+        body.append('teamId', team._id);
+        body.append('nameMember', playerData.nameMember);
+        body.append('number', playerData.number);
+        body.append('isCaptain', playerData.isCaptain);
+        body.append('avatar', playerData.avatarFile);
+      } else {
+        body = {
+          teamId: team._id,
+          nameMember: playerData.nameMember,
+          number: playerData.number,
+          isCaptain: playerData.isCaptain,
+          avatar: playerData.avatar || ''
+        };
+        headers['Content-Type'] = 'application/json';
+      }
+
+      const response = await axios.post(
+        'http://localhost:5000/api/member',
+        body,
+        { headers }
+      );
+
+      if (response.data?.success || response.status === 201) {
+        await fetchTeamPlayers();
+        setIsPlayerModalOpen(false);
+      }
+    } catch (error) {
+      console.error("Error adding player:", error.response?.data || error.message);
+      alert(error.response?.data?.message || 'Failed to add player');
+    }
+  };
+
+  const handleEditPlayer = (player) => {
+    setEditingPlayer(player);
+    setIsPlayerModalOpen(true);
+  };
+
+  const handleDeletePlayer = async (player) => {
+    if (!window.confirm(`Xóa ${player.name}?`)) return;
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`http://localhost:5000/api/member/${player._id}` , {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await fetchTeamPlayers();
+    } catch (error) {
+      console.error("Delete player error:", error.response?.data || error.message);
+      alert(error.response?.data?.message || 'Xóa thất bại');
+    }
+  };
+
+  const handleUpsertPlayer = async (playerData) => {
+    // Decide create or update based on editingPlayer
+    if (editingPlayer) {
+      try {
+        const token = localStorage.getItem("token");
+        const hasFile = Boolean(playerData?.avatarFile);
+        let body;
+        let headers = { Authorization: `Bearer ${token}` };
+
+        if (hasFile) {
+          body = new FormData();
+          body.append('nameMember', playerData.nameMember);
+          body.append('number', playerData.number);
+          body.append('isCaptain', playerData.isCaptain);
+          if (playerData.avatarFile) body.append('avatar', playerData.avatarFile);
+        } else {
+          body = {
+            nameMember: playerData.nameMember,
+            number: playerData.number,
+            isCaptain: playerData.isCaptain,
+            avatar: playerData.avatar || ''
+          };
+          headers['Content-Type'] = 'application/json';
+        }
+
+        await axios.put(`http://localhost:5000/api/member/${editingPlayer._id}`, body, { headers });
+        await fetchTeamPlayers();
+        setEditingPlayer(null);
+        setIsPlayerModalOpen(false);
+      } catch (error) {
+        console.error("Update player error:", error.response?.data || error.message);
+        alert(error.response?.data?.message || 'Cập nhật thất bại');
+      }
+      return;
+    }
+
+    // Create flow
+    await handleAddPlayer(playerData);
   };
 
   // 🟢 Gọi API lấy team của user hiện tại
@@ -40,29 +169,7 @@ const TeamPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        {/* <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                {team?.shortName || (team?.name ? team.name.substring(0, 2).toUpperCase() : 'CLB')}
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800">{team?.name || 'Chưa có đội'}</h1>
-                <p className="text-gray-600">{team?.description || 'Hãy tạo đội để bắt đầu quản lý.'}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setIsTeamModalOpen(true)}
-              className="flex items-center space-x-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
-            >
-              <Edit size={16} />
-              <span>{team ? 'Chỉnh sửa' : 'Tạo đội'}</span>
-            </button>
-          </div>
-        </div> */}
 
-        {/* Tabs */}
         <div className="bg-white rounded-lg shadow-sm mb-6">
           <div className="border-b">
             <nav className="flex space-x-8 px-6">
@@ -113,29 +220,25 @@ const TeamPage = () => {
               </div>
             ) : (
               <>
-                {activeTab === 'formation' && (
-                  <Formation
-                    availablePlayers={availablePlayers}
-                    onAddPlayer={handleAddPlayer}
-                  />
-                )}
+    {activeTab === 'players' && (
+                <PlayerList
+                  players={availablePlayers}
+                  onAddClick={() => { setEditingPlayer(null); setIsPlayerModalOpen(true); }}
+                  onEditClick={handleEditPlayer}
+                  onDeleteClick={handleDeletePlayer}
+                />
+              )}
 
-                {activeTab === 'players' && (
-                  availablePlayers.length > 0 ? (
-                    <PlayerList
-                      players={availablePlayers}
-                      onAddClick={() => setActiveTab('formation')}
-                    />
-                  ) : (
-                    <div className="text-center py-12 text-gray-500 text-lg">
-                      Chưa có thành viên nào
-                    </div>
-                  )
-                )}
+              {activeTab === 'info' && (
+                <TeamInfo 
+                  team={team} 
+                  playersCount={availablePlayers.length} 
+                />
+              )}
 
-                {activeTab === 'info' && (
-                  <TeamInfo team={team} playersCount={availablePlayers.length} />
-                )}
+              {activeTab === 'formation' && (
+                <Formation players={availablePlayers} />
+              )}
               </>
             )}
           </div>
@@ -152,6 +255,16 @@ const TeamPage = () => {
           setActiveTab('info');
         }}
       />
+          {team && (
+        <PlayerModal
+          isOpen={isPlayerModalOpen}
+          onClose={() => setIsPlayerModalOpen(false)}
+          onSubmit={handleUpsertPlayer}
+          teamId={team._id}
+          mode={editingPlayer ? 'edit' : 'create'}
+          initialData={editingPlayer}
+        />
+      )}
     </div>
   );
 };

@@ -19,7 +19,7 @@ const AdminLayout = () => {
               darkMode={darkMode}
               toggleDarkMode={() => setDarkMode(!darkMode)}
             />
-            <main className="p-4 lg:p-6">
+            <main className="p-2 lg:pt-4 lg:px-6">
               <Outlet />
             </main>
           </div>

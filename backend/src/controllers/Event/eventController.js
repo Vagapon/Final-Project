@@ -1,7 +1,7 @@
 // controllers/eventController.js
-const Event = require("../models/Event/Event");
-const EventRegistration = require("../models/Event/EventRegistration");
-const Season = require("../models/Event/Season");
+const Event = require("../../models/Event/Event");
+const EventRegistration = require("../../models/Event/EventRegistration");
+const Season = require("../../models/Event/Season");
 const mongoose = require("mongoose");
 
 // Utility: validate dates + season
@@ -47,7 +47,8 @@ const eventController = {
         status,
         address,
         maxTeams: maxTeams ? parseInt(maxTeams) : 0,
-        avatar: req.file?.path || ""
+        avatar: req.file?.path || "",
+        createdBy: req.user?.id || null
       });
 
       await event.save();
@@ -83,6 +84,15 @@ const eventController = {
         updates.numberOfMatch = Math.floor((updates.maxTeams * (updates.maxTeams - 1)) / 2);
       }
 
+      // STAFF can only update their own events
+      if (req.user && req.user.role && req.user.role.toUpperCase() === 'STAFF') {
+        const existing = await Event.findById(eventId);
+        if (!existing) return res.status(404).json({ message: "Event not found" });
+        if (existing.createdBy?.toString() !== req.user.id) {
+          return res.status(403).json({ message: "Not authorized to update this event" });
+        }
+      }
+
       const event = await Event.findByIdAndUpdate(eventId, updates, { new: true, runValidators: true });
       if (!event) return res.status(404).json({ message: "Event not found" });
 
@@ -96,14 +106,31 @@ const eventController = {
   },
 
   // GET ALL
-  getAll: async (req, res) => {
-    try {
-      const events = await Event.find();
-      res.status(200).json(events);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching events", error });
-    }
-  },
+getAll : async (req, res) => {
+  try {
+    // Add lean() để convert mongoose document sang plain object
+    const events = await Event.find()
+      .populate({
+        path: 'sportTypeId',
+        select: 'name' 
+      })
+      .lean()
+      .exec();
+
+
+    res.status(200).json({
+      success: true,
+      data: events
+    });
+  } catch (error) {
+    console.error('Error in getAll:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+},
+
 
   // GET BY ID
   getById: async (req, res) => {
@@ -152,6 +179,14 @@ const eventController = {
         if (!event) {
           await session.abortTransaction();
           return res.status(404).json({ message: "Event not found" });
+        }
+
+        // STAFF can only approve registrations for their own events
+        if (req.user && req.user.role && req.user.role.toUpperCase() === 'STAFF') {
+          if (event.createdBy?.toString() !== req.user.id) {
+            await session.abortTransaction();
+            return res.status(403).json({ message: "Not authorized to approve for this event" });
+          }
         }
 
         if (typeof event.maxTeams === "number" && event.maxTeams >= 0) {
