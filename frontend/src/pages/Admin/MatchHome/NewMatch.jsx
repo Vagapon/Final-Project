@@ -164,17 +164,7 @@ return (
   <div className="p-3 sm:p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen">
     <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-6 sm:mb-8">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 mb-2">
-          <div className="p-2 sm:p-3 bg-gradient-to-r from-green-500 to-blue-600 rounded-xl">
-            <Plus className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-          </div>
-          <span className="leading-tight">Tạo trận đấu bóng đá mới</span>
-        </h2>
-        <p className="text-gray-600 text-sm sm:text-base md:text-lg">
-          Tạo và quản lý trận đấu bóng đá chuyên nghiệp
-        </p>
-      </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Sidebar - Team Selection */}
@@ -184,7 +174,7 @@ return (
               <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg">
                 <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
               </div>
-              <span className="text-base sm:text-lg">Bộ lọc đội bóng</span>
+              <span className="text-base sm:text-lg">Filter Team</span>
             </h3>
 
             {/* Filters */}
@@ -199,7 +189,7 @@ return (
                   onChange={handleFilterChange}
                   className="w-full px-2 sm:px-3 py-2 text-sm sm:text-base bg-gray-50 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Tất cả giải đấu</option>
+                  <option value="">All Event</option>
                   {tournaments.map(tournament => (
                     <option key={tournament.id} value={tournament.id}>
                       {tournament.name}
@@ -210,7 +200,7 @@ return (
 
               <div>
                 <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                  Loại sân
+                  Sport Type
                 </label>
                 <select
                   name="fieldType"
@@ -218,7 +208,7 @@ return (
                   onChange={handleFilterChange}
                   className="w-full px-2 sm:px-3 py-2 text-sm sm:text-base bg-gray-50 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Tất cả loại sân</option>
+                  <option value="">All stadium</option>
                   {fieldTypes.map(type => (
                     <option key={type.value} value={type.value}>
                       {type.label}
@@ -229,7 +219,7 @@ return (
 
               <div>
                 <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                  Tìm kiếm đội
+                  Search
                 </label>
                 <div className="relative">
                   <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
@@ -248,7 +238,7 @@ return (
             {/* Teams List */}
             <div className="space-y-2 max-h-64 sm:max-h-80 md:max-h-96 overflow-y-auto">
               <h4 className="font-semibold text-gray-700 mb-2 sm:mb-3 text-sm sm:text-base">
-                Danh sách đội ({filteredTeams.length})
+                Team list ({filteredTeams.length})
               </h4>
               {filteredTeams.map(team => (
                 <div

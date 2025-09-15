@@ -16,21 +16,21 @@ const PageBanner = ({ pathname }) => {
       case "/myteam":
         return {
           title: "My Team",
-          subtitle: "Quản lý đội bóng và thành viên của bạn",
+          subtitle: "Manage your team and members",
           icon: Users,
         };
 
       case "/challenge":
         return {
           title: "Challenge",
-          subtitle: "Tham gia các giải đấu hấp dẫn",
+          subtitle: "Join exciting tournaments",
           icon: Trophy,
         };
 
       case "/blog":
         return {
           title: "Blog",
-          subtitle: "Tìm kiếm tin tức",
+          subtitle: "Search for news",
           showSearch: true,
           icon: BookOpen,
         };
@@ -38,15 +38,15 @@ const PageBanner = ({ pathname }) => {
       case "/shop":
         return {
           title: "Shop",
-          subtitle: "Cửa hàng thiết bị thể thao",
-          description: "Mua sắm các sản phẩm thể thao chất lượng cao",
+          subtitle: "Sports equipment store",
+          description: "Shop for high-quality sports products",
           icon: Target,
         };
 
       default:
         return {
           title: "High Light",
-          subtitle: "Những khoảnh khắc nổi bật",
+          subtitle: "Outstanding moments",
           icon: Trophy,
         };
     }
@@ -84,7 +84,7 @@ const PageBanner = ({ pathname }) => {
           </span>
         </h1>
 
-        {/* Subtitle (chỉ hiện nếu KHÔNG phải blog) */}
+        {/* Subtitle (only show if NOT blog) */}
         {!config.showSearch && (
           <p className="text-lg md:text-xl text-gray-600 mt-4 max-w-3xl mx-auto font-light">
             {config.subtitle}
@@ -94,7 +94,7 @@ const PageBanner = ({ pathname }) => {
     </div>
   </div>
 
-  {/* Search Box riêng cho Blog, nằm dưới cùng */}
+  {/* Separate Search Box for Blog, positioned at bottom */}
   {config.showSearch && (
     <div className="px-4 sm:px-6 lg:px-8 pb-6">
       <form onSubmit={handleSearch} className="relative max-w-xl mx-auto">
@@ -103,14 +103,14 @@ const PageBanner = ({ pathname }) => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm kiếm bài viết..."
+            placeholder="Search articles..."
             className="w-full px-5 py-2.5 pl-12 text-base bg-white border border-gray-300 rounded-full text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition-all duration-300"
           />
           <Search className="absolute left-4 w-5 h-5 text-gray-600" />
           <button
             type="submit"
             className="absolute right-2 p-2 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-800 transition-all duration-300 border border-gray-300"
-            title="Tìm kiếm"
+            title="Search"
           >
             <Search className="w-5 h-5" />
           </button>

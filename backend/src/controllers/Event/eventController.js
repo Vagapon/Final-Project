@@ -117,10 +117,23 @@ getAll : async (req, res) => {
       .lean()
       .exec();
 
+    // Calculate approved teams count for each event
+    const eventsWithParticipants = await Promise.all(
+      events.map(async (event) => {
+        const approvedCount = await EventRegistration.countDocuments({
+          eventId: event._id,
+          status: "approved"
+        });
+        return {
+          ...event,
+          participants: approvedCount
+        };
+      })
+    );
 
     res.status(200).json({
       success: true,
-      data: events
+      data: eventsWithParticipants
     });
   } catch (error) {
     console.error('Error in getAll:', error);
@@ -138,7 +151,19 @@ getAll : async (req, res) => {
       const { id } = req.params;
       const event = await Event.findById(id);
       if (!event) return res.status(404).json({ message: "Event not found" });
-      res.status(200).json(event);
+      
+      // Calculate approved teams count
+      const approvedCount = await EventRegistration.countDocuments({
+        eventId: event._id,
+        status: "approved"
+      });
+      
+      const eventWithParticipants = {
+        ...event.toObject(),
+        participants: approvedCount
+      };
+      
+      res.status(200).json(eventWithParticipants);
     } catch (error) {
       res.status(500).json({ message: "Error fetching event", error });
     }

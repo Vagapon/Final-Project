@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { UserPlus, Eye, EyeOff, Upload, X, User, Mail, Phone, Key, Camera } from "lucide-react";
+import { message, Spin } from "antd";
 
 const CreateStaff = () => {
   const [formData, setFormData] = useState({
@@ -11,7 +12,6 @@ const CreateStaff = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
   const [avatarPreview, setAvatarPreview] = useState(null);
 
   const handleChange = (e) => {
@@ -22,7 +22,7 @@ const CreateStaff = () => {
         avatar: file,
       });
       
-      // Tạo preview cho ảnh
+      // Create preview for image
       if (file) {
         const reader = new FileReader();
         reader.onload = (e) => setAvatarPreview(e.target.result);
@@ -50,10 +50,9 @@ const CreateStaff = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage("");
 
     try {
-      // Lấy token từ localStorage (giữ nguyên logic gốc)
+      // Get token from localStorage (keep original logic)
       const token = window.localStorage?.getItem("token") || "demo-token";
 
       const data = new FormData();
@@ -72,7 +71,7 @@ const CreateStaff = () => {
       });
 
       if (response.ok) {
-        setMessage("✅ Tạo tài khoản Staff thành công!");
+        message.success("✅ Staff account created successfully!");
         setFormData({
           name: "",
           email: "",
@@ -88,7 +87,7 @@ const CreateStaff = () => {
         throw new Error("API Error");
       }
     } catch (error) {
-      setMessage(`❌ Lỗi: ${error.message || "Có lỗi xảy ra"}`);
+      message.error(`❌ Error: ${error.message || "An error occurred"}`);
     } finally {
       setLoading(false);
     }
@@ -104,34 +103,21 @@ const CreateStaff = () => {
               <UserPlus className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Tạo tài khoản Staff</h1>
-              <p className="text-sm text-gray-500">Thêm nhân viên mới vào hệ thống</p>
+              <h1 className="text-2xl font-semibold text-gray-900">Create Staff Account</h1>
+              <p className="text-sm text-gray-500">Add new staff member to the system</p>
             </div>
           </div>
         </div>
 
-        {/* Message */}
-        {message && (
-          <div
-            className={`mb-6 p-4 rounded-xl border ${
-              message.includes("✅")
-                ? "bg-green-50 text-green-700 border-green-200"
-                : "bg-red-50 text-red-700 border-red-200"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <div className="font-medium">{message}</div>
-            </div>
-          </div>
-        )}
+        {/* Message section removed - using Ant Design notifications */}
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Form Section */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-6 border-b border-gray-100">
-                <h2 className="text-lg font-medium text-gray-900">Thông tin cơ bản</h2>
-                <p className="text-sm text-gray-500 mt-1">Điền đầy đủ thông tin nhân viên</p>
+                <h2 className="text-lg font-medium text-gray-900">Basic Information</h2>
+                <p className="text-sm text-gray-500 mt-1">Fill in complete staff information</p>
               </div>
               
               <div className="p-6">
@@ -141,7 +127,7 @@ const CreateStaff = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4" />
-                        Họ và tên
+                        Full Name
                       </div>
                     </label>
                     <input
@@ -151,7 +137,7 @@ const CreateStaff = () => {
                       onChange={handleChange}
                       required
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
-                      placeholder="Nhập họ và tên đầy đủ"
+                      placeholder="Enter full name"
                     />
                   </div>
 
@@ -179,7 +165,7 @@ const CreateStaff = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       <div className="flex items-center gap-2">
                         <Phone className="w-4 h-4" />
-                        Số điện thoại
+                        Phone Number
                       </div>
                     </label>
                     <input
@@ -197,7 +183,7 @@ const CreateStaff = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       <div className="flex items-center gap-2">
                         <Key className="w-4 h-4" />
-                        Mật khẩu
+                        Password
                       </div>
                     </label>
                     <div className="relative">
@@ -208,7 +194,7 @@ const CreateStaff = () => {
                         onChange={handleChange}
                         required
                         className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
-                        placeholder="Nhập mật khẩu"
+                        placeholder="Enter password"
                       />
                       <button
                         type="button"
@@ -235,13 +221,13 @@ const CreateStaff = () => {
                   >
                     {loading ? (
                       <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Đang tạo...
+                        <Spin size="small" />
+                        Creating...
                       </>
                     ) : (
                       <>
                         <UserPlus className="w-5 h-5" />
-                        Tạo tài khoản Staff
+                        Create Staff Account
                       </>
                     )}
                   </button>
@@ -255,7 +241,7 @@ const CreateStaff = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-8">
               <div className="p-6 border-b border-gray-100">
                 <h3 className="text-lg font-medium text-gray-900">Preview</h3>
-                <p className="text-sm text-gray-500 mt-1">Xem trước thông tin</p>
+                <p className="text-sm text-gray-500 mt-1">Preview information</p>
               </div>
               
               <div className="p-6">
@@ -288,7 +274,7 @@ const CreateStaff = () => {
                       ) : (
                         <div className="w-32 h-32 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center">
                           <Camera className="w-8 h-8 text-gray-400 mb-2" />
-                          <span className="text-xs text-gray-400 text-center">Chưa có ảnh</span>
+                          <span className="text-xs text-gray-400 text-center">No image</span>
                         </div>
                       )}
                     </div>
@@ -307,7 +293,7 @@ const CreateStaff = () => {
                       className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                     >
                       <Upload className="w-4 h-4" />
-                      {avatarPreview ? "Đổi ảnh" : "Tải ảnh lên"}
+                      {avatarPreview ? "Change Image" : "Upload Image"}
                     </label>
                   </div>
                 </div>
@@ -320,25 +306,25 @@ const CreateStaff = () => {
                       <div>
                         <span className="text-xs text-gray-500">Name</span>
                         <p className="text-sm font-medium text-gray-900 mt-1">
-                          {formData.name || "Chưa nhập"}
+                          {formData.name || "Not entered"}
                         </p>
                       </div>
                       <div>
                         <span className="text-xs text-gray-500">Email:</span>
                         <p className="text-sm font-medium text-gray-900 mt-1">
-                          {formData.email || "Chưa nhập"}
+                          {formData.email || "Not entered"}
                         </p>
                       </div>
                       <div>
-                        <span className="text-xs text-gray-500">Điện thoại:</span>
+                        <span className="text-xs text-gray-500">Phone:</span>
                         <p className="text-sm font-medium text-gray-900 mt-1">
-                          {formData.phone_number || "Chưa nhập"}
+                          {formData.phone_number || "Not entered"}
                         </p>
                       </div>
                       <div>
-                        <span className="text-xs text-gray-500">Mật khẩu:</span>
+                        <span className="text-xs text-gray-500">Password:</span>
                         <p className="text-sm font-medium text-gray-900 mt-1">
-                          {formData.password ? "••••••••" : "Chưa nhập"}
+                          {formData.password ? "••••••••" : "Not entered"}
                         </p>
                       </div>
                     </div>

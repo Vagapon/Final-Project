@@ -55,7 +55,7 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
 
       if (response.status === 201) {
         setIsAlreadyRegistered(true); // Cập nhật state ngay sau khi đăng ký thành công
-        setParticipantsCount((prev) => prev + 1);
+        // Don't increment participants count here as team is only pending, not approved yet
         message.success("Đăng ký thành công, vui lòng chờ phê duyệt");
 
         // Cache joined event locally for fallback on next reload

@@ -10,7 +10,7 @@ import {
   Filter,
 } from "lucide-react";
 import axios from "axios";
-import { message, Modal } from "antd";
+import { message, Modal, Spin } from "antd";
 import { ExclamationCircleFilled } from "@ant-design/icons";
 import { useAuth } from "../../Authen/AuthContext";
 const Team = () => {
@@ -21,7 +21,7 @@ const Team = () => {
   const [loadingRegs, setLoadingRegs] = useState(false);
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("Tất cả");
+  const [filterStatus, setFilterStatus] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalTeams, setTotalTeams] = useState(0);
@@ -32,7 +32,7 @@ const Team = () => {
     players: "",
     founded: "",
     league: "",
-    status: "Hoạt động",
+    status: "Active",
   });
 
   useEffect(() => {
@@ -57,7 +57,7 @@ const Team = () => {
       setRegistrations(res.data || []);
     } catch (err) {
       console.error(err);
-      message.error("Không tải được danh sách đăng ký sự kiện");
+      message.error("Failed to load event registration list");
     } finally {
       setLoadingRegs(false);
     }
@@ -69,11 +69,11 @@ const Team = () => {
       await axios.patch(`http://localhost:5000/api/event-registrations/${registrationId}/status`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      message.success(status === 'approved' ? 'Đã duyệt đội tham gia' : 'Đã từ chối đội tham gia');
+      message.success(status === 'approved' ? 'Team approved successfully' : 'Team rejected successfully');
       fetchRegistrations();
     } catch (err) {
       console.error(err);
-      message.error('Cập nhật trạng thái thất bại');
+      message.error('Failed to update status');
     }
   };
 
@@ -83,28 +83,28 @@ const Team = () => {
       await axios.delete(`http://localhost:5000/api/event-registrations/${registrationId}` , {
         headers: { Authorization: `Bearer ${token}` }
       });
-      message.success('Đã xóa đăng ký');
+      message.success('Registration deleted successfully');
       setRegistrations((prev) => prev.filter((r) => r._id !== registrationId));
     } catch (err) {
       console.error(err);
-      message.error('Xóa đăng ký thất bại');
+      message.error('Failed to delete registration');
     }
   };
 
   const confirmDeleteRegistration = (registration) => {
     Modal.confirm({
-      title: 'Xóa đăng ký tham gia?',
+      title: 'Delete Registration?',
       icon: <ExclamationCircleFilled />,
       content: (
         <div>
-          <p className="mb-1">Bạn chắc chắn muốn xóa đăng ký này?</p>
+          <p className="mb-1">Are you sure you want to delete this registration?</p>
           <p className="text-gray-500">Team: <span className="font-medium">{registration.teamId?.name || '-'}</span></p>
           <p className="text-gray-500">Event: <span className="font-medium">{registration.eventId?.name || '-'}</span></p>
         </div>
       ),
-      okText: 'Xóa',
+      okText: 'Delete',
       okType: 'danger',
-      cancelText: 'Hủy',
+      cancelText: 'Cancel',
       onOk: () => deleteRegistration(registration._id)
     });
   };
@@ -125,19 +125,19 @@ const Team = () => {
       }
       setLoading(false);
     } catch (err) {
-      setError("Lỗi khi tải dữ liệu đội bóng");
+      setError("Error loading team data");
       setLoading(false);
       console.error(err);
     }
   };
 
-  const filteredTeams = teams.filter((team) => {
+  const filteredRegistrations = registrations.filter((r) => {
     const matchesSearch =
-      team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      team.manager.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      team.event.toLowerCase().includes(searchTerm.toLowerCase());
+      r.teamId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.teamId?.managerId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.eventId?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter =
-      filterStatus === "Tất cả" || team.status === filterStatus;
+      filterStatus === "All" || team.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
@@ -149,7 +149,7 @@ const Team = () => {
     setSearchTerm(e.target.value);
   };
 
-  if (loading && teams.length === 0) return <div>Loading...</div>;
+  if (loading && teams.length === 0) return <div className="flex justify-center items-center h-64"><Spin size="large" /></div>;
   if (error) return <div>Error: {error}</div>;
 
 const handleDelete = async (userId) => {
@@ -236,7 +236,7 @@ const handleDelete = async (userId) => {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Manager Team
+          Team Management
         </h1>
       </div>
 
@@ -246,7 +246,7 @@ const handleDelete = async (userId) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Tổng đội bóng
+                Total Teams
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {teams.length}
@@ -259,10 +259,10 @@ const handleDelete = async (userId) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Đang hoạt động
+                Active Teams
               </p>
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {teams.filter((t) => t.status === "Hoạt động").length}
+                {teams.filter((t) => t.status === "Active").length}
               </p>
             </div>
             <Trophy className="h-8 w-8 text-green-600 dark:text-green-400" />
@@ -272,10 +272,10 @@ const handleDelete = async (userId) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Tạm ngưng
+                Suspended
               </p>
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {teams.filter((t) => t.status === "Tạm ngưng").length}
+                {teams.filter((t) => t.status === "Suspended").length}
               </p>
             </div>
             <Calendar className="h-8 w-8 text-red-600 dark:text-red-400" />
@@ -285,7 +285,7 @@ const handleDelete = async (userId) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Tổng cầu thủ
+                Total Players
               </p>
               <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                 {teams.reduce((sum, team) => sum + team.players, 0)}
@@ -304,7 +304,7 @@ const handleDelete = async (userId) => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
-                placeholder="Tìm kiếm đội bóng..."
+                placeholder="Search teams..."
                 value={searchTerm}
                 onChange={handleSearch}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
@@ -318,8 +318,8 @@ const handleDelete = async (userId) => {
                 className="pl-10 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="All">All Status</option>
-                <option value="approve">Approve</option>
-                <option value="reject">Reject</option>
+                <option value="Active">Active</option>
+                <option value="Suspended">Suspended</option>
               </select>
             </div>
           </div>
@@ -329,8 +329,8 @@ const handleDelete = async (userId) => {
       {/* Event Registrations Table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Đăng ký tham gia sự kiện</h2>
-          {loadingRegs && <span className="text-sm text-gray-500">Đang tải...</span>}
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Event Registrations</h2>
+          {loadingRegs && <Spin size="small" />}
         </div>
         <div className="overflow-x-auto" style={{ maxHeight: 8 * 64 + 'px', overflowY: 'auto' }}>
           <table className="w-full">
@@ -345,7 +345,7 @@ const handleDelete = async (userId) => {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {(registrations || []).map((r) => (
+              {(filteredRegistrations  || []).map((r) => (
                 <tr key={r._id}>
                   <td className="px-6 py-3 whitespace-nowrap">
                     <div className="flex items-center gap-3">
@@ -377,21 +377,21 @@ const handleDelete = async (userId) => {
                         className="px-2 py-1 text-xs rounded bg-green-600 text-white hover:bg-green-700"
                         disabled={r.status === 'approved'}
                       >
-                        Duyệt
+                        Approve
                       </button>
                       <button
                         onClick={() => updateRegistrationStatus(r._id, 'rejected')}
                         className="px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700"
                         disabled={r.status === 'rejected'}
                       >
-                        Từ chối
+                        Reject
                       </button>
                       <button
                         onClick={() => confirmDeleteRegistration(r)}
                         className={`px-2 py-1 text-xs rounded ${r.status === 'rejected' ? 'bg-gray-100 text-red-600 border border-red-200 hover:bg-red-50' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
                         disabled={r.status !== 'rejected'}
                       >
-                        Xóa
+                        Delete
                       </button>
                     </div>
                   </td>
@@ -399,7 +399,7 @@ const handleDelete = async (userId) => {
               ))}
               {(!registrations || registrations.length === 0) && (
                 <tr>
-                  <td colSpan={4} className="px-6 py-6 text-center text-sm text-gray-500">Không có đăng ký nào</td>
+                  <td colSpan={4} className="px-6 py-6 text-center text-sm text-gray-500">No registrations found</td>
                 </tr>
               )}
             </tbody>

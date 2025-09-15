@@ -176,7 +176,7 @@ const Banner = () => {
 
               {/* Text appears on hover - desktop only */}
               <span className="hidden group-hover:block lg:group-hover:block text-sm font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
-                Chat với chúng tôi
+                Chat with us
               </span>
             </div>
 

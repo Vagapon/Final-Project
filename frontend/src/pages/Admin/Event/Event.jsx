@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Search, Plus, Calendar, Users, MapPin, Clock, Star, Heart, Edit, Trash2 } from 'lucide-react';
 import axios from 'axios';
+import { message, Modal, Spin } from 'antd';
+import { ExclamationCircleFilled } from '@ant-design/icons';
 
-// Import modals (trong thực tế sẽ import từ file riêng)
+// Import modals (in practice would import from separate file)
 import CreateEventModal from '../../ModalEvent/CreateEvent';
 import EventDetailModal from '../../ModalEvent/DetailEvent';
 import EditEventModal from '../../ModalEvent/EditEvent';
@@ -33,7 +35,8 @@ const Event = () => {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         
         const response = await axios.get('http://localhost:5000/api/event', { headers });
-        setEventData(response.data || []);
+        // Handle new API response format: { success: true, data: [...] }
+        setEventData(response.data?.data || response.data || []);
       } catch (error) {
         console.error('Error fetching events:', error);
         setEventData([]);
@@ -84,7 +87,7 @@ const Event = () => {
       }
     } catch (error) {
       console.error('Error updating event:', error);
-      alert('Failed to update event. Please try again.');
+      message.error('Failed to update event. Please try again.');
     }
   };
 
@@ -96,11 +99,13 @@ const Event = () => {
       const response = await axios.delete(`http://localhost:5000/api/event/${eventId}`, { headers });
       
       if (response.status === 200) {
+        message.success('Event deleted successfully!');
         setEventData(prev => prev.filter(event => event._id !== eventId));
       }
     } catch (error) {
       console.error('Error deleting event:', error);
-      alert('Failed to delete event. Please try again.');
+      const errorMessage = error.response?.data?.message || 'Failed to delete event. Please try again.';
+      message.error(errorMessage);
     }
   };
 
@@ -115,9 +120,28 @@ const Event = () => {
 
   const handleDeleteClick = (e, event) => {
     e.stopPropagation();
-    if (window.confirm(`Are you sure you want to delete "${event.title || event.name}"?`)) {
-      handleDeleteEvent(event._id);
-    }
+    
+    Modal.confirm({
+      title: 'Delete Event',
+      icon: <ExclamationCircleFilled />,
+      content: (
+        <div>
+          <p>Are you sure you want to delete this event?</p>
+          <p className="text-gray-500 mt-2">
+            <strong>Event:</strong> {event.title || event.name}
+          </p>
+          <p className="text-red-600 text-sm mt-2">
+            This action cannot be undone.
+          </p>
+        </div>
+      ),
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk() {
+        handleDeleteEvent(event._id);
+      },
+    });
   };
 
   // Slider navigation
@@ -231,7 +255,7 @@ const Event = () => {
         {/* Event Grid */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <Spin size="large" />
             <p className="mt-4 text-gray-600 dark:text-gray-400">Loading events...</p>
           </div>
         ) : (

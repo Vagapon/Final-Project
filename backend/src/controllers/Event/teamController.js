@@ -183,7 +183,30 @@ const teamController = {
     console.error("Error fetching my team:", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
   }
-}
+},
+
+  // Get team by manager ID (for admin view)
+  getTeamByManagerId: async (req, res) => {
+    try {
+      const { managerId } = req.params;
+      
+      if (!mongoose.Types.ObjectId.isValid(managerId)) {
+        return res.status(400).json({ message: "Invalid manager ID" });
+      }
+
+      const team = await Team.findOne({ managerId })
+        .populate("managerId", "name email phone_number avatar");
+
+      if (!team) {
+        return res.status(404).json({ message: "User has no team yet" });
+      }
+
+      res.status(200).json(team);
+    } catch (error) {
+      console.error("Error fetching team by manager ID:", error.message);
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  }
 };
 
 module.exports = teamController;

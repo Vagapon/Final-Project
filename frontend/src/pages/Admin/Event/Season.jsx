@@ -4,6 +4,7 @@ import SeasonCard from './SeasonCard';
 import SeasonModal from '../../ModalEvent/SeasonModal';
 import ConfirmDeleteModal from '../../ModalEvent/ConfirmDeleteModal';
 import axios from 'axios';
+import { message, Spin } from 'antd';
 
 const Season = () => {
   const [seasons, setSeasons] = useState([]);
@@ -109,7 +110,7 @@ const fetchSeasons = async () => {
             <nav className="hidden sm:flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
               {/* <span>Home</span> */}
               <ChevronRight className="w-4 h-4" />
-              <span className="text-gray-900 dark:text-white">Seasons Manager</span>
+              <span className="text-gray-900 dark:text-white">Season Management</span>
             </nav>
           </div>
 
@@ -120,7 +121,7 @@ const fetchSeasons = async () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-white" size={20} />
               <input
                 type="text"
-                placeholder="Tìm kiếm seasons..."
+                placeholder="Search seasons..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-900"
@@ -131,7 +132,7 @@ const fetchSeasons = async () => {
               className="flex items-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
             >
               <Plus size={20} />
-              <span>Tạo Season Mới</span>
+              <span>Create New Season</span>
             </button>
           </div>
         </div>
@@ -139,15 +140,15 @@ const fetchSeasons = async () => {
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 dark:bg-gray-900">
           <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 dark:bg-gray-900 dark:border-gray-700 p-6 hover:shadow-xl transition-shadow duration-300">
-            <h3 className="text-sm font-medium text-gray-500 dark:text-white">Tổng Seasons</h3>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-white">Total Seasons</h3>
             <p className="text-2xl font-bold text-gray-800 dark:text-white">{seasons.length}</p>
           </div>
           <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 dark:bg-gray-900 dark:border-gray-700 p-6 hover:shadow-xl transition-shadow duration-300">
-            <h3 className="text-sm font-medium text-gray-500 dark:text-white">Đang Hiển Thị</h3>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-white">Currently Displayed</h3>
             <p className="text-2xl font-bold text-blue-600 dark:text-white">{filteredSeasons.length}</p>
           </div>
           <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 dark:bg-gray-900 dark:border-gray-700 p-6 hover:shadow-xl transition-shadow duration-300">
-            <h3 className="text-sm font-medium text-gray-500 dark:text-white">Season Hoạt Động</h3>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-white">Active Seasons</h3>
             <p className="text-2xl font-bold text-green-600 dark:text-white">{seasons.filter(s => new Date(s.endDate) > new Date()).length}</p>
           </div>
         </div>
@@ -172,10 +173,10 @@ const fetchSeasons = async () => {
               <Plus size={48} className="mx-auto" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm ? 'Không tìm thấy season nào' : 'Chưa có season nào'}
+              {searchTerm ? 'No seasons found' : 'No seasons yet'}
             </h3>
             <p className="text-gray-500 mb-4">
-              {searchTerm ? 'Thử tìm kiếm với từ khóa khác' : 'Bắt đầu bằng cách tạo season đầu tiên'}
+              {searchTerm ? 'Try searching with different keywords' : 'Start by creating your first season'}
             </p>
          
           </div>

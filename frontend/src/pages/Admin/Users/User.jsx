@@ -1,7 +1,8 @@
 import React from "react";
-import { Search, Pencil, Trash2 } from "lucide-react";
+import { Search, Pencil, Trash2, Eye } from "lucide-react";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import UserDetailModal from "./UserDetailModal";
 
 const User = () => {
   const [users, setUsers] = useState([]);
@@ -11,6 +12,10 @@ const User = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
+  
+  // Modal states
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -65,22 +70,60 @@ const User = () => {
   if (error) return <div>Error: {error}</div>;
 
 const handleDelete = async (userId) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      try {
-        const token = localStorage.getItem("token");
-        await axios.delete(`http://localhost:5000/api/user/${userId}`, {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`http://localhost:5000/api/user/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setUsers(users.filter((user) => user._id !== userId));
+      alert("User deleted successfully");
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      alert("Failed to delete user");
+    }
+  };
+
+  const handleViewUser = (user) => {
+    setSelectedUser(user);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleEditUser = (user) => {
+    // TODO: Implement edit functionality
+    console.log("Edit user:", user);
+    alert("Edit functionality will be implemented soon");
+  };
+
+  const handleToggleUserStatus = async (userId, newStatus) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(`http://localhost:5000/api/user/${userId}/status`, 
+        { isActive: newStatus },
+        {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
-        setUsers(users.filter((user) => user._id !== userId));
-        alert("User deleted successfully");
-      } catch (err) {
-        console.error("Error deleting user:", err);
-        alert("Failed to delete user");
-      }
+        }
+      );
+      
+      // Update local state
+      setUsers(users.map(user => 
+        user._id === userId ? { ...user, isActive: newStatus } : user
+      ));
+      
+      alert(`User ${newStatus ? 'activated' : 'deactivated'} successfully`);
+    } catch (err) {
+      console.error("Error updating user status:", err);
+      alert("Failed to update user status");
     }
-  }
+  };
+
+  const closeDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedUser(null);
+  };
 
   const Pagination = () => {
     return (
@@ -241,12 +284,29 @@ const handleDelete = async (userId) => {
                   </span>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                  <button className="text-indigo-600 hover:text-indigo-900 mr-3">
-                    <Pencil className="w-5 h-5" />
-                  </button>
-                  <button onClick={() => handleDelete(user._id)} className="text-red-600 hover:text-red-900">
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button 
+                      onClick={() => handleViewUser(user)}
+                      className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                      title="Xem chi tiết"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleEditUser(user)}
+                      className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 transition-colors"
+                      title="Chỉnh sửa"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(user._id)} 
+                      className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
+                      title="Xóa"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -291,11 +351,26 @@ const handleDelete = async (userId) => {
                 </div>
               </div>
               <div className="flex space-x-2">
-                <button className="text-indigo-600 hover:text-indigo-900">
-                  <Pencil className="w-5 h-5" />
+                <button 
+                  onClick={() => handleViewUser(user)}
+                  className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                  title="Xem chi tiết"
+                >
+                  <Eye className="w-4 h-4" />
                 </button>
-                <button onClick={() => handleDelete(user._id)} className="text-red-600 hover:text-red-900">
-                  <Trash2 className="w-5 h-5" />
+                <button 
+                  onClick={() => handleEditUser(user)}
+                  className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 transition-colors"
+                  title="Chỉnh sửa"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => handleDelete(user._id)} 
+                  className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
+                  title="Xóa"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -306,6 +381,16 @@ const handleDelete = async (userId) => {
       <div className="sm:hidden">
         <Pagination />
       </div>
+
+      {/* User Detail Modal */}
+      <UserDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={closeDetailModal}
+        user={selectedUser}
+        onEdit={handleEditUser}
+        onDelete={handleDelete}
+        onToggleStatus={handleToggleUserStatus}
+      />
     </div>
   );
 };

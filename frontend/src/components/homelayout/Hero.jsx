@@ -55,13 +55,13 @@ const Banner = () => {
               alt={slide.title}
               className="w-full h-full object-cover"
             />
-            {/* Gradient overlay - nhẹ hơn để không che nhiều ảnh */}
+            {/* Gradient overlay - lighter to not cover much of the image */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-black/30"></div>
           </div>
         ))}
       </div>
 
-      {/* Content - Đặt ở bên trái để không che ảnh */}
+      {/* Content - Positioned on the left to not cover the image */}
       <div className="absolute inset-0 flex items-center justify-start text-left text-white z-20 px-6 sm:px-12 lg:px-16">
         <div className="max-w-2xl w-full">
           <h1
@@ -100,7 +100,7 @@ const Banner = () => {
         </div>
       </div>
 
-      {/* Content overlay cho mobile - center aligned */}
+      {/* Content overlay for mobile - center aligned */}
       <div className="absolute inset-0 flex items-center justify-center text-center text-white z-10 px-4 sm:hidden">
         <div className="max-w-sm w-full bg-black/40 backdrop-blur-sm rounded-lg p-6">
           <h1
@@ -147,7 +147,7 @@ const Banner = () => {
         </svg>
       </button>
 
-      {/* Slide Counter - Responsive và thu gọn */}
+      {/* Slide Counter - Responsive and compact */}
       <div className="absolute left-2 sm:left-4 lg:left-8 bottom-4 sm:bottom-8 z-30 text-white text-lg sm:text-xl lg:text-2xl font-light">
         <span className="font-bold">0{currentSlide + 1}</span>
         <span className="opacity-50">/0{slides.length}</span>
@@ -175,7 +175,7 @@ const Banner = () => {
         ))}
       </div>
 
-      {/* Side Buttons - Hidden on mobile, thu gọn */}
+      {/* Side Buttons - Hidden on mobile, compact */}
       <div className="hidden lg:flex fixed right-0 top-1/2 transform -translate-y-1/2 z-40 flex-col space-y-1">
         <button className="bg-green-500 hover:bg-green-600 text-white p-3 transition-all duration-300 hover:scale-110">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,7 +194,7 @@ const Banner = () => {
         </button>
       </div>
 
-      {/* Chat Button - Responsive và thu gọn */}
+      {/* Chat Button - Responsive and compact */}
       <button className="fixed bottom-4 sm:bottom-6 left-2 sm:left-4 z-40 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full shadow-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2">
         <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
         <span className="font-medium text-sm">Chat</span>

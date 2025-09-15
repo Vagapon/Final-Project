@@ -12,7 +12,7 @@ router.get('/:id', eventController.getById);
 // Update event (admin or staff). Controller should verify ownership for STAFF
 router.put('/:eventId', verifyToken, checkRole(['ADMIN','STAFF']), eventUpload.single("avatar"), eventController.update);
 // Delete event (admin only)
-router.delete('/:evenId', verifyToken, checkRole(['ADMIN']), eventController.delete);
+router.delete('/:eventId', verifyToken, checkRole(['ADMIN']), eventController.delete);
 
 
 // Approve registration (admin or staff). Controller verifies ownership for STAFF

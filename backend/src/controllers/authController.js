@@ -127,13 +127,13 @@ const createStaff = async (req, res) => {
     // ⚠️ Kiểm tra field Role thực sự trong DB
     const staffRole = await Role.findOne({ name: "Staff" });
     if (!staffRole) {
-      return res.status(500).json({ message: "Không tìm thấy vai trò Staff" });
+      return res.status(500).json({ message: "Staff role not found" });
     }
 
     await new UserRole({ user_id: newUser._id, role_id: staffRole._id }).save();
 
     res.status(201).json({
-      message: "Tạo tài khoản Staff thành công",
+      message: "Staff account created successfully",
       user: {
         id: newUser._id,
         name: newUser.name,
@@ -157,7 +157,7 @@ const login = async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Sai email hoặc mật khẩu" });
+    if (!user) return res.status(400).json({ message: "Wrong email or password" });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Sai email hoặc mật khẩu" });
