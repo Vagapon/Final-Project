@@ -15,6 +15,8 @@ const eventRoutes = require("./src/routes/eventRoutes");
 const teamRoutes = require("./src/routes/teamRoutes");
 const memberRoutes = require("./src/routes/memberRoutes");
 const eventRegisRoutes = require("./src/routes/eventRegisRoutes");
+const fieldRoutes = require("./src/routes/fieldRoutes");
+// const matchScheduleRoutes = require("./src/routes/matchScheduleRoutes");
 // const TeamMatch = require("./src/models/Team/TeamMatch");
 
 
@@ -36,6 +38,8 @@ require("./src/models/Event/SportType")
 require("./src/models/Team/Team");
 require("./src/models/Team/TeamMatch");
 require("./src/models/Team/TeamMember");
+require("./src/models/Event/Match");
+require("./src/models/Field");
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -46,5 +50,7 @@ app.use("/api/sport-types", seasonRoutes)
 app.use("/api/team", teamRoutes);
 app.use("/api/member", memberRoutes);
 app.use("/api/event-registrations", eventRegisRoutes);
+app.use("/api/fields", fieldRoutes);
+// app.use("/api/schedule", matchScheduleRoutes);
 
 module.exports = app;

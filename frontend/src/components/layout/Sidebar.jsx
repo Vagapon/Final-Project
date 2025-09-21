@@ -69,7 +69,11 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       id: "booking",
       icon: CreditCard,
       label: "Booking",
-      path: "/admin/booking",
+      submenu: [
+        { label: "All Booking", path: "/admin/booking" },
+        { label: "Stadium Manager", path: "/admin/stadium" },
+        { label: "Invoid Manager", path: "/admin/invoid" },
+      ],
     },
     {
       id: "setting",

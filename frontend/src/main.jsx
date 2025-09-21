@@ -25,6 +25,7 @@ import { AuthProvider } from "./pages/Authen/AuthContext.jsx";
 import Unauthorized from "./pages/Authen/Unauthorized.jsx";
 import CreateStaff from "./pages/Admin/Users/CreateStaff.jsx"; 
 import Season from "./pages/Admin/Event/Season.jsx"; 
+import Stadium from "./pages/Admin/Booking/Stadium.jsx";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Failed to find root element");
@@ -57,6 +58,7 @@ createRoot(rootElement).render(
               <Route path="matches" element={<Match />} />
               <Route path="create-staff" element={<CreateStaff />} />
               <Route path="seasons" element={<Season />} />
+              <Route path="stadium" element={<Stadium />} />
             </Route>
           </Route>
 
