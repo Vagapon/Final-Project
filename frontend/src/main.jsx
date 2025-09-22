@@ -22,6 +22,7 @@ import Match from "./pages/Admin/Event/Match.jsx";
 import Register from "./pages/Authen/Register.jsx"; 
 import ProtectedRoute from "./routes/ProtectedRoute.jsx"; 
 import { AuthProvider } from "./pages/Authen/AuthContext.jsx";
+import { SocketProvider } from "./contexts/SocketContext.jsx";
 import Unauthorized from "./pages/Authen/Unauthorized.jsx";
 import CreateStaff from "./pages/Admin/Users/CreateStaff.jsx"; 
 import Season from "./pages/Admin/Event/Season.jsx"; 
@@ -33,7 +34,7 @@ if (!rootElement) throw new Error("Failed to find root element");
 createRoot(rootElement).render(
   <BrowserRouter>
     <AuthProvider>
-
+      <SocketProvider>
         <Routes>
           <Route path="/" element={<App />}>
             <Route index element={<Home />} />
@@ -82,7 +83,7 @@ createRoot(rootElement).render(
           {/* Unauthorized route */}
           <Route path="/unauthorized" element={<Unauthorized />} />
         </Routes>
-
+      </SocketProvider>
     </AuthProvider>
   </BrowserRouter>
 );

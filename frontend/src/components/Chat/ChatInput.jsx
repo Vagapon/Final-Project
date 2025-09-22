@@ -1,13 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Phone, Video, MoreHorizontal, Paperclip, Smile, Send, MessageCircle, Users, Settings, User, Clock, Globe, ArrowLeft, Menu, X } from 'lucide-react';
 
-const ChatInput = ({ onSendMessage }) => {
+const ChatInput = ({ onSendMessage, selectedChat, currentUser, socket }) => {
   const [message, setMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef(null);
 
   const handleSend = () => {
     if (message.trim()) {
       onSendMessage(message);
       setMessage('');
+      
+      // Stop typing indicator
+      if (socket && selectedChat && currentUser) {
+        socket.emit('stopTyping', {
+          senderId: currentUser.id,
+          receiverId: selectedChat._id
+        });
+      }
+      setIsTyping(false);
     }
   };
 
@@ -15,6 +26,36 @@ const ChatInput = ({ onSendMessage }) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setMessage(e.target.value);
+    
+    // Typing indicator logic
+    if (socket && selectedChat && currentUser) {
+      if (!isTyping) {
+        setIsTyping(true);
+        socket.emit('typing', {
+          senderId: currentUser.id,
+          receiverId: selectedChat._id,
+          isTyping: true
+        });
+      }
+      
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Set new timeout to stop typing
+      typingTimeoutRef.current = setTimeout(() => {
+        setIsTyping(false);
+        socket.emit('stopTyping', {
+          senderId: currentUser.id,
+          receiverId: selectedChat._id
+        });
+      }, 1000);
     }
   };
 
@@ -33,7 +74,7 @@ const ChatInput = ({ onSendMessage }) => {
           <input
             type="text"
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder="Enter Message..."
             className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"

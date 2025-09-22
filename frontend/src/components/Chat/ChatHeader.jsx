@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Phone, Video, MoreHorizontal, Paperclip, Smile, Send, MessageCircle, Users, Settings, User, Clock, Globe, ArrowLeft, Menu, X } from 'lucide-react';
+import { Search, Phone, Video, MoreHorizontal, Paperclip, Smile, Send, MessageCircle, Users, Settings, User, Clock, Globe, ArrowLeft, X } from 'lucide-react';
 
-const ChatHeader = ({ selectedChat, onBackClick, onMenuToggle, onInfoToggle }) => {
+const ChatHeader = ({ selectedChat, onBackClick, onInfoToggle }) => {
   if (!selectedChat) return null;
 
   return (
@@ -15,13 +15,7 @@ const ChatHeader = ({ selectedChat, onBackClick, onMenuToggle, onInfoToggle }) =
           <ArrowLeft className="w-5 h-5" />
         </button>
         
-        {/* Mobile menu button */}
-        <button 
-          onClick={onMenuToggle}
-          className="lg:hidden mr-3 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+        
 
         <div className="relative">
           {selectedChat.avatar ? (
@@ -31,8 +25,8 @@ const ChatHeader = ({ selectedChat, onBackClick, onMenuToggle, onInfoToggle }) =
               className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
             />
           ) : (
-            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full ${selectedChat.bgColor} flex items-center justify-center text-white font-semibold text-sm`}>
-              {selectedChat.avatarText}
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-300 flex items-center justify-center text-white font-semibold text-sm">
+              {selectedChat.name?.charAt(0) || 'U'}
             </div>
           )}
           {selectedChat.isOnline && (
@@ -40,10 +34,10 @@ const ChatHeader = ({ selectedChat, onBackClick, onMenuToggle, onInfoToggle }) =
           )}
         </div>
         <div className="ml-2 sm:ml-3">
-          <h2 className="text-sm font-semibold text-gray-900">{selectedChat.name}</h2>
+          <h2 className="text-sm font-semibold text-gray-900">{selectedChat.name || 'Unknown'}</h2>
           <div className="flex items-center">
             <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mr-1"></div>
-            <p className="text-xs text-green-600">Online</p>
+            <p className="text-xs text-green-600">{selectedChat.isOnline ? 'Online' : 'Offline'}</p>
           </div>
         </div>
       </div>

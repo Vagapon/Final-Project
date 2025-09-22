@@ -1,6 +1,7 @@
 const User = require("../models/UserModel/User");
 const UserRole = require("../models/UserModel/UserRole");
 const Role = require("../models/UserModel/Role");
+const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const userController = {
@@ -49,7 +50,6 @@ const userController = {
         }
     },
 
-    // Admin routes - chỉ admin mới truy cập được
     getAllUsers: async (req, res) => {
         try {
             const page = parseInt(req.query.page) || 1;
@@ -197,6 +197,72 @@ const userController = {
             res.status(500).json({
                 success: false,
                 message: "Error deleting user",
+                error: error.message
+            });
+        }
+    },
+
+    // Lấy danh sách users để chat (trừ user hiện tại)
+    getChatUsers: async (req, res) => {
+        try {
+            const currentUserId = req.user.id; // User hiện tại
+            
+            console.log('getChatUsers called with currentUserId:', currentUserId);
+            console.log('req.user:', req.user);
+            
+            // Kiểm tra currentUserId có hợp lệ không
+            if (!currentUserId || !mongoose.Types.ObjectId.isValid(currentUserId)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid user ID"
+                });
+            }
+            
+            // Lấy tất cả users trừ user hiện tại, có avatar và role
+            const users = await User.aggregate([
+                { $match: { _id: { $ne: new mongoose.Types.ObjectId(currentUserId) } } },
+                { $lookup: {
+                    from: "userroles",
+                    localField: "_id",
+                    foreignField: "user_id",
+                    as: "roles"
+                }},
+                {
+                    $lookup: {
+                        from: "roles",
+                        localField: "roles.role_id",
+                        foreignField: "_id",
+                        as: "roleDetails"
+                    }
+                },
+                { $project: {
+                    _id: 1,
+                    name: 1,
+                    email: 1,
+                    avatar: 1,
+                    isActive: 1,
+                    username: 1,
+                    role: {
+                        $arrayElemAt: ["$roleDetails.name", 0]
+                    },
+                    isOnline: { $literal: false } // Mặc định offline, sẽ cập nhật qua socket sau
+                }},
+                { $sort: { name: 1 } }
+            ]);
+            
+            console.log('Found users:', users.length);
+            console.log('Users data:', users);
+            
+            res.status(200).json({
+                success: true,
+                data: users,
+                message: "Chat users retrieved successfully"
+            });
+        } catch (error) {
+            console.error("Error in getChatUsers:", error);
+            res.status(500).json({
+                success: false,
+                message: "Error retrieving chat users",
                 error: error.message
             });
         }

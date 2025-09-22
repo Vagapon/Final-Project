@@ -9,6 +9,8 @@ const userAuth = [verifyToken, isAuthenticated]; // Any authenticated user
 
 // User routes (cần đăng nhập)
 router.get('/profile', userAuth, userController.getMyProfile); // User xem profile của mình
+router.get('/chat-users', userAuth, userController.getChatUsers); // User lấy danh sách users để chat
+
 router.put('/profile', userAuth, userUpload.single("avatar"), userController.updateMyProfile); // User cập nhật profile
 
 // Admin routes (chỉ admin mới truy cập được)

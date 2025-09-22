@@ -167,10 +167,10 @@ const TeamPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100">
+    <div className="min-h-screen bg-gray-100">
       <div className="max-w-7xl mx-auto">
 
-        <div className="bg-white rounded-lg shadow-sm mb-6">
+        <div className="bg-white rounded-lg mb-6">
           <div className="border-b">
             <nav className="flex space-x-8 px-6">
               <button

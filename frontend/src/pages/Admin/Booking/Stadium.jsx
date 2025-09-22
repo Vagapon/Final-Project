@@ -29,7 +29,6 @@ const Stadium = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [purposeFilter, setPurposeFilter] = useState('All');
 
-  // Mock data - thay thế bằng API call thực tế
   useEffect(() => {
     fetchFields();
   }, []);

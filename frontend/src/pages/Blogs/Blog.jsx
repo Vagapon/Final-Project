@@ -103,7 +103,7 @@ const Blog = () => {
   const sports = ["Bóng đá", "Cầu lông", "Bóng rổ", "Tennis", "Bóng chuyền", "Bóng bàn"];
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100">
+    <div className="min-h-screen bg-gray-100">
       <div className="w-full">
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
@@ -199,7 +199,7 @@ const Blog = () => {
           {/* Main Content */}
           <div className="flex-1 min-w-0 max-w-3xl mx-auto px-3 sm:px-4 py-4 lg:py-6 space-y-4 lg:space-y-6">
             {/* Create Post */}
-           <div className="bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.15)] p-3 sm:p-4">
+           <div className="bg-white rounded-lg p-3 sm:p-4">
 
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100 flex items-center justify-center flex-shrink-0">
@@ -249,7 +249,7 @@ const Blog = () => {
             {/* Posts */}
             <div className="space-y-4 lg:space-y-6">
               {posts.map((post) => (
-                <div key={post.id} className="bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.15)] p-3 sm:p-4 overflow-hidden">
+                <div key={post.id} className="bg-white rounded-lg p-3 sm:p-4 overflow-hidden">
                   {/* Post Header */}
                   <div className="p-3 sm:p-4 border-b border-gray-100">
                     <div className="flex items-center justify-between">

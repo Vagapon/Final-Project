@@ -5,6 +5,7 @@ const messageSchema = new mongoose.Schema({
   receiveId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
   content: { type: String },
+  type: { type: String, default: 'text', enum: ['text', 'image', 'file'] },
   isRead: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }

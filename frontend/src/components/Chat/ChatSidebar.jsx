@@ -1,88 +1,88 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Phone, Video, MoreHorizontal, Paperclip, Smile, Send, MessageCircle, Users, Settings, User, Clock, Globe, ArrowLeft, Menu, X } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import {
+  Search,
+  ArrowLeft,
+} from "lucide-react";
+import { useSocket } from "../../contexts/SocketContext";
 
-const ChatSidebar = ({ selectedChat, onChatSelect, isVisible, onBackClick }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+const ChatSidebar = ({
+  selectedChat,
+  onChatSelect,
+  isVisible,
+  onBackClick,
+  currentUser,
+  chats,
+  allUsers,
+  loading,
+}) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const { isUserOnline } = useSocket();
+
+  // Lấy user hiện tại từ prop hoặc localStorage
+  const user =
+    currentUser || JSON.parse(localStorage.getItem("user") || "{}");
+
+  // Lọc conversations và users theo search
+  const filteredChats = chats.filter((chat) =>
+    chat.otherUser?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
-  const contacts = [
-    { id: 1, name: 'Patrick', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face', isOnline: true },
-    { id: 2, name: 'Doris', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b1e0?w=40&h=40&fit=crop&crop=face', isOnline: false },
-    { id: 3, name: 'Emily', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face', isOnline: false },
-    { id: 4, name: 'Steve', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face', isOnline: false }
-  ];
+  const filteredUsers = allUsers.filter((user) =>
+    user.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  // Tách users đã chat và chưa chat
+  const chattedUserIds = chats.map(chat => chat._id);
+  const usersWithChats = filteredUsers.filter(user => chattedUserIds.includes(user._id));
+  const usersWithoutChats = filteredUsers.filter(user => !chattedUserIds.includes(user._id));
 
-  const recentChats = [
-    {
-      id: 1,
-      name: 'Patrick Hendricks',
-      message: "hey! there I'm available",
-      time: '02:50 PM',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=48&h=48&fit=crop&crop=face',
-      isOnline: true,
-      unread: 0
-    },
-    {
-      id: 2,
-      name: 'Mark Messer',
-      message: '📷 Images',
-      time: '10:30 AM',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=48&h=48&fit=crop&crop=face',
-      isOnline: false,
-      unread: 2
-    },
-    {
-      id: 3,
-      name: 'General',
-      message: 'This theme is Awesome!',
-      time: '2:06 min',
-      avatar: null,
-      avatarText: 'G',
-      bgColor: 'bg-purple-500',
-      isOnline: false,
-      unread: 0
-    },
-    {
-      id: 4,
-      name: 'Doris Brown',
-      message: '🤗',
-      time: '00:18',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b1e0?w=48&h=48&fit=crop&crop=face',
-      isOnline: true,
-      unread: 0
-    },
-    {
-      id: 5,
-      name: 'Designer',
-      message: 'Next meeting tomorrow 10:00AM',
-      time: '2:10 min',
-      avatar: null,
-      avatarText: 'D',
-      bgColor: 'bg-blue-500',
-      isOnline: false,
-      unread: 1
-    },
-    {
-      id: 6,
-      name: 'Steve Walter',
-      message: 'Admin-A-zip',
-      time: '01:16 PM',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=48&h=48&fit=crop&crop=face',
-      isOnline: false,
-      unread: 0
-    }
-  ];
+  if (loading) {
+    return <div className="p-4">Loading conversations...</div>;
+  }
 
   return (
-    <div className={`
+    <div
+      className={`
       w-full sm:w-80 bg-white flex flex-col h-full
-      ${isVisible ? 'block' : 'hidden lg:flex'}
-    `}>
+      ${isVisible ? "block" : "hidden lg:flex"}
+    `}
+    >
       {/* Header */}
       <div className="p-4 sm:p-6 border-b border-gray-100">
         <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Chats</h1>
+          {/* User Profile Section */}
+          {user && user.name ? (
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-green-400 object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">
+                    {user.name?.charAt(0)?.toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <h1 className="text-sm font-medium text-gray-900 truncate">
+                  {user.name}
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">
+                  {user.email}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
+              Chats
+            </h1>
+          )}
+
           {onBackClick && (
-            <button 
+            <button
               onClick={onBackClick}
               className="lg:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
             >
@@ -90,7 +90,7 @@ const ChatSidebar = ({ selectedChat, onChatSelect, isVisible, onBackClick }) => 
             </button>
           )}
         </div>
-        
+
         {/* Search */}
         <div className="relative mb-4 sm:mb-6">
           <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -103,21 +103,31 @@ const ChatSidebar = ({ selectedChat, onChatSelect, isVisible, onBackClick }) => 
           />
         </div>
 
-        {/* Quick Contacts - Hidden on very small screens */}
+        {/* Quick Contacts - Tất cả users */}
         <div className="hidden sm:flex space-x-4">
-          {contacts.map((contact) => (
-            <div key={contact.id} className="flex flex-col items-center">
+          {filteredUsers.slice(0, 4).map((user) => (
+            <div
+              key={user._id}
+              className="flex flex-col items-center cursor-pointer"
+              onClick={() => onChatSelect(user)}
+            >
               <div className="relative mb-2">
-                <img
-                  src={contact.avatar}
-                  alt={contact.name}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                {contact.isOnline && (
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium">
+                    {user.name?.charAt(0)?.toUpperCase()}
+                  </div>
+                )}
+                {isUserOnline(user._id) && (
                   <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                 )}
               </div>
-              <span className="text-xs text-gray-600">{contact.name}</span>
+              <span className="text-xs text-gray-600">{user.name}</span>
             </div>
           ))}
         </div>
@@ -126,52 +136,115 @@ const ChatSidebar = ({ selectedChat, onChatSelect, isVisible, onBackClick }) => 
       {/* Recent Chats */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-2 sm:p-4">
-          <h2 className="text-sm font-medium text-gray-500 mb-4 px-2">Recent</h2>
-          <div className="space-y-1">
-            {recentChats.map((chat) => (
-              <div
-                key={chat.id}
-                onClick={() => onChatSelect(chat)}
-                className={`flex items-center p-2 sm:p-3 rounded-xl cursor-pointer transition-all duration-200 ${
-                  selectedChat?.id === chat.id 
-                    ? 'bg-blue-50 shadow-sm' 
-                    : 'hover:bg-gray-50'
-                }`}
-              >
-                <div className="relative flex-shrink-0">
-                  {chat.avatar ? (
-                    <img
-                      src={chat.avatar}
-                      alt={chat.name}
-                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full ${chat.bgColor} flex items-center justify-center text-white font-semibold text-sm`}>
-                      {chat.avatarText}
+          {/* Users đã chat */}
+          {filteredChats.length > 0 && (
+            <>
+              <h2 className="text-sm font-medium text-gray-500 mb-4 px-2">
+                Recent Chats
+              </h2>
+              <div className="space-y-1 mb-6">
+                {filteredChats.map((chat) => (
+                  <div
+                    key={chat._id}
+                    onClick={() => onChatSelect(chat.otherUser)}
+                    className={`flex items-center p-2 sm:p-3 rounded-xl cursor-pointer transition-all duration-200 ${
+                      selectedChat?._id === chat._id
+                        ? "bg-blue-50 shadow-sm"
+                        : "hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="relative flex-shrink-0">
+                      {chat.otherUser?.avatar ? (
+                        <img
+                          src={chat.otherUser.avatar}
+                          alt={chat.otherUser.name}
+                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                          {chat.otherUser?.name?.charAt(0)?.toUpperCase()}
+                        </div>
+                      )}
+                      {isUserOnline(chat._id) && (
+                        <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                      )}
                     </div>
-                  )}
-                  {chat.isOnline && (
-                    <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white"></div>
-                  )}
-                </div>
-                <div className="ml-2 sm:ml-3 flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-sm font-medium text-gray-900 truncate">{chat.name}</h3>
-                    <span className="text-xs text-gray-500 flex-shrink-0">{chat.time}</span>
+                    <div className="ml-2 sm:ml-3 flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">
+                          {chat.otherUser?.name}
+                        </h3>
+                        {chat.unreadCount > 0 && (
+                          <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                            {chat.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-600 truncate">
+                        {chat.lastMessage || "No messages yet"}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-600 truncate">{chat.message}</p>
-                </div>
-                {chat.unread > 0 && (
-                  <div className="ml-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center flex-shrink-0">
-                    {chat.unread}
-                  </div>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
+          
+          {/* Users chưa chat */}
+          {usersWithoutChats.length > 0 && (
+            <>
+              <h2 className="text-sm font-medium text-gray-500 mb-4 px-2">
+                Start New Chat
+              </h2>
+              <div className="space-y-1">
+                {usersWithoutChats.map((user) => (
+                  <div
+                    key={user._id}
+                    onClick={() => onChatSelect(user)}
+                    className={`flex items-center p-2 sm:p-3 rounded-xl cursor-pointer transition-all duration-200 ${
+                      selectedChat?._id === user._id
+                        ? "bg-blue-50 shadow-sm"
+                        : "hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="relative flex-shrink-0">
+                      {user.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
+                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                          {user.name?.charAt(0)?.toUpperCase()}
+                        </div>
+                      )}
+                      {isUserOnline(user._id) && (
+                        <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                      )}
+                    </div>
+                    <div className="ml-2 sm:ml-3 flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">
+                          {user.name}
+                        </h3>
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-500 truncate">
+                        Start a conversation
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 };
+
 export default ChatSidebar;

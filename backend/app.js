@@ -16,6 +16,7 @@ const teamRoutes = require("./src/routes/teamRoutes");
 const memberRoutes = require("./src/routes/memberRoutes");
 const eventRegisRoutes = require("./src/routes/eventRegisRoutes");
 const fieldRoutes = require("./src/routes/fieldRoutes");
+const messageRoutes = require("./src/routes/messageRoutes");
 // const matchScheduleRoutes = require("./src/routes/matchScheduleRoutes");
 // const TeamMatch = require("./src/models/Team/TeamMatch");
 
@@ -52,5 +53,6 @@ app.use("/api/member", memberRoutes);
 app.use("/api/event-registrations", eventRegisRoutes);
 app.use("/api/fields", fieldRoutes);
 // app.use("/api/schedule", matchScheduleRoutes);
+app.use("/api/messages", messageRoutes);
 
 module.exports = app;
