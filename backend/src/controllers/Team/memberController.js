@@ -150,12 +150,10 @@ importFromGoogleSheet: async (req, res) => {
     if (!sheetName) {
       return res.status(400).json({ success: false, message: "Cannot determine first sheet name" });
     }
-    console.log("👉 Sheet name:", sheetName);
 
     // đọc dữ liệu cột A, B
     const range = encodeURIComponent(sheetName) + "!A2:B";
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`;
-    console.log("👉 URL gọi:", url);
 
     const response = await axios.get(url);
 

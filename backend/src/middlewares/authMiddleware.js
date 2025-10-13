@@ -4,20 +4,21 @@ const UserRole = require("../models/UserModel/UserRole");
 
 const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  console.log('🔐 Auth header:', authHeader);
   
   if (!authHeader) return res.status(401).json({ message: "Không có token" });
 
   const token = authHeader.split(" ")[1];
-  console.log('🔑 Token extracted:', token ? 'Present' : 'Missing');
   
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('✅ Token decoded successfully:', decoded);
     req.user = decoded;
     next();
   } catch (err) {
-    console.log('❌ Token verification failed:', err.message);
+    // Only log if it's not a common jwt expired error
+    if (err.message !== 'jwt expired') {
+      console.log('❌ Token verification failed:', err.message);
+    }
+    
     return res.status(403).json({ message: "Token không hợp lệ" });
   }
 };

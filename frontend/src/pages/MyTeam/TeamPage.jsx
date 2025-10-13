@@ -5,7 +5,8 @@ import PlayerList from './PlayerList';
 import TeamInfo from './TeamInfo';
 import ModalTeam from './ModalTeam';
 import PlayerModal from './PlayerModal';
-import axios from 'axios';
+import teamApi from '../../api/teamManagement/teamApi';
+import memberApi from '../../api/memberManagement/memberApi';
 
 const TeamPage = () => {
   const [activeTab, setActiveTab] = useState('formation');
@@ -23,15 +24,9 @@ const TeamPage = () => {
   }, [team?._id]);
 
   // Add function to fetch team players
-    const fetchTeamPlayers = async () => {
+  const fetchTeamPlayers = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `http://localhost:5000/api/member/team/${team._id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      const response = await memberApi.getTeamMembers(team._id);
       const raw = response.data?.data || response.data || [];
       const normalized = raw.map((p) => ({
         ...p,
@@ -44,12 +39,10 @@ const TeamPage = () => {
     }
   };
 
-   const handleAddPlayer = async (playerData) => {
+  const handleAddPlayer = async (playerData) => {
     try {
-      const token = localStorage.getItem("token");
       const hasFile = Boolean(playerData?.avatarFile);
       let body;
-      let headers = { Authorization: `Bearer ${token}` };
 
       if (hasFile) {
         body = new FormData();
@@ -66,14 +59,9 @@ const TeamPage = () => {
           isCaptain: playerData.isCaptain,
           avatar: playerData.avatar || ''
         };
-        headers['Content-Type'] = 'application/json';
       }
 
-      const response = await axios.post(
-        'http://localhost:5000/api/member',
-        body,
-        { headers }
-      );
+      const response = await memberApi.createMember(body);
 
       if (response.data?.success || response.status === 201) {
         await fetchTeamPlayers();
@@ -93,10 +81,7 @@ const TeamPage = () => {
   const handleDeletePlayer = async (player) => {
     if (!window.confirm(`Xóa ${player.name}?`)) return;
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/member/${player._id}` , {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await memberApi.deleteMember(player._id);
       await fetchTeamPlayers();
     } catch (error) {
       console.error("Delete player error:", error.response?.data || error.message);
@@ -108,10 +93,8 @@ const TeamPage = () => {
     // Decide create or update based on editingPlayer
     if (editingPlayer) {
       try {
-        const token = localStorage.getItem("token");
         const hasFile = Boolean(playerData?.avatarFile);
         let body;
-        let headers = { Authorization: `Bearer ${token}` };
 
         if (hasFile) {
           body = new FormData();
@@ -126,10 +109,9 @@ const TeamPage = () => {
             isCaptain: playerData.isCaptain,
             avatar: playerData.avatar || ''
           };
-          headers['Content-Type'] = 'application/json';
         }
 
-        await axios.put(`http://localhost:5000/api/member/${editingPlayer._id}`, body, { headers });
+        await memberApi.updateMember(editingPlayer._id, body);
         await fetchTeamPlayers();
         setEditingPlayer(null);
         setIsPlayerModalOpen(false);
@@ -147,18 +129,38 @@ const TeamPage = () => {
   // 🟢 Gọi API lấy team của user hiện tại
   const fetchMyTeam = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/team/myteam", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setTeam(data);
-      } else if (res.status === 404) {
+      // Debug: Check if user is logged in
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      // console.log('🔍 Debug - Token exists:', !!token);
+      // console.log('🔍 Debug - User exists:', !!user);
+      // console.log('🔍 Debug - User data:', user ? JSON.parse(user) : null);
+      
+      const response = await teamApi.getMyTeam();
+      if (response.data) {
+        setTeam(response.data);
+        // console.log('✅ Team loaded successfully:', response.data.name);
+      } else {
+        console.log('ℹ️ No team data in response');
         setTeam(null);
       }
     } catch (err) {
-      console.error("Fetch team error:", err);
+      if (err.response?.status === 404) {
+        console.log('ℹ️ User has no team yet - this is normal for new users');
+        setTeam(null);
+      } else if (err.response?.status === 401 || err.response?.status === 403) {
+        console.log('🔐 Authentication error - user may need to login again');
+        setTeam(null);
+      } else {
+        console.error("❌ Fetch team error details:", {
+          status: err.response?.status,
+          message: err.response?.data?.message,
+          url: err.config?.url,
+          headers: err.config?.headers
+        });
+        console.error("❌ Fetch team error:", err);
+        setTeam(null);
+      }
     }
   };
 
@@ -167,7 +169,7 @@ const TeamPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100">
       <div className="max-w-7xl mx-auto">
 
         <div className="bg-white rounded-lg mb-6">
@@ -249,10 +251,20 @@ const TeamPage = () => {
       <ModalTeam
         isOpen={isTeamModalOpen}
         onClose={() => setIsTeamModalOpen(false)}
-        onSubmit={() => {
-          setIsTeamModalOpen(false);
-          fetchMyTeam();   // 🟢 gọi lại API để refresh team thật
-          setActiveTab('info');
+        onSubmit={async (teamData) => {
+          console.log('🔄 ModalTeam onSubmit called with:', teamData);
+          // Update state trực tiếp nếu có teamData
+          if (teamData) {
+            setTeam(teamData);
+            console.log('✅ Team updated in state:', teamData.name);
+            setActiveTab('info');
+          } else {
+            // Nếu không có teamData, gọi fetchMyTeam để lấy data mới
+            setTimeout(async () => {
+              await fetchMyTeam();
+              setActiveTab('info');
+            }, 3000);
+          }
         }}
       />
           {team && (

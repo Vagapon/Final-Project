@@ -9,8 +9,8 @@ router.get('/' ,teamController.getAllTeams);
 router.get('/myteam', verifyToken, teamController.myTeam);
 router.get('/manager/:managerId', verifyToken, teamController.getTeamByManagerId);
 router.post('/', verifyToken, isAuthenticated, teamUpload.single("avatar"), teamController.createTeam);
-router.put('/:teamId', teamUpload.single("avatar") ,teamController.updateTeam);
-router.delete('/:teamId', teamController.deleteTeam);
+router.put('/:teamId', verifyToken, isAuthenticated, teamUpload.single("avatar") ,teamController.updateTeam);
+router.delete('/:teamId', verifyToken, isAuthenticated, teamController.deleteTeam);
 router.get('/:id', teamController.getById);
 
 module.exports = router;                                 

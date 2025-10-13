@@ -103,7 +103,7 @@ const Blog = () => {
   const sports = ["Bóng đá", "Cầu lông", "Bóng rổ", "Tennis", "Bóng chuyền", "Bóng bàn"];
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100">
       <div className="w-full">
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (

@@ -169,9 +169,9 @@ const MobileMenu = ({ isOpen, onClose, menuItems, navigate, unreadCount, onNotif
   ];
 
   return (
-    <div className={`fixed inset-0 z-[60] lg:hidden transition-all duration-300 ${isOpen ? "visible opacity-100" : "invisible opacity-0"}`}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <div className={`absolute top-0 left-0 h-full w-80 max-w-[85vw] bg-gradient-to-b from-gray-900 to-black shadow-2xl transform transition-transform duration-300 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
+    <div className={`fixed inset-0 z-[60] lg:hidden transition-all duration-300 ease-out ${isOpen ? "visible opacity-100" : "invisible opacity-0"}`}>
+      <div className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ease-out ${isOpen ? "opacity-100" : "opacity-0"}`} onClick={onClose} />
+      <div className={`absolute top-0 left-0 h-full w-80 max-w-[85vw] bg-gradient-to-b from-gray-900 to-black shadow-2xl transform transition-all duration-300 ease-out ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
         
         {/* Header */}
         <div className="border-b border-gray-700 ml-6 mt-4 mb-4">
@@ -204,8 +204,8 @@ const MobileMenu = ({ isOpen, onClose, menuItems, navigate, unreadCount, onNotif
               return (
                 <Link
                   key={item.name} to={item.path} onClick={onClose}
-                  className="flex items-center space-x-4 text-gray-300 hover:text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all duration-200 transform hover:scale-105"
-                  style={{ animationDelay: `${index * 0.1}s`, animation: isOpen ? `slideInLeft 0.5s ease-out ${index * 0.1}s both` : "none" }}
+                  className="flex items-center space-x-4 text-gray-300 hover:text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all duration-300 ease-out transform hover:scale-105 hover:translate-x-1"
+                  style={{ animationDelay: `${index * 0.05}s`, animation: isOpen ? `slideInLeft 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${index * 0.05}s both` : "none" }}
                 >
                   <Icon className="w-5 h-5 text-green-400" />
                   <span className="font-medium">{item.name}</span>
@@ -224,8 +224,8 @@ const MobileMenu = ({ isOpen, onClose, menuItems, navigate, unreadCount, onNotif
                 <button
                   key={item.label}
                   onClick={() => { onClose(); item.action?.(); }}
-                  className="relative flex flex-col items-center justify-center w-full h-full min-h-[60px] min-w-[60px] rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-all duration-200 transform hover:scale-105"
-                  style={{ animationDelay: `${(menuItems.length + index) * 0.1}s`, animation: isOpen ? `slideInLeft 0.5s ease-out ${(menuItems.length + index) * 0.1}s both` : "none" }}
+                  className="relative flex flex-col items-center justify-center w-full h-full min-h-[60px] min-w-[60px] rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-all duration-300 ease-out transform hover:scale-110 hover:shadow-lg active:scale-95"
+                  style={{ animationDelay: `${(menuItems.length + index) * 0.05}s`, animation: isOpen ? `slideInLeft 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${(menuItems.length + index) * 0.05}s both` : "none" }}
                 >
                   <Icon className="w-6 h-6 mb-1" />
                   <span className="text-xs font-medium">{item.label}</span>
@@ -361,9 +361,11 @@ const Header = () => {
               {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className={`menu-toggle lg:hidden ${colors.menuIcon} transition-all duration-300 p-2 rounded-lg ${colors.background} relative z-50 flex items-center justify-center order-first`}
+                className={`menu-toggle lg:hidden ${colors.menuIcon} transition-all duration-300 ease-out p-2 rounded-lg ${colors.background} relative z-50 flex items-center justify-center order-first transform hover:scale-105 active:scale-95`}
               >
-                {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                <div className={`transition-all duration-300 ease-out ${menuOpen ? "rotate-180" : "rotate-0"}`}>
+                  {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </div>
               </button>
 
               {/* Desktop Icons */}
@@ -444,12 +446,24 @@ const Header = () => {
       {/* Animation Styles */}
       <style jsx>{`
         @keyframes slideInLeft {
-          from { opacity: 0; transform: translateX(-20px); }
-          to { opacity: 1; transform: translateX(0); }
+          from { 
+            opacity: 0; 
+            transform: translateX(-30px) scale(0.95); 
+          }
+          to { 
+            opacity: 1; 
+            transform: translateX(0) scale(1); 
+          }
         }
         @keyframes slideInRight {
-          from { opacity: 0; transform: translateX(10px); }
-          to { opacity: 1; transform: translateX(0); }
+          from { 
+            opacity: 0; 
+            transform: translateX(20px) scale(0.95); 
+          }
+          to { 
+            opacity: 1; 
+            transform: translateX(0) scale(1); 
+          }
         }
       `}</style>
       {profileModalOpen && (

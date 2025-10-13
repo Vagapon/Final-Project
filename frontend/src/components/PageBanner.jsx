@@ -45,8 +45,8 @@ const PageBanner = ({ pathname }) => {
 
       default:
         return {
-          title: "High Light",
-          subtitle: "Outstanding moments",
+          title: "Field Booking",
+          subtitle: "Luxury Stadium",
           icon: Trophy,
         };
     }
@@ -62,14 +62,6 @@ const PageBanner = ({ pathname }) => {
 
   return (
     <div className="relative h-[200px] md:h-[400px] overflow-hidden bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-gray-200 rounded-full animate-pulse"></div>
-        <div className="absolute bottom-10 right-1/4 w-20 h-20 bg-gray-300 rounded-full animate-ping"></div>
-        <div className="absolute top-20 right-20 w-6 h-6 bg-gray-200 rounded-full animate-pulse delay-1000"></div>
-        <div className="absolute bottom-20 left-40 w-4 h-4 bg-gray-300 rounded-full animate-bounce delay-500"></div>
-        <div className="absolute top-40 right-40 w-8 h-8 bg-gray-200 rounded-full animate-ping delay-700"></div>
-      </div>
 
       {/* Content */}
    {/* Content */}
@@ -104,12 +96,12 @@ const PageBanner = ({ pathname }) => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search articles..."
-            className="w-full px-5 py-2.5 pl-12 text-base bg-white border border-gray-300 rounded-full text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition-all duration-300"
+            className="w-full px-5 py-2.5 pl-12 text-base bg-white border border-gray-300 rounded-full text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
           />
           <Search className="absolute left-4 w-5 h-5 text-gray-600" />
           <button
             type="submit"
-            className="absolute right-2 p-2 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-800 transition-all duration-300 border border-gray-300"
+            className="absolute right-2 p-2 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-300"
             title="Search"
           >
             <Search className="w-5 h-5" />

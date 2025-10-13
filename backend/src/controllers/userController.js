@@ -62,19 +62,16 @@ const userController = {
                 return res.status(500).json({ message: "Admin role not found" });
             }
 
-            console.log("Admin role found:", adminRole); // Debug log
 
             // Lấy danh sách user có role Admin để loại trừ
             const adminUserIds = await UserRole.find({ role_id: adminRole._id })
                 .distinct('user_id');
 
-            console.log("Admin user IDs:", adminUserIds); // Debug log
 
             const totalUsers = await User.countDocuments({
                 _id: { $nin: adminUserIds }
             });
 
-            console.log("Total users (excluding admin):", totalUsers); // Debug log
 
             const users = await User.aggregate([
                 { $match: { _id: { $nin: adminUserIds } } },
@@ -108,8 +105,6 @@ const userController = {
                 { $limit: limit }
             ]);
 
-            console.log("Users returned:", users.length); // Debug log
-            console.log("First user:", users[0]); // Debug log
 
             res.status(200).json({ 
                 success: true,
@@ -207,8 +202,6 @@ const userController = {
         try {
             const currentUserId = req.user.id; // User hiện tại
             
-            console.log('getChatUsers called with currentUserId:', currentUserId);
-            console.log('req.user:', req.user);
             
             // Kiểm tra currentUserId có hợp lệ không
             if (!currentUserId || !mongoose.Types.ObjectId.isValid(currentUserId)) {
@@ -250,8 +243,6 @@ const userController = {
                 { $sort: { name: 1 } }
             ]);
             
-            console.log('Found users:', users.length);
-            console.log('Users data:', users);
             
             res.status(200).json({
                 success: true,

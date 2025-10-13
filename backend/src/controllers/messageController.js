@@ -8,28 +8,28 @@ const messageController = {
       const { chatRoomId } = req.params;
       const currentUserId = req.user.id;
       
-      console.log('🔍 Getting messages for chat room:', chatRoomId);
-      console.log('👤 Current user:', currentUserId);
-      console.log('🔑 Token user:', req.user);
+      // console.log('🔍 Getting messages for chat room:', chatRoomId);
+      // console.log('👤 Current user:', currentUserId);
+      // console.log('🔑 Token user:', req.user);
       
       // Parse chat room ID để lấy sender và receiver
       const userIds = chatRoomId.split('_').map(id => new mongoose.Types.ObjectId(id));
-      console.log('📋 Parsed user IDs:', userIds);
+      // console.log('📋 Parsed user IDs:', userIds);
       
       // Convert currentUserId to ObjectId for comparison
       const currentUserObjectId = new mongoose.Types.ObjectId(currentUserId);
       
       if (!userIds.some(id => id.equals(currentUserObjectId))) {
-        console.log('❌ User not authorized for this chat room');
-        console.log('❌ Current user ObjectId:', currentUserObjectId);
-        console.log('❌ Chat room user IDs:', userIds);
+        // console.log('❌ User not authorized for this chat room');
+        // console.log('❌ Current user ObjectId:', currentUserObjectId);
+        // console.log('❌ Chat room user IDs:', userIds);
         return res.status(403).json({
           success: false,
           message: "You don't have permission to view these messages"
         });
       }
       
-      console.log('✅ User authorized for this chat room');
+      // console.log('✅ User authorized for this chat room');
       
       // Lấy messages giữa 2 users
       const messages = await Message.find({
@@ -42,7 +42,7 @@ const messageController = {
       .populate('receiveId', 'name avatar')
       .sort({ createdAt: 1 });
       
-      console.log('Found messages:', messages.length);
+      // console.log('Found messages:', messages.length);
       
       res.status(200).json({
         success: true,

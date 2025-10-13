@@ -67,7 +67,7 @@ const getAllFields = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 const getFieldById = async (req, res) => {
   try {
@@ -101,13 +101,14 @@ const getFieldById = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Tạo sân mới
 // @route   POST /api/fields
 // @access  Private (Admin/Staff)
 const createField = async (req, res) => {
   try {
+
     const {
       name,
       fieldNumber,
@@ -115,10 +116,20 @@ const createField = async (req, res) => {
       location,
       purpose,
       pricePerHour,
-      openingHours,
       status = 'active',
       description
     } = req.body;
+
+    // Parse openingHours từ JSON string
+    let openingHours;
+    try {
+      openingHours = req.body.openingHours ? JSON.parse(req.body.openingHours) : null;
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: 'Định dạng giờ hoạt động không hợp lệ'
+      });
+    }
 
     // Validation cơ bản
     if (!name || !fieldNumber || !address || !purpose || !openingHours?.start || !openingHours?.end) {
@@ -143,11 +154,25 @@ const createField = async (req, res) => {
     }
 
     // Validation cho purpose và pricePerHour
-    if (purpose === 'rental' && (!pricePerHour || pricePerHour <= 0)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Sân thuê phải có giá thuê hợp lệ'
-      });
+    if (purpose === 'rental') {
+      if (!pricePerHour || pricePerHour <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Sân thuê phải có giá thuê hợp lệ'
+        });
+      }
+      if (pricePerHour < 200000) {
+        return res.status(400).json({
+          success: false,
+          message: 'Giá thuê tối thiểu 200,000 VNĐ'
+        });
+      }
+      if (pricePerHour > 1000000) {
+        return res.status(400).json({
+          success: false,
+          message: 'Giá thuê không được vượt quá 1,000,000 VNĐ'
+        });
+      }
     }
 
     // Xử lý upload ảnh từ Cloudinary
@@ -187,7 +212,7 @@ const createField = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Cập nhật thông tin sân
 // @route   PUT /api/fields/:id
@@ -195,7 +220,21 @@ const createField = async (req, res) => {
 const updateField = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const updateData = { ...req.body };
+    
+    console.log('Update field data:', updateData);
+
+    // Parse openingHours từ JSON string nếu có
+    if (updateData.openingHours && typeof updateData.openingHours === 'string') {
+      try {
+        updateData.openingHours = JSON.parse(updateData.openingHours);
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: 'Định dạng giờ hoạt động không hợp lệ'
+        });
+      }
+    }
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -214,11 +253,27 @@ const updateField = async (req, res) => {
     }
 
     // Validation cho purpose và pricePerHour
-    if (updateData.purpose === 'rental' && (!updateData.pricePerHour || updateData.pricePerHour <= 0)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Sân thuê phải có giá thuê hợp lệ'
-      });
+    if (updateData.purpose === 'rental') {
+      const pricePerHour = parseFloat(updateData.pricePerHour);
+      if (!pricePerHour || pricePerHour <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Sân thuê phải có giá thuê hợp lệ'
+        });
+      }
+      if (pricePerHour < 200000) {
+        return res.status(400).json({
+          success: false,
+          message: 'Giá thuê tối thiểu 200,000 VNĐ'
+        });
+      }
+      if (pricePerHour > 1000000) {
+        return res.status(400).json({
+          success: false,
+          message: 'Giá thuê không được vượt quá 1,000,000 VNĐ'
+        });
+      }
+      updateData.pricePerHour = pricePerHour;
     }
 
     // Nếu đổi purpose từ rental sang event, xóa pricePerHour
@@ -226,24 +281,50 @@ const updateField = async (req, res) => {
       updateData.pricePerHour = undefined;
     }
 
-    // Xử lý upload ảnh mới từ Cloudinary
+    // Xử lý ảnh
+    let finalImages = [];
+    
+    // Thêm ảnh mới nếu có
     if (req.files && req.files.length > 0) {
-      // Xóa ảnh cũ khỏi Cloudinary
+      finalImages = req.files.map(file => file.path);
+    }
+    
+    // Xử lý ảnh existing nếu có
+    if (updateData.existingImages) {
+      let existingImages = [];
+      try {
+        existingImages = JSON.parse(updateData.existingImages);
+        finalImages = [...finalImages, ...existingImages];
+      } catch (error) {
+        console.error('Error parsing existing images:', error);
+      }
+    }
+    
+    // Nếu có ảnh mới hoặc existing, cập nhật
+    if (finalImages.length > 0) {
+      // Xóa ảnh cũ khỏi Cloudinary (chỉ những ảnh không được giữ lại)
       if (existingField.images && existingField.images.length > 0) {
+        const existingImages = updateData.existingImages ? JSON.parse(updateData.existingImages) : [];
+        
         for (const imageUrl of existingField.images) {
-          try {
-            // Extract public_id từ URL
-            const publicId = imageUrl.split('/').pop().split('.')[0];
-            await cloudinary.uploader.destroy(`field_images/${publicId}`);
-          } catch (error) {
-            console.error('Error deleting old image:', error);
+          // Chỉ xóa nếu ảnh không được giữ lại
+          if (!existingImages.includes(imageUrl)) {
+            try {
+              // Extract public_id từ URL
+              const publicId = imageUrl.split('/').pop().split('.')[0];
+              await cloudinary.uploader.destroy(`field_images/${publicId}`);
+            } catch (error) {
+              console.error('Error deleting old image:', error);
+            }
           }
         }
       }
       
-      // Thêm ảnh mới
-      updateData.images = req.files.map(file => file.path);
+      updateData.images = finalImages;
     }
+    
+    // Xóa trường existingImages khỏi updateData
+    delete updateData.existingImages;
 
     // Cập nhật field
     const updatedField = await Field.findByIdAndUpdate(
@@ -265,7 +346,7 @@ const updateField = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Xóa sân
 // @route   DELETE /api/fields/:id
@@ -320,7 +401,7 @@ const deleteField = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Cập nhật trạng thái sân
 // @route   PATCH /api/fields/:id/status
@@ -370,7 +451,7 @@ const updateFieldStatus = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Lấy danh sách sân theo mục đích
 // @route   GET /api/fields/purpose/:purpose
@@ -405,7 +486,7 @@ const getFieldsByPurpose = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Lấy thống kê sân
 // @route   GET /api/fields/stats
@@ -457,7 +538,7 @@ const getFieldStats = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 module.exports = {
   getAllFields,
@@ -468,4 +549,4 @@ module.exports = {
   updateFieldStatus,
   getFieldsByPurpose,
   getFieldStats
-};
+}

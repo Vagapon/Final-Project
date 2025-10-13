@@ -9,10 +9,11 @@ import {
   Calendar,
   Filter,
 } from "lucide-react";
-import axios from "axios";
 import { message, Modal, Spin } from "antd";
 import { ExclamationCircleFilled } from "@ant-design/icons";
 import { useAuth } from "../../Authen/AuthContext";
+import teamApi from "../../../api/teamManagement/teamApi";
+import axios from "axios";
 const Team = () => {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -110,10 +111,7 @@ const Team = () => {
   };
   const fetchTeams = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`http://localhost:5000/api/team?page=${currentPage}&limit=8`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await teamApi.getAllTeams({ page: currentPage, limit: 8 });
 
       setTeams(response.data.data || []);
       if (response.data.pagination && response.data.pagination.totalPages) {
@@ -132,12 +130,16 @@ const Team = () => {
   };
 
   const filteredRegistrations = registrations.filter((r) => {
-    const matchesSearch =
+    // Search filter
+    const matchesSearch = searchTerm === "" || 
       r.teamId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.teamId?.managerId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.eventId?.name?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter =
-      filterStatus === "All" || team.status === filterStatus;
+    
+    // Status filter - filter by registration status
+    const matchesFilter = filterStatus === "All" || 
+      r.status === filterStatus;
+    
     return matchesSearch && matchesFilter;
   });
 
@@ -152,20 +154,16 @@ const Team = () => {
   if (loading && teams.length === 0) return <div className="flex justify-center items-center h-64"><Spin size="large" /></div>;
   if (error) return <div>Error: {error}</div>;
 
-const handleDelete = async (userId) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
+const handleDelete = async (teamId) => {
+    if (window.confirm("Are you sure you want to delete this team?")) {
       try {
-        const token = localStorage.getItem("token");
-        await axios.delete(`http://localhost:5000/api/team/${teamId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setUsers(users.filter((user) => user._id !== userId));
-        alert("User deleted successfully");
+        await teamApi.deleteTeam(teamId);
+        setTeams(teams.filter((team) => team._id !== teamId));
+        message.success("Team deleted successfully");
+        fetchTeams(); // Refresh the list
       } catch (err) {
-        console.error("Error deleting user:", err);
-        alert("Failed to delete user");
+        console.error("Error deleting team:", err);
+        message.error("Failed to delete team");
       }
     }
   }
@@ -318,8 +316,9 @@ const handleDelete = async (userId) => {
                 className="pl-10 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="All">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Suspended">Suspended</option>
+                <option value="approved">Approved</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
               </select>
             </div>
           </div>

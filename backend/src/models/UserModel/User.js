@@ -13,7 +13,14 @@ const userSchema = new mongoose.Schema({
   firebaseUid: { type: String },
   provider: { type: String, default: "local" },
 
-  phone_number: String, 
+  phone_number: {
+    type: String, 
+    unique: true, 
+    required: function () {
+      // Chỉ bắt buộc phone_number nếu user này không phải từ Firebase
+      return !this.firebaseUid;
+    }
+  }, 
   avatar: { type: String, default: "" },
   address: { type: String, default: "" },
   created_date: { type: Date, default: Date.now },

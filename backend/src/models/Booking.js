@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const bookingSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   fieldId: { type: mongoose.Schema.Types.ObjectId, ref: 'Field', required: true },
+  timeSlotId: { type: mongoose.Schema.Types.ObjectId, ref: 'TimeSlot', required: true },
   startTime: { type: Date, required: true },
   endTime: { type: Date, required: true },
   duration: { type: Number },

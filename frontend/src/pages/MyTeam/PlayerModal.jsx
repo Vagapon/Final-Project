@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Upload, FileSpreadsheet } from 'lucide-react';
-import axios from 'axios';
+import memberApi from '../../api/memberManagement/memberApi';
 
 const PlayerModal = ({ isOpen, onClose, onSubmit, teamId, mode = 'create', initialData = null }) => {
   const [activeTab, setActiveTab] = useState('manual'); // 'manual' or 'sheet'
@@ -29,17 +29,7 @@ const PlayerModal = ({ isOpen, onClose, onSubmit, teamId, mode = 'create', initi
       onSubmit(formData);
     } else {
       try {
-        const token = localStorage.getItem('token');
-        const response = await axios.post(
-          'http://localhost:5000/api/member/google-sheet',
-          { 
-            teamId,
-            sheetUrl 
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
-        );
+        const response = await memberApi.importMembersFromSheet(teamId, sheetUrl);
         if (response.data.success) {
           onClose();
           // Thông báo thành công và refresh danh sách
@@ -130,12 +120,22 @@ const PlayerModal = ({ isOpen, onClose, onSubmit, teamId, mode = 'create', initi
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Số áo</label>
+                  <label className="block text-sm font-medium text-gray-700">Số áo (1-99)</label>
                   <input
                     type="number"
+                    min="1"
+                    max="99"
                     value={formData.number}
-                    onChange={(e) => setFormData({...formData, number: e.target.value})}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (value >= 1 && value <= 99) {
+                        setFormData({...formData, number: e.target.value});
+                      } else if (e.target.value === '') {
+                        setFormData({...formData, number: ''});
+                      }
+                    }}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Nhập số từ 1-99"
                     required
                   />
                 </div>

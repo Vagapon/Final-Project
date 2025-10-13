@@ -9,6 +9,7 @@ import {
   Award,
   Shield,
 } from "lucide-react";
+import teamApi from "../../api/teamManagement/teamApi";
 
 const StatCard = ({ value, label, colorClass, icon: Icon }) => (
   <div className="bg-white rounded-lg border border-gray-200 p-6 hover:border-purple-300 transition-all duration-300 group">
@@ -39,26 +40,20 @@ const TeamInfo = () => {
   useEffect(() => {
     const fetchTeam = async () => {
       try {
-        const token = window.localStorage.getItem("token");
-        const res = await fetch("http://localhost:5000/api/team/myteam", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) {
-          if (res.status === 404) {
-            setTeam(null);
-          } else {
-            throw new Error("Không thể tải dữ liệu team");
-          }
-        } else {
-          const data = await res.json();
-          console.log("Team data:", data); // 👈 log đúng ở đây
-          console.log("ManagerId:", data.managerId);
-          setTeam(data);
-          setPlayersCount(data?.players?.length || 0);
+        const response = await teamApi.getMyTeam();
+        
+        if (response.data) {
+          // console.log("Team data:", response.data); // 👈 log đúng ở đây
+          // console.log("ManagerId:", response.data.managerId);
+          setTeam(response.data);
+          setPlayersCount(response.data?.players?.length || 0);
         }
       } catch (err) {
-        setError(err.message);
+        if (err.response?.status === 404) {
+          setTeam(null);
+        } else {
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }

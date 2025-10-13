@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
 import App from "./App.jsx";
 
-
 import AdminLayout from "./components/dashboard/AdminLayout.jsx"; 
 import Overview from "./pages/Admin/Event/Overview.jsx"; 
 import User from "./pages/Admin/Users/User.jsx"; 
@@ -11,13 +10,15 @@ import Event from "./pages/Admin/Event/Event.jsx";
 import Profile from "./pages/Admin/Users/Profile.jsx";
 import Chat from "./components/Chat/ChatApp.jsx"; 
 import Login from "./pages/Authen/Login.jsx"; 
+import ForgotPassword from "./pages/Authen/ForgotPassword.jsx";
 import Team from "./pages/Admin/Users/Team.jsx"; 
 import Ranking from "./pages/Admin/Users/Ranking.jsx";
 import Home from "./pages/HomePage/Home.jsx";
 import MyTeam from "./pages/MyTeam/TeamPage.jsx";
 import Blog from "./pages/Blogs/Blog.jsx"; 
 import Challenge from "./pages/Challenges/Challenge.jsx";
-import Booking from "./pages/Blogs/FieldBooking.jsx";
+import Booking from "./pages/FieldBooking/FieldBooking.jsx";
+import BookingPage from "./pages/FieldBooking/BookingPage.jsx";
 import Match from "./pages/Admin/Event/Match.jsx"; 
 import Register from "./pages/Authen/Register.jsx"; 
 import ProtectedRoute from "./routes/ProtectedRoute.jsx"; 
@@ -43,6 +44,7 @@ createRoot(rootElement).render(
               <Route path="/blog" element={<Blog />} />
               <Route path="/challenge" element={<Challenge />} />
               <Route path="/book" element={<Booking />} />
+              <Route path="/booking/:fieldId/:timeSlotId/:date" element={<BookingPage />} />
             </Route>
           </Route>
           {/* </Route> */}
@@ -79,6 +81,7 @@ createRoot(rootElement).render(
           {/* Login/Register */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
           {/* Unauthorized route */}
           <Route path="/unauthorized" element={<Unauthorized />} />

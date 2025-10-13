@@ -30,65 +30,65 @@ const ChatApp = () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     setCurrentUser(user);
     
-    // Load conversations and users from API
-    const loadData = async () => {
-      if (user && user.id) {
-        try {
-          const token = localStorage.getItem('token');
-          console.log('🔑 Loading data with token:', token ? 'Present' : 'Missing');
-          console.log('👤 Current user:', user);
-          
-          // Load conversations
-          const conversationsResponse = await fetch('http://localhost:5000/api/messages/conversations/list', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          console.log('📋 Conversations response status:', conversationsResponse.status);
-          
-          // Load all users
-          const usersResponse = await fetch('http://localhost:5000/api/user/chat-users', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          console.log('👥 Users response status:', usersResponse.status);
-          
-          if (conversationsResponse.ok) {
-            const conversationsData = await conversationsResponse.json();
-            console.log('📋 Conversations loaded:', conversationsData);
-            setChats(conversationsData.conversations || []);
-          } else {
-            console.error('❌ Failed to load conversations:', conversationsResponse.status, conversationsResponse.statusText);
-            const errorText = await conversationsResponse.text();
-            console.error('❌ Error details:', errorText);
-            setChats([]);
-          }
-          
-          if (usersResponse.ok) {
-            const usersData = await usersResponse.json();
-            console.log('👥 Users loaded:', usersData);
-            setAllUsers(usersData.data || []);
-          } else {
-            console.error('❌ Failed to load users:', usersResponse.status, usersResponse.statusText);
-            const errorText = await usersResponse.text();
-            console.error('❌ Error details:', errorText);
-            setAllUsers([]);
-          }
-        } catch (error) {
-          console.error('❌ Error loading data:', error);
-          setChats([]);
-          setAllUsers([]);
-        }
-      } else {
-        console.error('❌ No user or user.id found:', user);
-      }
-      setLoading(false);
-    };
+             // Load conversations and users from API
+             const loadData = async () => {
+               if (user && user.id) {
+                 try {
+                   const token = localStorage.getItem('token');
+                   // console.log('🔑 Loading data with token:', token ? 'Present' : 'Missing');
+                   // console.log('👤 Current user:', user);
+                   
+                   // Load conversations
+                   const conversationsResponse = await fetch('http://localhost:5000/api/messages/conversations/list', {
+                     headers: {
+                       'Authorization': `Bearer ${token}`,
+                       'Content-Type': 'application/json'
+                     }
+                   });
+                   
+                   // console.log('📋 Conversations response status:', conversationsResponse.status);
+                   
+                   // Load all users
+                   const usersResponse = await fetch('http://localhost:5000/api/user/chat-users', {
+                     headers: {
+                       'Authorization': `Bearer ${token}`,
+                       'Content-Type': 'application/json'
+                     }
+                   });
+                   
+                   // console.log('👥 Users response status:', usersResponse.status);
+                   
+                   if (conversationsResponse.ok) {
+                     const conversationsData = await conversationsResponse.json();
+                     // console.log('📋 Conversations loaded:', conversationsData);
+                     setChats(conversationsData.conversations || []);
+                   } else {
+                     console.error('❌ Failed to load conversations:', conversationsResponse.status, conversationsResponse.statusText);
+                     const errorText = await conversationsResponse.text();
+                     console.error('❌ Error details:', errorText);
+                     setChats([]);
+                   }
+                   
+                   if (usersResponse.ok) {
+                     const usersData = await usersResponse.json();
+                     // console.log('👥 Users loaded:', usersData);
+                     setAllUsers(usersData.data || []);
+                   } else {
+                     console.error('❌ Failed to load users:', usersResponse.status, usersResponse.statusText);
+                     const errorText = await usersResponse.text();
+                     console.error('❌ Error details:', errorText);
+                     setAllUsers([]);
+                   }
+                 } catch (error) {
+                   console.error('❌ Error loading data:', error);
+                   setChats([]);
+                   setAllUsers([]);
+                 }
+               } else {
+                 console.error('❌ No user or user.id found:', user);
+               }
+               setLoading(false);
+             };
     
     loadData();
   }, []);
@@ -96,9 +96,9 @@ const ChatApp = () => {
   // Socket event handlers
   useEffect(() => {
     if (socket && currentUser) {
-      // Listen for new messages
-      socket.on('receiveMessage', (message) => {
-        console.log('📨 Received message:', message);
+               // Listen for new messages
+               socket.on('receiveMessage', (message) => {
+                 // console.log('📨 Received message:', message);
         
         // Add message to current chat if it matches
         if (selectedChat) {
@@ -238,11 +238,11 @@ const ChatApp = () => {
   }, []);
 
   const handleChatSelect = async (chat) => {
-    console.log('🎯 Chat selected:', chat);
-    console.log('🎯 Chat name:', chat.name);
-    console.log('🎯 Chat avatar:', chat.avatar);
-    console.log('🎯 Chat email:', chat.email);
-    console.log('🎯 Chat isOnline:', chat.isOnline);
+    // console.log('🎯 Chat selected:', chat);
+    // console.log('🎯 Chat name:', chat.name);
+    // console.log('🎯 Chat avatar:', chat.avatar);
+    // console.log('🎯 Chat email:', chat.email);
+    // console.log('🎯 Chat isOnline:', chat.isOnline);
     
     // Add isOnline status from socket context
     const chatWithOnlineStatus = {
@@ -250,7 +250,7 @@ const ChatApp = () => {
       isOnline: isUserOnline(chat._id)
     };
     
-    console.log('🎯 Chat with online status:', chatWithOnlineStatus);
+    // console.log('🎯 Chat with online status:', chatWithOnlineStatus);
     
     setSelectedChat(chatWithOnlineStatus);
     if (isMobile) {
@@ -262,37 +262,37 @@ const ChatApp = () => {
       const chatRoomId = [currentUser.id, chat._id].sort().join('_');
       socket.emit('joinChat', chatRoomId);
       
-      console.log('Loading messages for chatRoomId:', chatRoomId);
+      // console.log('Loading messages for chatRoomId:', chatRoomId);
       
-      // Load messages for this chat
-      try {
-        const token = localStorage.getItem('token');
-        console.log('🔑 Token for messages API:', token ? 'Present' : 'Missing');
-        console.log('🔑 Token value:', token);
-        
-        const response = await fetch(`http://localhost:5000/api/messages/${chatRoomId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+        // Load messages for this chat
+        try {
+          const token = localStorage.getItem('token');
+          // console.log('🔑 Token for messages API:', token ? 'Present' : 'Missing');
+          // console.log('🔑 Token value:', token);
+          
+          const response = await fetch(`http://localhost:5000/api/messages/${chatRoomId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          // console.log('Messages API response status:', response.status);
+          // console.log('Messages API response headers:', response.headers);
+          
+          if (response.ok) {
+            const data = await response.json();
+            // console.log('Messages loaded:', data.messages);
+            setMessages(data.messages || []);
+          } else {
+            const errorData = await response.json();
+            console.error('Failed to load messages:', errorData);
+            setMessages([]);
           }
-        });
-        
-        console.log('Messages API response status:', response.status);
-        console.log('Messages API response headers:', response.headers);
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Messages loaded:', data.messages);
-          setMessages(data.messages || []);
-        } else {
-          const errorData = await response.json();
-          console.error('Failed to load messages:', errorData);
+        } catch (error) {
+          console.error('Error loading messages:', error);
           setMessages([]);
         }
-      } catch (error) {
-        console.error('Error loading messages:', error);
-        setMessages([]);
-      }
       
       // Mark messages as read
       socket.emit('markAsRead', {

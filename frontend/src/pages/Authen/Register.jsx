@@ -1,7 +1,8 @@
 import React, { useState, useRef } from "react";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import { authService } from "../../api";
+import { message } from "antd";
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -13,28 +14,30 @@ export default function Register() {
   // const [agreeTerms, setAgreeTerms] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const [messageApi, contextHolder] = message.useMessage();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (password !== confirmPassword) {
-      alert("Passwords do not match!");
+      messageApi.error("Mật khẩu xác nhận không khớp!");
       return;
     }
-    // if (!agreeTerms) {
-    //   alert("Please agree to the terms and conditions!");
-    //   return;
-    // }
+    
     try {
-      const response = axios.post("http://localhost:5000/api/auth/register", {
+      await authService.register({
         name: fullName,
         email,
         password,
         confirmPassword,
         phone_number: phone,
       });
-      alert("Registration successful!");
+      
+      messageApi.success("Đăng ký thành công! Vui lòng đăng nhập.");
       navigate("/login");
     } catch (error) {
-      alert("Registration failed: " + error.response.data.message);
+      const errorMessage = error.message || error.response?.data?.message || "Đăng ký thất bại!";
+      messageApi.error(errorMessage);
     }
   };
 
@@ -55,7 +58,9 @@ export default function Register() {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden">
+    <>
+      {contextHolder}
+      <div className="h-screen flex overflow-hidden">
       {/* Left side - Register form với scroll riêng */}
       <div className="flex-1  bg-white">
         <div className="min-h-full flex flex-col justify-start px-4 sm:px-6 lg:px-16 xl:px-20 py-8">
@@ -302,5 +307,6 @@ export default function Register() {
         </div>
       </div>
     </div>
+    </>
   );
 }

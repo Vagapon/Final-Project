@@ -6,34 +6,70 @@ const mongoose = require("mongoose");
 
 // Utility: validate dates + season
 const validateDates = async (startDate, endDate, seasonId) => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  
+  try {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    throw new Error("Invalid start or end date");
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      throw new Error("Ngày bắt đầu hoặc ngày kết thúc không hợp lệ");
+    }
+    if (start > end) {
+      throw new Error("Ngày bắt đầu phải trước hoặc bằng ngày kết thúc");
+    }
+
+    const season = await Season.findById(seasonId).maxTimeMS(5000); // 5 second timeout
+    if (!season) {
+      throw new Error("Không tìm thấy mùa giải");
+    }
+
+
+    // Convert season dates to Date objects for comparison
+    const seasonStart = new Date(season.startDate);
+    const seasonEnd = new Date(season.endDate);
+    
+    
+    if (start < seasonStart || end > seasonEnd) {
+      throw new Error("Ngày sự kiện phải nằm trong khoảng thời gian của mùa giải");
+    }
+
+    return { start, end };
+  } catch (error) {
+    console.error('Error in validateDates:', error);
+    throw error;
   }
-  if (start > end) {
-    throw new Error("Start date must be before or equal to end date");
-  }
-
-  const season = await Season.findById(seasonId);
-  if (!season) throw new Error("Season not found");
-
-  if (start < season.startDate || end > season.endDate) {
-    throw new Error("Event dates must be within the selected season date range");
-  }
-
-  return { start, end };
 };
 
 const eventController = {
   // CREATE
   create: async (req, res) => {
+    
     const { name, description, sportTypeId, seasonId, startDate, endDate, location, status, address, maxTeams } = req.body;
+    
+    // Validate required fields
+    if (!name) {
+      return res.status(400).json({ message: "Event name is required" });
+    }
+    if (!sportTypeId) {
+      return res.status(400).json({ message: "Sport type is required" });
+    }
+    if (!seasonId) {
+      return res.status(400).json({ message: "Season is required" });
+    }
+    if (!startDate) {
+      return res.status(400).json({ message: "Start date is required" });
+    }
+    if (!endDate) {
+      return res.status(400).json({ message: "End date is required" });
+    }
+    if (maxTeams && (isNaN(parseInt(maxTeams)) || parseInt(maxTeams) < 1)) {
+      return res.status(400).json({ message: "Max teams must be a positive number" });
+    }
     try {
       const { start, end } = await validateDates(startDate, endDate, seasonId);
 
-      const calculatedMatches = maxTeams ? Math.floor((maxTeams * (maxTeams - 1)) / 2) : 0;
+      const maxTeamsInt = maxTeams ? parseInt(maxTeams) : 0;
+      const calculatedMatches = maxTeamsInt > 0 ? Math.floor((maxTeamsInt * (maxTeamsInt - 1)) / 2) : 0;
 
       const event = new Event({
         name,
@@ -46,18 +82,40 @@ const eventController = {
         numberOfMatch: calculatedMatches,
         status,
         address,
-        maxTeams: maxTeams ? parseInt(maxTeams) : 0,
+        maxTeams: maxTeamsInt,
         avatar: req.file?.path || "",
         createdBy: req.user?.id || null
       });
 
       await event.save();
-      res.status(201).json(event);
+      
+      res.status(201).json({
+        success: true,
+        data: event,
+        message: "Event created successfully"
+      });
     } catch (error) {
+      console.error('Error creating event:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        name: error.name,
+        stack: error.stack
+      });
+      
       if (error.code === 11000) {
-        return res.status(400).json({ message: "Event name already exists" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Tên sự kiện đã tồn tại. Vui lòng chọn tên khác." 
+        });
       }
-      res.status(400).json({ message: error.message || "Error creating event" });
+      
+      // Return specific error message
+      res.status(400).json({ 
+        success: false,
+        message: error.message || "Có lỗi xảy ra khi tạo sự kiện",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   },
 
@@ -94,14 +152,28 @@ const eventController = {
       }
 
       const event = await Event.findByIdAndUpdate(eventId, updates, { new: true, runValidators: true });
-      if (!event) return res.status(404).json({ message: "Event not found" });
+      if (!event) return res.status(404).json({ 
+        success: false,
+        message: "Event not found" 
+      });
 
-      res.status(200).json(event);
+      res.status(200).json({
+        success: true,
+        data: event,
+        message: "Event updated successfully"
+      });
     } catch (error) {
+      console.error('Error updating event:', error);
       if (error.code === 11000) {
-        return res.status(400).json({ message: "Event name already exists" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Tên sự kiện đã tồn tại. Vui lòng chọn tên khác." 
+        });
       }
-      res.status(400).json({ message: error.message || "Error updating event" });
+      res.status(400).json({ 
+        success: false,
+        message: error.message || "Có lỗi xảy ra khi cập nhật sự kiện" 
+      });
     }
   },
 
@@ -174,10 +246,20 @@ getAll : async (req, res) => {
     try {
       const { eventId } = req.params;
       const event = await Event.findByIdAndDelete(eventId);
-      if (!event) return res.status(404).json({ message: "Event not found" });
-      res.status(200).json({ message: "Event deleted successfully" });
+      if (!event) return res.status(404).json({ 
+        success: false,
+        message: "Event not found" 
+      });
+      res.status(200).json({ 
+        success: true,
+        message: "Event deleted successfully" 
+      });
     } catch (error) {
-      res.status(500).json({ message: "Error deleting event", error });
+      res.status(500).json({ 
+        success: false,
+        message: "Error deleting event", 
+        error: error.message 
+      });
     }
   },
 

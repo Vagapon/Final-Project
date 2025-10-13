@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { X, Upload, Camera, User, Phone, Mail, Crown } from "lucide-react";
+import teamApi from "../../api/teamManagement/teamApi";
 
-const ModalTeam = ({ isOpen, onClose, team, onUpdated }) => {
+const ModalTeam = ({ isOpen, onClose, team, onUpdated, onSubmit }) => {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
@@ -14,6 +15,11 @@ const ModalTeam = ({ isOpen, onClose, team, onUpdated }) => {
 
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  
+  // Debug loading state
+  useEffect(() => {
+    // console.log('🔄 Loading state changed:', loading);
+  }, [loading]);
   const [message, setMessage] = useState("");
 
   // Prefill khi edit
@@ -75,41 +81,119 @@ const ModalTeam = ({ isOpen, onClose, team, onUpdated }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('🚀 Form submit triggered');
+    console.log('📝 Form data:', formData);
+    console.log('🔄 Setting loading to true');
+    console.log('🔄 Current loading state before setLoading(true):', loading);
+    
     setLoading(true);
     setMessage("");
 
+    // Validation
+    if (!formData.name || formData.name.trim() === '') {
+      console.log('❌ Validation failed: Team name is required');
+      setMessage("❌ Team name is required");
+      console.log('🔄 Setting loading to false due to validation failure');
+      setLoading(false);
+      return;
+    }
+    
+    console.log('✅ Validation passed, proceeding with API call');
+    console.log('🔄 Loading state after validation:', loading);
+
     try {
-      const token = window.localStorage.getItem("token");
+      console.log('🔄 Starting API call...');
       const data = new FormData();
-      data.append("name", formData.name);
-      data.append("shortName", formData.shortName);
-      data.append("description", formData.description);
+      data.append("name", formData.name.trim());
+      if (formData.shortName.trim()) data.append("shortName", formData.shortName.trim());
+      if (formData.description.trim()) data.append("description", formData.description.trim());
       if (formData.avatar) data.append("avatar", formData.avatar);
+      
+      console.log('📦 FormData contents:');
+      for (let [key, value] of data.entries()) {
+        console.log(`  ${key}:`, value);
+      }
 
-      const url = team
-        ? `http://localhost:5000/api/team/${team._id}`
-        : "http://localhost:5000/api/team";
-      const method = team ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { Authorization: `Bearer ${token}` },
-        body: data,
+      console.log('🚀 Sending team data:', {
+        name: formData.name.trim(),
+        shortName: formData.shortName.trim(),
+        description: formData.description.trim(),
+        hasAvatar: !!formData.avatar
       });
+      
+      console.log('🔄 About to call API...');
+      console.log('🔄 Loading state before API call:', loading);
 
-      if (response.ok) {
-        const teamData = await response.json();
+      let response;
+      if (team) {
+        console.log('🔄 Updating team with ID:', team._id);
+        response = await teamApi.updateTeam(team._id, data);
+        console.log('✅ Update API call completed');
+      } else {
+        console.log('🔄 Creating new team');
+        response = await teamApi.createTeam(data);
+        console.log('✅ Create API call completed');
+      }
+
+      console.log('📥 API Response:', response);
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response data:', response.data);
+
+      if (response.status === 201 || response.status === 200) {
         setMessage(`✅ ${team ? "Update" : "Create"} team success!`);
+        console.log('✅ Team created/updated successfully:', response.data);
+        console.log('🔄 Loading state after success:', loading);
 
-        if (onUpdated) onUpdated(teamData); // update UI
-        onClose();
+        // Reset form after successful creation
+        if (!team) {
+          setFormData({
+            name: "",
+            shortName: "",
+            description: "",
+            avatar: null,
+          });
+          setAvatarPreview(null);
+        }
+
+        // Call callbacks with response data
+        if (onUpdated) onUpdated(response.data); // update UI
+        if (onSubmit) onSubmit(response.data); // update UI
+        
+        // Close modal after a short delay to show success message
+        setTimeout(() => {
+          onClose();
+        }, 3000);
       } else {
         throw new Error("API Error");
       }
     } catch (error) {
-      setMessage(`❌ Lỗi: ${error.message || "Có lỗi xảy ra"}`);
+      console.error('❌ Error creating/updating team:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Full error object:', error);
+      
+      let errorMessage = "Có lỗi xảy ra";
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      } else if (error.response?.status === 400) {
+        errorMessage = "Dữ liệu không hợp lệ";
+      } else if (error.response?.status === 401) {
+        errorMessage = "Bạn cần đăng nhập lại";
+      } else if (error.response?.status === 403) {
+        errorMessage = "Bạn không có quyền thực hiện hành động này";
+      } else if (error.response?.status === 500) {
+        errorMessage = "Lỗi server, vui lòng thử lại sau";
+      }
+      
+      setMessage(`❌ Lỗi: ${errorMessage}`);
     } finally {
+      console.log('🏁 Finally block - setting loading to false');
       setLoading(false);
+      console.log('✅ Loading state should now be false');
     }
   };
 
@@ -300,6 +384,17 @@ const ModalTeam = ({ isOpen, onClose, team, onUpdated }) => {
           </div>
         </div>
 
+        {/* Message */}
+        {message && (
+          <div className="px-6 py-3 border-t border-gray-100">
+            <div className={`text-sm font-medium ${
+              message.includes('✅') ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {message}
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="border-t border-gray-100 px-6 py-4 flex justify-end gap-3">
           <button
@@ -311,9 +406,19 @@ const ModalTeam = ({ isOpen, onClose, team, onUpdated }) => {
           </button>
           <button
             type="button"
-            onClick={handleSubmit}
             disabled={loading}
-            className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-lg"
+            onClick={(e) => {
+              console.log('🔘 Submit button clicked');
+              console.log('🔘 Loading state:', loading);
+              console.log('🔘 Form data:', formData);
+              console.log('🔘 Button disabled:', loading);
+              handleSubmit(e);
+            }}
+            className={`px-5 py-2.5 text-white text-sm font-semibold rounded-lg ${
+              loading 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-gray-900 hover:bg-gray-800'
+            }`}
           >
             {loading ? "Saving..." : team ? "Update Team" : "Create Team"}
           </button>

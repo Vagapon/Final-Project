@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 // Validation middleware cho tạo sân mới
 const validateCreateField = (req, res, next) => {
+  
   const {
     name,
     fieldNumber,
@@ -32,25 +33,33 @@ const validateCreateField = (req, res, next) => {
     errors.push('Mục đích sử dụng phải là "event" hoặc "rental"');
   }
 
-  // Kiểm tra giờ hoạt động
+  // Kiểm tra giờ hoạt động (cần parse từ JSON string trước)
+  let parsedOpeningHours;
   if (!openingHours) {
     errors.push('Giờ hoạt động là bắt buộc');
   } else {
-    if (!openingHours.start || !openingHours.end) {
-      errors.push('Giờ bắt đầu và kết thúc là bắt buộc');
-    } else {
-      // Kiểm tra format giờ (HH:MM)
-      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-      if (!timeRegex.test(openingHours.start) || !timeRegex.test(openingHours.end)) {
-        errors.push('Giờ hoạt động phải có định dạng HH:MM');
+    try {
+      // Parse openingHours nếu nó là string
+      parsedOpeningHours = typeof openingHours === 'string' ? JSON.parse(openingHours) : openingHours;
+      
+      if (!parsedOpeningHours.start || !parsedOpeningHours.end) {
+        errors.push('Giờ bắt đầu và kết thúc là bắt buộc');
       } else {
-        // Kiểm tra giờ bắt đầu phải nhỏ hơn giờ kết thúc
-        const startTime = new Date(`2000-01-01 ${openingHours.start}`);
-        const endTime = new Date(`2000-01-01 ${openingHours.end}`);
-        if (startTime >= endTime) {
-          errors.push('Giờ bắt đầu phải nhỏ hơn giờ kết thúc');
+        // Kiểm tra format giờ (HH:MM)
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        if (!timeRegex.test(parsedOpeningHours.start) || !timeRegex.test(parsedOpeningHours.end)) {
+          errors.push('Giờ hoạt động phải có định dạng HH:MM');
+        } else {
+          // Kiểm tra giờ bắt đầu phải nhỏ hơn giờ kết thúc
+          const startTime = new Date(`2000-01-01 ${parsedOpeningHours.start}`);
+          const endTime = new Date(`2000-01-01 ${parsedOpeningHours.end}`);
+          if (startTime >= endTime) {
+            errors.push('Giờ bắt đầu phải nhỏ hơn giờ kết thúc');
+          }
         }
       }
+    } catch (parseError) {
+      errors.push('Định dạng giờ hoạt động không hợp lệ');
     }
   }
 
@@ -58,8 +67,10 @@ const validateCreateField = (req, res, next) => {
   if (purpose === 'rental') {
     if (!pricePerHour || pricePerHour <= 0) {
       errors.push('Sân thuê phải có giá thuê hợp lệ');
-    } else if (pricePerHour > 10000000) { // Giới hạn giá thuê tối đa 10 triệu
-      errors.push('Giá thuê không được vượt quá 10,000,000 VNĐ');
+    } else if (pricePerHour < 200000) {
+      errors.push('Giá thuê tối thiểu 200,000 VNĐ');
+    } else if (pricePerHour > 1000000) { // Giới hạn giá thuê tối đa 1 triệu
+      errors.push('Giá thuê không được vượt quá 1,000,000 VNĐ');
     }
   }
 
@@ -100,17 +111,31 @@ const validateUpdateField = (req, res, next) => {
 
   // Kiểm tra giờ hoạt động nếu có
   if (openingHours) {
-    if (!openingHours.start || !openingHours.end) {
-      errors.push('Giờ bắt đầu và kết thúc là bắt buộc');
-    } else {
-      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-      if (!timeRegex.test(openingHours.start) || !timeRegex.test(openingHours.end)) {
-        errors.push('Giờ hoạt động phải có định dạng HH:MM');
+    let parsedOpeningHours = openingHours;
+    
+    // Parse JSON string nếu cần
+    if (typeof openingHours === 'string') {
+      try {
+        parsedOpeningHours = JSON.parse(openingHours);
+      } catch (error) {
+        errors.push('Định dạng giờ hoạt động không hợp lệ');
+        parsedOpeningHours = null;
+      }
+    }
+    
+    if (parsedOpeningHours) {
+      if (!parsedOpeningHours.start || !parsedOpeningHours.end) {
+        errors.push('Giờ bắt đầu và kết thúc là bắt buộc');
       } else {
-        const startTime = new Date(`2000-01-01 ${openingHours.start}`);
-        const endTime = new Date(`2000-01-01 ${openingHours.end}`);
-        if (startTime >= endTime) {
-          errors.push('Giờ bắt đầu phải nhỏ hơn giờ kết thúc');
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        if (!timeRegex.test(parsedOpeningHours.start) || !timeRegex.test(parsedOpeningHours.end)) {
+          errors.push('Giờ hoạt động phải có định dạng HH:MM');
+        } else {
+          const startTime = new Date(`2000-01-01 ${parsedOpeningHours.start}`);
+          const endTime = new Date(`2000-01-01 ${parsedOpeningHours.end}`);
+          if (startTime >= endTime) {
+            errors.push('Giờ bắt đầu phải nhỏ hơn giờ kết thúc');
+          }
         }
       }
     }
@@ -120,8 +145,10 @@ const validateUpdateField = (req, res, next) => {
   if (purpose === 'rental' && pricePerHour !== undefined) {
     if (pricePerHour <= 0) {
       errors.push('Giá thuê phải lớn hơn 0');
-    } else if (pricePerHour > 10000000) {
-      errors.push('Giá thuê không được vượt quá 10,000,000 VNĐ');
+    } else if (pricePerHour < 200000) {
+      errors.push('Giá thuê tối thiểu 200,000 VNĐ');
+    } else if (pricePerHour > 1000000) {
+      errors.push('Giá thuê không được vượt quá 1,000,000 VNĐ');
     }
   }
 

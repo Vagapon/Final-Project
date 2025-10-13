@@ -10,13 +10,24 @@ import {
   Activity,
   Filter,
   Eye,
+  Star,
+  Wifi,
+  Car,
+  ChevronLeft,
+  ChevronRight,
+  ShowerHead,
+  Zap,
+  Camera,
+  Shield,
 } from 'lucide-react';
-import { message, Modal, Spin } from 'antd';
-import { ExclamationCircleFilled } from '@ant-design/icons';
+import { Modal, Spin } from 'antd';
+import { ExclamationCircleFilled, ClockCircleOutlined } from '@ant-design/icons';
 import CreateFieldModal from '../../ModalBooking/CreateFieldModal';
 import EditFieldModal from '../../ModalBooking/EditFieldModal';
 import FieldDetailModal from '../../ModalBooking/FieldDetailModal';
-import axios from 'axios';
+import TimeSlotModal from '../../ModalBooking/TimeSlotModal';
+import { fieldApi } from '../../../api';
+import { message } from 'antd';
 
 const Stadium = () => {
   const [fields, setFields] = useState([]);
@@ -24,10 +35,12 @@ const Stadium = () => {
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [timeSlotModalVisible, setTimeSlotModalVisible] = useState(false);
   const [selectedField, setSelectedField] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [purposeFilter, setPurposeFilter] = useState('All');
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     fetchFields();
@@ -36,90 +49,72 @@ const Stadium = () => {
   const fetchFields = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/fields', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      if (response.data.success) {
-        setFields(response.data.data);
-      } else {
-        message.error('Lỗi khi tải danh sách sân');
-      }
+      const response = await fieldApi.getAllFields();
+      setFields(response.data.data || response.data);
     } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Không thể tải danh sách sân bóng';
+      message.error(errorMessage);
       console.error('Error fetching fields:', error);
-      message.error('Lỗi khi tải danh sách sân');
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const handleCreate = async (formData) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post('http://localhost:5000/api/fields', formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      console.log('Creating field with data:', formData);
+      const response = await fieldApi.createField(formData);
+      console.log('Create field response:', response);
       
-      if (response.data.success) {
+      // Kiểm tra response structure
+      if (response && response.data) {
+        if (response.data.success || response.data.data) {
+          message.success('Tạo sân bóng thành công!');
+          setCreateModalVisible(false);
+          await fetchFields(); // Refresh danh sách
+          return { success: true };
+        } else {
+          message.error(response.data.message || 'Tạo sân bóng thất bại');
+          return { success: false, message: response.data.message };
+        }
+      } else {
         message.success('Tạo sân bóng thành công!');
         setCreateModalVisible(false);
-        fetchFields(); // Refresh danh sách
-      } else {
-        message.error(response.data.message || 'Lỗi khi tạo sân');
+        await fetchFields(); // Refresh danh sách
+        return { success: true };
       }
     } catch (error) {
       console.error('Error creating field:', error);
-      message.error(error.response?.data?.message || 'Lỗi khi tạo sân');
+      const errorMessage = error.response?.data?.message || 'Không thể tạo sân bóng';
+      message.error(errorMessage);
+      return { success: false, message: errorMessage };
     }
   };
 
   const handleEdit = async (formData) => {
+    setEditLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.put(`http://localhost:5000/api/fields/${selectedField._id}`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      
-      if (response.data.success) {
-        message.success('Cập nhật sân bóng thành công!');
-        setEditModalVisible(false);
-        fetchFields(); // Refresh danh sách
-      } else {
-        message.error(response.data.message || 'Lỗi khi cập nhật sân');
-      }
+      const response = await fieldApi.updateField(selectedField._id, formData);
+      message.success('Cập nhật sân bóng thành công!');
+      setEditModalVisible(false);
+      setSelectedField(null);
+      await fetchFields(); // Refresh danh sách
     } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Không thể cập nhật sân bóng';
+      message.error(errorMessage);
       console.error('Error updating field:', error);
-      message.error(error.response?.data?.message || 'Lỗi khi cập nhật sân');
     }
+    setEditLoading(false);
   };
 
   const handleDelete = async (id) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.delete(`http://localhost:5000/api/fields/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      if (response.data.success) {
-        message.success('Xóa sân bóng thành công!');
-        fetchFields(); // Refresh danh sách
-      } else {
-        message.error(response.data.message || 'Lỗi khi xóa sân');
-      }
+      const response = await fieldApi.deleteField(id);
+      message.success('Xóa sân bóng thành công!');
+      fetchFields(); // Refresh danh sách
     } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Không thể xóa sân bóng';
+      message.error(errorMessage);
       console.error('Error deleting field:', error);
-      message.error(error.response?.data?.message || 'Lỗi khi xóa sân');
     }
   };
 
@@ -129,14 +124,14 @@ const Stadium = () => {
       icon: <ExclamationCircleFilled />,
       content: (
         <div>
-          <p className="mb-1">Bạn có chắc chắn muốn xóa sân bóng này?</p>
-          <p className="text-gray-500">Tên sân: <span className="font-medium">{field.name}</span></p>
-          <p className="text-gray-500">Vị trí: <span className="font-medium">{field.location}</span></p>
+          <p className="mb-1">Are you sure you want to delete this field?</p>
+          <p className="text-gray-500">Stadium Name: <span className="font-medium">{field.name}</span></p>
+          <p className="text-gray-500">Location: <span className="font-medium">{field.location}</span></p>
         </div>
       ),
-      okText: 'Xóa',
+      okText: 'Delete',
       okType: 'danger',
-      cancelText: 'Hủy',
+      cancelText: 'Cancle',
       onOk: () => handleDelete(field._id)
     });
   };
@@ -157,11 +152,11 @@ const Stadium = () => {
   const getStatusText = (status) => {
     switch (status) {
       case 'active':
-        return 'Hoạt động';
+        return 'active';
       case 'maintenance':
-        return 'Bảo trì';
+        return 'maintenance';
       case 'inactive':
-        return 'Ngừng hoạt động';
+        return 'inactive';
       default:
         return status;
     }
@@ -202,6 +197,245 @@ const Stadium = () => {
     setSearchText(e.target.value);
   };
 
+  // Component for facility icons
+  const FacilityIcon = ({ type }) => {
+    const facilityIcons = {
+      wifi: Wifi,
+      parking: Car,
+      shower: ShowerHead,
+      lighting: Zap,
+      camera: Camera,
+      security: Shield
+    };
+    const Icon = facilityIcons[type];
+    return Icon ? <Icon className="h-4 w-4" /> : null;
+  };
+
+  // Stadium Card Component with Image Carousel
+  const StadiumCard = ({ field }) => {
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const images = field.images && field.images.length > 0 ? field.images : [];
+
+    const nextImage = (e) => {
+      e.stopPropagation();
+      if (images.length > 1) {
+        setCurrentImageIndex((prev) => (prev + 1) % images.length);
+      }
+    };
+
+    const prevImage = (e) => {
+      e.stopPropagation();
+      if (images.length > 1) {
+        setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+      }
+    };
+
+    return (
+      <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300 ease-out transform hover:scale-105 hover:-translate-y-1">
+        {/* Card Header with Image Carousel */}
+        <div className="relative h-48 bg-gradient-to-br from-blue-500 via-purple-600 to-green-500 rounded-t-xl overflow-hidden">
+          {images.length > 0 ? (
+            <>
+              <img 
+                src={images[currentImageIndex]} 
+                alt={`${field.name} - ${currentImageIndex + 1}`}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              />
+              
+              {/* Image Navigation Arrows */}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </>
+              )}
+
+              {/* Image Indicators */}
+              {images.length > 1 && (
+                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
+                  {images.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex(index);
+                      }}
+                      className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                        index === currentImageIndex 
+                          ? 'bg-white scale-125' 
+                          : 'bg-white/50 hover:bg-white/75'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Image Count Badge */}
+              {images.length > 1 && (
+                <div className="absolute top-2 right-12 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
+                  <span className="text-white text-xs font-medium">
+                    {currentImageIndex + 1}/{images.length}
+                  </span>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <MapPin className="h-16 w-16 text-white/80" />
+            </div>
+          )}
+          
+          {/* Status Badge */}
+          <div className="absolute top-3 right-3">
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              field.status === 'active' 
+                ? 'bg-green-500 text-white' 
+                : field.status === 'maintenance' 
+                ? 'bg-orange-500 text-white'
+                : 'bg-red-500 text-white'
+            }`}>
+              {getStatusText(field.status)}
+            </span>
+          </div>
+
+          {/* Purpose Badge */}
+          <div className="absolute top-3 left-3">
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              field.purpose === 'event' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-green-500 text-white'
+            }`}>
+              {getPurposeText(field.purpose)}
+            </span>
+          </div>
+
+          {/* Field Number Badge */}
+          <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1">
+            <span className="text-white text-sm font-medium">#{field.fieldNumber}</span>
+          </div>
+        </div>
+
+        {/* Card Content */}
+        <div className="p-4 space-y-4">
+          {/* Stadium Name & Description */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              {field.name}
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
+              {field.description || 'Không có mô tả'}
+            </p>
+          </div>
+
+          {/* Location */}
+          <div className="flex items-start gap-3">
+            <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm text-gray-900 dark:text-white font-medium line-clamp-1">
+                {field.address}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                {field.location}
+              </p>
+            </div>
+          </div>
+
+          {/* Price */}
+          <div className="flex items-center gap-3">
+            <DollarSign className="h-4 w-4 text-gray-400" />
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              {field.pricePerHour ? `${field.pricePerHour.toLocaleString('vi-VN')} VNĐ/giờ` : 'Miễn phí'}
+            </span>
+          </div>
+
+        {/* Facilities */}
+        {field.facilities && field.facilities.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {field.facilities.slice(0, 4).map((facility, idx) => (
+              <div key={idx} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-1.5 border border-gray-200 dark:border-gray-700">
+                <FacilityIcon type={facility} />
+                <span className="text-xs text-gray-600 dark:text-gray-400 capitalize">
+                  {facility}
+                </span>
+              </div>
+            ))}
+            {field.facilities.length > 4 && (
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-1.5 border border-gray-200 dark:border-gray-700">
+                <span className="text-xs text-gray-500 dark:text-gray-500">
+                  +{field.facilities.length - 4} more
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center pt-3 border-t border-gray-100 dark:border-gray-700">
+  {/* Rating nếu có */}
+  {field.rating && (
+    <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+      <Star className="h-4 w-4 text-gray-400" />
+      <span className="text-sm">{field.rating.toFixed(1)}</span>
+    </div>
+  )}
+
+  {/* Action buttons luôn ở bên phải */}
+  <div className="flex gap-1 ml-auto">
+    <button
+      onClick={() => {
+        setSelectedField(field);
+        setDetailModalVisible(true);
+      }}
+      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
+      title="Xem chi tiết"
+    >
+      <Eye className="h-4 w-4" />
+    </button>
+    <button
+      onClick={() => {
+        setSelectedField(field);
+        setTimeSlotModalVisible(true);
+      }}
+      className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200"
+      title="Quản lý khung giờ"
+    >
+      <ClockCircleOutlined className="h-4 w-4" />
+    </button>
+    <button
+      onClick={() => {
+        setSelectedField(field);
+        setEditModalVisible(true);
+      }}
+      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
+      title="Chỉnh sửa"
+    >
+      <Edit2 className="h-4 w-4" />
+    </button>
+    <button
+      onClick={() => confirmDeleteField(field)}
+      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
+      title="Xóa"
+    >
+      <Trash2 className="h-4 w-4" />
+    </button>
+  </div>
+</div>
+
+      </div>
+    </div>
+    );
+  };
+
   if (loading && fields.length === 0) return <div className="flex justify-center items-center h-64"><Spin size="large" /></div>;
 
   return (
@@ -209,7 +443,7 @@ const Stadium = () => {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Quản lý sân bóng
+          Stadium Management
         </h1>
       </div>
 
@@ -232,7 +466,7 @@ const Stadium = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Sân giải đấu
+                Event Stadium
               </p>
               <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {fields.filter((f) => f.purpose === "event").length}
@@ -245,7 +479,7 @@ const Stadium = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Sân thuê
+                Rental Stadium
               </p>
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {fields.filter((f) => f.purpose === "rental").length}
@@ -277,10 +511,10 @@ const Stadium = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
-                placeholder="Tìm kiếm theo tên sân, số sân hoặc địa điểm..."
+                placeholder="Search by name, number or location..."
                 value={searchText}
                 onChange={handleSearch}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200"
               />
             </div>
             <div className="relative">
@@ -288,11 +522,11 @@ const Stadium = () => {
               <select
                 value={purposeFilter}
                 onChange={(e) => setPurposeFilter(e.target.value)}
-                className="pl-10 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="pl-10 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
               >
-                <option value="All">Tất cả loại sân</option>
-                <option value="event">Sân giải đấu</option>
-                <option value="rental">Sân thuê</option>
+                <option value="All">All type of stadium</option>
+                <option value="event">Event stadium</option>
+                <option value="rental">Rental stadium</option>
               </select>
             </div>
             <div className="relative">
@@ -300,135 +534,93 @@ const Stadium = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="pl-10 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="pl-10 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
               >
-                <option value="All">Tất cả trạng thái</option>
-                <option value="active">Hoạt động</option>
-                <option value="maintenance">Bảo trì</option>
-                <option value="inactive">Ngừng hoạt động</option>
+                <option value="All">All status</option>
+                <option value="active">Active</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="inactive">Inactive</option>
               </select>
             </div>
           </div>
+          
           <button
-                onClick={() => setCreateModalVisible(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
+            onClick={() => setCreateModalVisible(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+          >
             <Plus className="h-4 w-4" />
-                Thêm sân bóng mới
+            New Stadium
           </button>
         </div>
-        </div>
+      </div>
 
-      {/* Fields Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Danh sách sân bóng</h2>
+      {/* Stadium Gallery */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Stadium Gallery ({filteredFields.length} stadiums)
+          </h2>
           {loading && <Spin size="small" />}
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tên sân</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Số sân</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Loại sân</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Địa điểm</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Giá thuê</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Trạng thái</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredFields.map((field) => (
-                <tr key={field._id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                        <MapPin className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{field.name}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{field.description}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">{field.fieldNumber}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPurposeColor(field.purpose)}`}>
-                      {getPurposeText(field.purpose)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm text-gray-900 dark:text-white">{field.address}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">{field.location}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm text-gray-900 dark:text-white">
-                        {field.pricePerHour ? `${field.pricePerHour.toLocaleString('vi-VN')} VNĐ/giờ` : 'Miễn phí'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      field.status === 'active' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                        : field.status === 'maintenance' 
-                        ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                    }`}>
-                      {getStatusText(field.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedField(field);
-                          setDetailModalVisible(true);
-                        }}
-                        className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                        title="Xem chi tiết"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedField(field);
-                          setEditModalVisible(true);
-                        }}
-                        className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
-                        title="Chỉnh sửa"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => confirmDeleteField(field)}
-                        className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                        title="Xóa"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {(!fields || fields.length === 0) && (
-                <tr>
-                  <td colSpan={7} className="px-6 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                    Không có sân bóng nào
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        
+        {filteredFields.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredFields.map((field, index) => (
+              <div
+                key={field._id}
+                style={{
+                  animation: `slideIn 0.3s ease-out ${index * 0.05}s both`
+                }}
+              >
+                <StadiumCard field={field} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              Không có sân bóng nào
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
+              Hãy thêm sân bóng đầu tiên của bạn
+            </p>
+            <button
+              onClick={() => setCreateModalVisible(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Thêm sân bóng
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* CSS Animation */}
+      <style jsx>{`
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        .line-clamp-1 {
+          display: -webkit-box;
+          -webkit-line-clamp: 1;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
 
       <CreateFieldModal
         visible={createModalVisible}
@@ -438,14 +630,24 @@ const Stadium = () => {
 
       <EditFieldModal
         visible={editModalVisible}
-        onCancel={() => setEditModalVisible(false)}
+        onCancel={() => {
+          setEditModalVisible(false);
+          setSelectedField(null);
+        }}
         onUpdate={handleEdit}
         initialValues={selectedField}
+        loading={editLoading}
       />
 
       <FieldDetailModal
         visible={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
+        field={selectedField}
+      />
+
+      <TimeSlotModal
+        visible={timeSlotModalVisible}
+        onCancel={() => setTimeSlotModalVisible(false)}
         field={selectedField}
       />
     </div>

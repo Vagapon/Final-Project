@@ -3,8 +3,8 @@ import { Plus, Search, ChevronRight } from 'lucide-react';
 import SeasonCard from './SeasonCard';
 import SeasonModal from '../../ModalEvent/SeasonModal';
 import ConfirmDeleteModal from '../../ModalEvent/ConfirmDeleteModal';
-import axios from 'axios';
 import { message, Spin } from 'antd';
+import seasonApi from '../../../api/seasonManagement/seasonApi';
 
 const Season = () => {
   const [seasons, setSeasons] = useState([]);
@@ -22,20 +22,17 @@ const Season = () => {
   }, []);
 
 const fetchSeasons = async () => {
+  setLoading(true);
   try {
-    const token = localStorage.getItem('token');
-    const response = await axios.get("http://localhost:5000/api/season", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    });
-//  console.log(response.data)
-    setSeasons(response.data.data || []);
-   setLoading(false);
-  } catch (err) {
-    setError('Failed to fetch seasons');
-    setLoading(false);
+    const response = await seasonApi.getAllSeasons();
+    setSeasons(response.data?.data || []);
+    setError(null);
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || 'Failed to fetch seasons';
+    setError(errorMessage);
+    message.error(errorMessage);
   }
+  setLoading(false);
 };
 
   // Filter seasons based on search term
@@ -79,12 +76,21 @@ const fetchSeasons = async () => {
     });
   };
 
-  const confirmDelete = () => {
-    setSeasons(prev => prev.filter(s => s._id !== deleteModal.season._id));
-    setDeleteModal({ isOpen: false, season: null });
+  const confirmDelete = async () => {
+    try {
+      await seasonApi.deleteSeason(deleteModal.season._id);
+      setSeasons(prev => prev.filter(s => s._id !== deleteModal.season._id));
+      setDeleteModal({ isOpen: false, season: null });
+      message.success('Xóa season thành công!');
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi xóa season';
+      message.error(errorMessage);
+    }
   };
 
   const handleSave = (seasonData) => {
+    // SeasonModal đã gọi API và trả về data
+    // Chỉ cần cập nhật state local
     if (modalState.mode === 'create') {
       setSeasons(prev => [...prev, seasonData]);
     } else if (modalState.mode === 'edit') {
@@ -115,7 +121,7 @@ const fetchSeasons = async () => {
           </div>
 
         {/* Search and Create Section */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-100 dark:bg-gray-900 dark:border-gray-700 p-6 hover:shadow-xl transition-shadow duration-300">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-100 dark:bg-gray-900 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4">
             <div className="relative flex-1 max-w-md ">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-white" size={20} />
@@ -139,15 +145,15 @@ const fetchSeasons = async () => {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 dark:bg-gray-900">
-          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 dark:bg-gray-900 dark:border-gray-700 p-6 hover:shadow-xl transition-shadow duration-300">
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 dark:bg-gray-900 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
             <h3 className="text-sm font-medium text-gray-500 dark:text-white">Total Seasons</h3>
             <p className="text-2xl font-bold text-gray-800 dark:text-white">{seasons.length}</p>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 dark:bg-gray-900 dark:border-gray-700 p-6 hover:shadow-xl transition-shadow duration-300">
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 dark:bg-gray-900 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
             <h3 className="text-sm font-medium text-gray-500 dark:text-white">Currently Displayed</h3>
             <p className="text-2xl font-bold text-blue-600 dark:text-white">{filteredSeasons.length}</p>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 dark:bg-gray-900 dark:border-gray-700 p-6 hover:shadow-xl transition-shadow duration-300">
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 dark:bg-gray-900 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
             <h3 className="text-sm font-medium text-gray-500 dark:text-white">Active Seasons</h3>
             <p className="text-2xl font-bold text-green-600 dark:text-white">{seasons.filter(s => new Date(s.endDate) > new Date()).length}</p>
           </div>

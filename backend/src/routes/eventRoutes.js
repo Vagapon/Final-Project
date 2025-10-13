@@ -6,11 +6,11 @@ const {eventUpload} = require('../config/cloudinary'); // Import event upload mi
 const { verifyToken, checkRole } = require('../middlewares/authMiddleware');
 
 // Create event (admin or staff)
-router.post('/', verifyToken, checkRole(['ADMIN','STAFF']), eventUpload.single("avatar") ,eventController.create);
+router.post('/', verifyToken, checkRole(['ADMIN','STAFF']), eventUpload.single('avatar'), eventController.create);
 router.get('/', eventController.getAll);
 router.get('/:id', eventController.getById);
 // Update event (admin or staff). Controller should verify ownership for STAFF
-router.put('/:eventId', verifyToken, checkRole(['ADMIN','STAFF']), eventUpload.single("avatar"), eventController.update);
+router.put('/:eventId', verifyToken, checkRole(['ADMIN','STAFF']), eventUpload.single('avatar'), eventController.update);
 // Delete event (admin only)
 router.delete('/:eventId', verifyToken, checkRole(['ADMIN']), eventController.delete);
 

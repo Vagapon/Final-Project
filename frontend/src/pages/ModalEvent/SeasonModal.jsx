@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Play, CheckCircle } from "lucide-react";
-import axios from "axios";
+import seasonApi from "../../api/seasonManagement/seasonApi";
 
 const SeasonModal = ({ isOpen, onClose, season, onSave, mode }) => {
   // Di chuyển imageOptions lên đầu
@@ -77,7 +77,6 @@ const SeasonModal = ({ isOpen, onClose, season, onSave, mode }) => {
     console.log("Selected image:", selectedImage);
 
     try {
-      const token = localStorage.getItem("token");
       let response;
       // Ensure backgroundImage is sent explicitly from the currently selected option
       const payload = {
@@ -85,29 +84,19 @@ const SeasonModal = ({ isOpen, onClose, season, onSave, mode }) => {
         backgroundImage: selectedImage || formData.backgroundImage,
       };
 
+      // Convert to FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', payload.name);
+      formDataToSend.append('status', payload.status);
+      formDataToSend.append('startDate', payload.startDate);
+      formDataToSend.append('endDate', payload.endDate);
+      formDataToSend.append('backgroundImage', payload.backgroundImage);
+
       if (mode === "create") {
-        response = await axios.post(
-          "http://localhost:5000/api/season",
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        response = await seasonApi.createSeason(formDataToSend);
         setMessage("✅ Season đã được tạo thành công!");
       } else if (mode === "edit") {
-        response = await axios.put(
-          `http://localhost:5000/api/season/${season._id}`,
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        response = await seasonApi.updateSeason(season._id, formDataToSend);
         setMessage("✅ Season đã được cập nhật thành công!");
       }
 

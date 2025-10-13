@@ -13,12 +13,21 @@ const firebaseLogin = async (req, res) => {
       return res.status(400).json({ message: "Firebase ID token is required" });
     }
 
-    // Verify token
-    const decoded = await admin.auth().verifyIdToken(idToken);
+    // Verify token with timeout
+    const decoded = await Promise.race([
+      admin.auth().verifyIdToken(idToken),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Token verification timeout')), 3000)
+      )
+    ]);
+    
     const { uid, email, name, picture } = decoded;
 
-    // Tìm user theo firebaseUid hoặc email
-    let user = await User.findOne({ $or: [{ firebaseUid: uid }, { email }] });
+    // Tìm user theo firebaseUid hoặc email với projection để tối ưu
+    let user = await User.findOne(
+      { $or: [{ firebaseUid: uid }, { email }] },
+      { _id: 1, firebaseUid: 1, email: 1, name: 1, avatar: 1 }
+    );
 
     if (user) {
       // Nếu đã có user nhưng chưa gán firebaseUid thì update
@@ -37,18 +46,20 @@ const firebaseLogin = async (req, res) => {
       });
       await user.save();
 
-      // Gán role mặc định
-      const defaultRole = await Role.findOne({ name: "User" });
+      // Gán role mặc định (tìm role trước để tối ưu)
+      const defaultRole = await Role.findOne({ name: "User" }, { _id: 1 });
       if (defaultRole) {
         await new UserRole({ user_id: user._id, role_id: defaultRole._id }).save();
       }
     }
 
-    // Lấy role
-    const userRole = await UserRole.findOne({ user_id: user._id }).populate("role_id");
+    // Lấy role với projection tối ưu
+    const userRole = await UserRole.findOne({ user_id: user._id })
+      .populate("role_id", "name")
+      .select("role_id");
 
     // Tạo JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "24h" });
 
     res.status(200).json({
       token,
@@ -165,7 +176,7 @@ const login = async (req, res) => {
     const userRole = await UserRole.findOne({ user_id: user._id }).populate("role_id");
     const role = await Role.findById(userRole.role_id);
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "24h" });
 
     res.status(200).json({
       token,

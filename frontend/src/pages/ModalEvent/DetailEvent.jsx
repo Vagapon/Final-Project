@@ -1,5 +1,5 @@
 import { Calendar, Users, MapPin, Clock, Star, Heart, Edit, Trash2, Share2, Download, Trophy, Target, Award } from 'lucide-react';
-import BaseModal from './BaseModal';
+import BaseModal from '../../components/Modal/BaseModal';
 
 const Detail = ({ isOpen, onClose, event, onEdit, onDelete }) => {
   if (!event) return null;

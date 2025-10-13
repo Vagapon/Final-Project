@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Upload, Calendar, Users, MapPin, Clock, Star, Heart, Save, X } from 'lucide-react';
-import BaseModal from './BaseModal';
+import BaseModal from '../../components/Modal/BaseModal';
 import axios from 'axios';
 import { message, Spin } from 'antd';
 
@@ -138,7 +138,8 @@ const Edit = ({ isOpen, onClose, event, onUpdateEvent }) => {
       
       if (response.status === 200) {
         message.success('Event updated successfully!');
-        onUpdateEvent(response.data);
+        // Pass the updated event data from response to parent
+        onUpdateEvent(response.data.data);
         handleClose();
       }
     } catch (error) {

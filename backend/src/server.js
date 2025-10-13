@@ -52,7 +52,6 @@ const PORT = process.env.PORT || 5000;
     // Lắng nghe socket
     io.on("connection", (socket) => {
       const userId = socket.userId;
-      console.log("⚡ User connected:", socket.id, "User ID:", userId);
 
       // Add user to online users
       onlineUsers.set(userId, {
@@ -73,19 +72,16 @@ const PORT = process.env.PORT || 5000;
       // Join specific chat room
       socket.on("joinChat", (chatId) => {
         socket.join(chatId);
-        console.log(`User ${userId} joined chat room: ${chatId}`);
       });
 
       // Leave specific chat room
       socket.on("leaveChat", (chatId) => {
         socket.leave(chatId);
-        console.log(`User ${userId} left chat room: ${chatId}`);
       });
 
       // Send message
       socket.on("sendMessage", async (data) => {
         try {
-          console.log("📨 Received message:", data);
           
           const newMessage = new Message({
             senderId: data.senderId,
@@ -140,7 +136,6 @@ const PORT = process.env.PORT || 5000;
             });
           }
 
-          console.log("✅ Message sent successfully");
 
         } catch (err) {
           console.error("❌ Error saving message:", err);
@@ -188,7 +183,6 @@ const PORT = process.env.PORT || 5000;
       });
 
       socket.on("disconnect", () => {
-        console.log("❌ User disconnected:", socket.id, "User ID:", userId);
         
         // Remove user from online users
         onlineUsers.delete(userId);

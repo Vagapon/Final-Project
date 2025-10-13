@@ -15,7 +15,7 @@ const fieldSchema = new mongoose.Schema({
   },
   
   // Giá thuê theo giờ (chỉ áp dụng cho rental)
-  pricePerHour: { type: Number }, // Không required vì sân event miễn phí
+  pricePerHour: { type: Number, min: 0 }, // Không required vì sân event miễn phí
   
   // Giờ hoạt động
   openingHours: {
