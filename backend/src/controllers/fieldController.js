@@ -161,10 +161,10 @@ const createField = async (req, res) => {
           message: 'Sân thuê phải có giá thuê hợp lệ'
         });
       }
-      if (pricePerHour < 200000) {
+      if (pricePerHour < 1000) {
         return res.status(400).json({
           success: false,
-          message: 'Giá thuê tối thiểu 200,000 VNĐ'
+          message: 'Giá thuê tối thiểu 1000 VNĐ'
         });
       }
       if (pricePerHour > 1000000) {
@@ -261,10 +261,10 @@ const updateField = async (req, res) => {
           message: 'Sân thuê phải có giá thuê hợp lệ'
         });
       }
-      if (pricePerHour < 200000) {
+      if (pricePerHour < 1000) {
         return res.status(400).json({
           success: false,
-          message: 'Giá thuê tối thiểu 200,000 VNĐ'
+          message: 'Giá thuê tối thiểu 1,000 VNĐ'
         });
       }
       if (pricePerHour > 1000000) {

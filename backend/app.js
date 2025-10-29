@@ -20,6 +20,7 @@ const fieldRoutes = require("./src/routes/fieldRoutes");
 const timeSlotRoutes = require("./src/routes/timeSlotRoutes");
 const bookingRoutes = require("./src/routes/bookingRoutes");
 const messageRoutes = require("./src/routes/messageRoutes");
+const paymentRoutes = require("./src/routes/paymentRoutes");
 // const matchScheduleRoutes = require("./src/routes/matchScheduleRoutes");
 // const TeamMatch = require("./src/models/Team/TeamMatch");
 
@@ -32,6 +33,12 @@ dotenv.config();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 🔍 Logging middleware để debug routing
+app.use((req, res, next) => {
+  // console.log(`📥 ${req.method} ${req.path}`);
+  next();
+});
 
 require("./src/models/UserModel/User");
 require("./src/models/UserModel/Role");
@@ -62,5 +69,17 @@ app.use("/api/timeslots", timeSlotRoutes);
 app.use("/api/bookings", bookingRoutes);
 // app.use("/api/schedule", matchScheduleRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/payments", paymentRoutes);
+
+// Alias route cho SePay webhook (không có 's')
+app.use("/api/payment", paymentRoutes);
+
+// Route trực tiếp cho SePay (không có /api prefix)
+app.use("/payment", paymentRoutes);
+
+console.log('✅ Payment routes registered:');
+console.log('   - /api/payments/*');
+console.log('   - /api/payment/*');
+console.log('   - /payment/* (for SePay webhook)');
 
 module.exports = app;

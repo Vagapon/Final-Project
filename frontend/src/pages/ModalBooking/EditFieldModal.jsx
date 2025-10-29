@@ -127,8 +127,8 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
           console.log('Edit - Price per hour value:', priceValue, 'Type:', typeof priceValue);
           formData.append('pricePerHour', priceValue);
         } else if (values.purpose === 'event') {
-          // Sân event có giá thuê tối thiểu 200,000 VNĐ
-          formData.append('pricePerHour', 200000);
+          // Sân event không cần giá thuê (set default 1000 VNĐ)
+          formData.append('pricePerHour', 1000);
         }
         
         // Thêm file ảnh mới vào FormData
@@ -273,8 +273,8 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
                         { required: true, message: 'Vui lòng nhập giá thuê!' },
                         { 
                           type: 'number', 
-                          min: 200000, 
-                          message: 'Giá thuê tối thiểu 200,000 VNĐ!' 
+                          min: 1000, 
+                          message: 'Giá thuê tối thiểu 1,000 VNĐ!' 
                         },
                         { 
                           type: 'number', 
@@ -288,7 +288,7 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
                       <InputNumber
                         style={{ width: '100%' }}
                         placeholder="Nhập giá thuê..."
-                        min={200000}
+                        min={1000}
                         step={10000}
                         precision={0}
                         addonAfter="VNĐ"

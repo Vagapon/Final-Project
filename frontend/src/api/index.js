@@ -8,6 +8,7 @@ export * from './eventManagement';
 export * from './teamManagement';
 export * from './memberManagement';
 export * from './seasonManagement';
+export * from './paymentManagement';
 export { default as axiosClient } from './axiosClient';
 
 // Export base classes for custom implementations

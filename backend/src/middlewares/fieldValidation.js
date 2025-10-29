@@ -67,8 +67,8 @@ const validateCreateField = (req, res, next) => {
   if (purpose === 'rental') {
     if (!pricePerHour || pricePerHour <= 0) {
       errors.push('Sân thuê phải có giá thuê hợp lệ');
-    } else if (pricePerHour < 200000) {
-      errors.push('Giá thuê tối thiểu 200,000 VNĐ');
+    } else if (pricePerHour < 1000) {
+      errors.push('Giá thuê tối thiểu 1,000 VNĐ');
     } else if (pricePerHour > 1000000) { // Giới hạn giá thuê tối đa 1 triệu
       errors.push('Giá thuê không được vượt quá 1,000,000 VNĐ');
     }
@@ -145,8 +145,8 @@ const validateUpdateField = (req, res, next) => {
   if (purpose === 'rental' && pricePerHour !== undefined) {
     if (pricePerHour <= 0) {
       errors.push('Giá thuê phải lớn hơn 0');
-    } else if (pricePerHour < 200000) {
-      errors.push('Giá thuê tối thiểu 200,000 VNĐ');
+    } else if (pricePerHour < 1000) {
+      errors.push('Giá thuê tối thiểu 1,000 VNĐ');
     } else if (pricePerHour > 1000000) {
       errors.push('Giá thuê không được vượt quá 1,000,000 VNĐ');
     }

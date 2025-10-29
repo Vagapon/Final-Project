@@ -54,8 +54,8 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
         console.log('Price per hour value:', priceValue, 'Type:', typeof priceValue);
         
         // Validation giá thuê ở frontend
-        if (priceValue < 200000) {
-          throw new Error('Giá thuê tối thiểu 200,000 VNĐ!');
+        if (priceValue < 1000) {
+          throw new Error('Giá thuê tối thiểu 1000 VNĐ!');
         }
         if (priceValue > 1000000) {
           throw new Error('Giá thuê không được vượt quá 1,000,000 VNĐ!');
@@ -298,8 +298,8 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                         { required: true, message: 'Vui lòng nhập giá thuê!' },
                         { 
                           type: 'number', 
-                          min: 200000, 
-                          message: 'Giá thuê tối thiểu 200,000 VNĐ!' 
+                          min: 1000, 
+                          message: 'Giá thuê tối thiểu 1,000 VNĐ!' 
                         },
                         { 
                           type: 'number', 
@@ -313,7 +313,7 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                       <InputNumber
                         style={{ width: '100%' }}
                         placeholder="Nhập giá thuê..."
-                        min={200000}
+                        min={1000}
                         step={10000}
                         precision={0}
                         addonAfter="VNĐ"

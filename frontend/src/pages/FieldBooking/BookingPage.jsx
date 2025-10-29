@@ -8,6 +8,8 @@ import ProgressIndicator from '../../components/Booking/ProgressIndicator';
 import Step1Content from '../../components/Booking/Step1Content';
 import Step2Content from '../../components/Booking/Step2Content';
 import Step3Content from '../../components/Booking/Step3Content';
+import FieldInfo from '../../components/Booking/FieldInfo';
+import OrderSummary from '../../components/Booking/OrderSummary';
 import { formatPrice } from '../../utils/formatPrice';
 
 const BookingPage = () => {
@@ -15,15 +17,57 @@ const BookingPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const [currentStep, setCurrentStep] = useState(1);
+  // Lưu state vào sessionStorage để giữ khi reload
+  const [currentStep, setCurrentStep] = useState(() => {
+    const saved = sessionStorage.getItem('bookingStep');
+    return saved ? parseInt(saved) : 1;
+  });
   const [loading, setLoading] = useState(true);
   const [field, setField] = useState(null);
   const [timeSlot, setTimeSlot] = useState(null);
-  const [bookingNotes, setBookingNotes] = useState('');
+  const [bookingNotes, setBookingNotes] = useState(() => {
+    return sessionStorage.getItem('bookingNotes') || '';
+  });
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
   const [selectedBookingDate, setSelectedBookingDate] = useState(date);
   const [selectedTimeSlotId, setSelectedTimeSlotId] = useState(timeSlotId);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [bookingId, setBookingId] = useState(() => {
+    return sessionStorage.getItem('currentBookingId') || null;
+  });
+  const [qrData, setQrData] = useState(() => {
+    const saved = sessionStorage.getItem('bookingQrData');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [paymentStatus, setPaymentStatus] = useState(() => {
+    return sessionStorage.getItem('bookingPaymentStatus') || 'unpaid';
+  });
+  const [validationError, setValidationError] = useState('');
+
+  // Lưu state khi thay đổi
+  useEffect(() => {
+    sessionStorage.setItem('bookingStep', currentStep.toString());
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (bookingId) {
+      sessionStorage.setItem('currentBookingId', bookingId);
+    }
+  }, [bookingId]);
+
+  useEffect(() => {
+    if (qrData) {
+      sessionStorage.setItem('bookingQrData', JSON.stringify(qrData));
+    }
+  }, [qrData]);
+
+  useEffect(() => {
+    sessionStorage.setItem('bookingPaymentStatus', paymentStatus);
+  }, [paymentStatus]);
+
+  useEffect(() => {
+    sessionStorage.setItem('bookingNotes', bookingNotes);
+  }, [bookingNotes]);
 
   useEffect(() => {
     if (fieldId && timeSlotId && date) {
@@ -109,10 +153,24 @@ const BookingPage = () => {
     return images[currentImageIndex] || images[0];
   };
 
-  const basePrice = field?.pricePerHour || 0;
-  const totalPrice = timeSlot ? (basePrice * timeSlot.multiplier) : basePrice;
+  // Tính duration từ time slot (giờ) - chỉ để hiển thị, KHÔNG dùng để tính giá
+  const calculateDuration = () => {
+    if (!timeSlot?.startTime || !timeSlot?.endTime) return 1;
+    
+    const [startHour, startMin] = timeSlot.startTime.split(':').map(Number);
+    const [endHour, endMin] = timeSlot.endTime.split(':').map(Number);
+    
+    const startMinutes = startHour * 60 + startMin;
+    const endMinutes = endHour * 60 + endMin;
+    
+    return (endMinutes - startMinutes) / 60; // Convert to hours
+  };
 
-  const handleNext = () => {
+  const basePrice = field?.pricePerHour || 0; // Giá cố định theo ca (không phải giá/giờ)
+  const duration = calculateDuration(); // Chỉ để hiển thị
+  const totalPrice = timeSlot ? (basePrice * timeSlot.multiplier) : basePrice; // GIÁ CỐ ĐỊNH × HỆ SỐ CA
+
+  const handleNext = async () => {
     // Validation for step 1
     if (currentStep === 1) {
       console.log('Validation check:', {
@@ -123,17 +181,74 @@ const BookingPage = () => {
       });
       
       if (!selectedBookingDate) {
-        message.error('Vui lòng chọn ngày đặt sân');
+        setValidationError('Vui lòng chọn ngày đặt sân');
+        message.warning({
+          content: 'Vui lòng chọn ngày đặt sân',
+          duration: 3
+        });
         return;
       }
       if (!selectedTimeSlotId || !timeSlot) {
-        message.error('Vui lòng chọn khung giờ');
+        setValidationError('Vui lòng chọn khung giờ để tiếp tục');
+        message.warning({
+          content: 'Vui lòng chọn khung giờ để tiếp tục',
+          duration: 3
+        });
+        // Scroll to time slot section
+        const timeSlotSection = document.querySelector('[data-section="timeslot"]');
+        if (timeSlotSection) {
+          timeSlotSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
         return;
       }
       if (!user) {
-        message.error('Vui lòng đăng nhập để tiếp tục');
+        setValidationError('');
+        message.error({
+          content: 'Vui lòng đăng nhập để tiếp tục',
+          duration: 3
+        });
         return;
       }
+      
+      // Clear validation error if all checks pass
+      setValidationError('');
+
+      // Tạo booking và QR khi chuyển sang step 2
+      try {
+        setLoading(true);
+        
+        const bookingData = {
+          fieldId,
+          timeSlotId: selectedTimeSlotId,
+          date: selectedBookingDate,
+          notes: bookingNotes
+        };
+
+        const response = await fieldBookingService.createBooking(bookingData);
+        
+        if (response.success) {
+          setBookingId(response.data._id);
+          
+          // Tạo QR thanh toán
+          const qrResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/payments/qr/${response.data._id}`);
+          const qrResult = await qrResponse.json();
+          
+          if (qrResult.success) {
+            setQrData(qrResult);
+            setCurrentStep(2);
+          } else {
+            message.error('Không thể tạo mã QR thanh toán');
+          }
+        } else {
+          message.error(response.message || 'Có lỗi xảy ra khi tạo đơn đặt sân');
+        }
+      } catch (error) {
+        console.error('Booking error:', error);
+        message.error('Có lỗi xảy ra khi tạo đơn đặt sân');
+      } finally {
+        setLoading(false);
+      }
+      return;
     }
     
     if (currentStep < 3) {
@@ -142,38 +257,154 @@ const BookingPage = () => {
     }
   };
 
-  const handlePrevious = () => {
+  const handlePrevious = async () => {
     if (currentStep > 1) {
+      // Nếu đang ở step 2 (thanh toán), cần hủy booking trước khi quay lại
+      if (currentStep === 2 && bookingId) {
+        const confirmed = window.confirm(
+          'Bạn có chắc muốn quay lại?\n\n' +
+          'Mã QR thanh toán sẽ bị hủy và bạn cần chọn lại thời gian.'
+        );
+        
+        if (!confirmed) return;
+        
+        try {
+          // Xóa booking đã tạo
+          const token = localStorage.getItem('token');
+          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${bookingId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          // Reset states và sessionStorage
+          setBookingId(null);
+          setQrData(null);
+          setPaymentStatus('unpaid');
+          sessionStorage.removeItem('currentBookingId');
+          sessionStorage.removeItem('bookingQrData');
+          sessionStorage.removeItem('bookingPaymentStatus');
+          
+          message.info('Đã hủy booking. Vui lòng chọn lại thời gian.');
+        } catch (error) {
+          console.error('Error canceling booking:', error);
+          message.error('Không thể hủy booking. Vui lòng thử lại.');
+          return;
+        }
+      }
+      
       setCurrentStep(currentStep - 1);
     }
   };
 
-  const handleConfirmBooking = async () => {
-    try {
-      setLoading(true);
+  // Poll payment status khi ở step 2
+  useEffect(() => {
+    // Validate bookingId trước khi poll
+    const isValidObjectId = (id) => {
+      return id && /^[a-f\d]{24}$/i.test(id);
+    };
+
+    if (currentStep === 2 && bookingId && isValidObjectId(bookingId)) {
+      console.log('🔄 Starting payment polling for booking:', bookingId);
       
-      const bookingData = {
-        fieldId,
-        timeSlotId: selectedTimeSlotId,
-        date: selectedBookingDate,
-        notes: bookingNotes
+      const pollInterval = setInterval(async () => {
+        try {
+          console.log('📡 Polling payment status...');
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/payments/status/${bookingId}`);
+          
+          if (!response.ok) {
+            console.error('❌ Payment status API error:', response.status);
+            return;
+          }
+          
+          const result = await response.json();
+          
+          console.log('📊 Payment status result:', result);
+          
+          if (result.success && result.paymentStatus === 'paid') {
+            console.log('✅ Payment confirmed! Moving to step 3');
+            setPaymentStatus('paid');
+            clearInterval(pollInterval);
+            message.success('Thanh toán thành công!');
+            
+            // Chuyển sang step 3 ngay lập tức
+            setTimeout(() => {
+              setCurrentStep(3);
+              // Clear booking data sau khi hoàn tất
+              sessionStorage.removeItem('currentBookingId');
+              sessionStorage.removeItem('bookingQrData');
+            }, 2000);
+          }
+        } catch (error) {
+          console.error('❌ Error polling payment status:', error);
+        }
+      }, 3000); // Poll mỗi 3 giây
+
+      return () => {
+        console.log('🛑 Stopping payment polling');
+        clearInterval(pollInterval);
+      };
+    }
+  }, [currentStep, bookingId]);
+
+  // Handle payment timeout
+  const handlePaymentTimeout = async () => {
+    try {
+      // Validate bookingId trước khi hủy
+      const isValidObjectId = (id) => {
+        return id && /^[a-f\d]{24}$/i.test(id);
       };
 
-      const response = await fieldBookingService.createBooking(bookingData);
-      
-      if (response.success) {
-      message.success('Đặt sân thành công!');
-        setCurrentStep(3);
-      } else {
-        message.error(response.message || 'Có lỗi xảy ra khi đặt sân');
+      // Hủy booking khi hết thời gian (chỉ nếu bookingId hợp lệ)
+      if (bookingId && isValidObjectId(bookingId)) {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${bookingId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          console.log('✅ Booking cancelled successfully');
+        }
       }
+      
+      message.warning('Hết thời gian thanh toán. Vui lòng đặt sân lại.');
+      
+      // Clear sessionStorage
+      sessionStorage.removeItem('bookingStep');
+      sessionStorage.removeItem('currentBookingId');
+      sessionStorage.removeItem('bookingQrData');
+      sessionStorage.removeItem('bookingPaymentStatus');
+      sessionStorage.removeItem('bookingNotes');
+      
+      // Redirect về trang chọn sân sau 3 giây
+      setTimeout(() => {
+        navigate('/book');
+      }, 3000);
     } catch (error) {
-      console.error('Booking error:', error);
-      message.error('Có lỗi xảy ra khi đặt sân');
-    } finally {
-      setLoading(false);
+      console.error('Error canceling booking:', error);
+      navigate('/book');
     }
   };
+
+  // Clear sessionStorage khi hoàn tất (Step 3)
+  useEffect(() => {
+    if (currentStep === 3) {
+      // Sau 30s tự động clear
+      const clearTimer = setTimeout(() => {
+        sessionStorage.removeItem('bookingStep');
+        sessionStorage.removeItem('currentBookingId');
+        sessionStorage.removeItem('bookingQrData');
+        sessionStorage.removeItem('bookingPaymentStatus');
+        sessionStorage.removeItem('bookingNotes');
+      }, 30000);
+
+      return () => clearTimeout(clearTimer);
+    }
+  }, [currentStep]);
 
   if (loading && !field) {
     return (
@@ -187,10 +418,15 @@ const BookingPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100">
-      <ProgressIndicator currentStep={currentStep} />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 ">
+    <div className="min-h-screen bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100 pt-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-12">
+        {/* 2 Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Left Column - Progress + Content */}
+          <div className="lg:col-span-2 space-y-4">
+            <ProgressIndicator currentStep={currentStep} />
+            
+            <div>
         {currentStep === 1 && (
           <Step1Content
             field={field}
@@ -208,6 +444,9 @@ const BookingPage = () => {
             getTimeTypeText={getTimeTypeText}
             basePrice={basePrice}
             totalPrice={totalPrice}
+            duration={duration}
+            validationError={validationError}
+            setValidationError={setValidationError}
           />
         )}
 
@@ -220,6 +459,11 @@ const BookingPage = () => {
             totalPrice={totalPrice}
             getTimeTypeText={getTimeTypeText}
             user={user}
+            qrData={qrData}
+            paymentStatus={paymentStatus}
+            bookingId={bookingId}
+            onTimeout={handlePaymentTimeout}
+            duration={duration}
           />
         )}
 
@@ -233,57 +477,92 @@ const BookingPage = () => {
             bookingNotes={bookingNotes}
             user={user}
             getTimeTypeText={getTimeTypeText}
+            duration={duration}
           />
         )}
+            </div>
+          </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+          {/* Right Column - Field Info & Order Summary (Sticky) */}
+          <div className="lg:col-span-1">
+            <div className="lg:sticky lg:top-4 space-y-2">
+              <FieldInfo
+                field={field}
+                selectedBookingDate={selectedBookingDate}
+                timeSlot={timeSlot}
+                currentImageIndex={currentImageIndex}
+                setCurrentImageIndex={setCurrentImageIndex}
+                getCurrentImage={getCurrentImage}
+                getTimeTypeText={getTimeTypeText}
+              />
+              <OrderSummary
+                field={field}
+                timeSlot={timeSlot}
+                selectedBookingDate={selectedBookingDate}
+                basePrice={basePrice}
+                totalPrice={totalPrice}
+                getTimeTypeText={getTimeTypeText}
+                user={user}
+                duration={duration}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation - Outside grid */}
+        <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
           <div className="flex gap-3">
-            {currentStep > 1 && (
+            {currentStep > 1 && currentStep < 3 && (
           <button
             onClick={handlePrevious}
                 className="flex items-center gap-2 px-6 py-2 text-gray-600 hover:bg-gray-50 rounded-lg text-sm font-medium transition-all border border-gray-300 hover:border-gray-400"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Quay lại
+                {currentStep === 2 ? 'Chọn lại thời gian' : 'Quay lại'}
           </button>
             )}
-            <button
-              onClick={() => {
-                if (window.confirm('Bạn có chắc chắn muốn hủy đặt sân? Thông tin đã nhập sẽ bị mất.')) {
-                  navigate('/book');
-                }
-              }}
-              className="px-6 py-2 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg text-sm font-medium transition-all border border-gray-300 hover:border-red-300"
-            >
-              Hủy đặt sân
-            </button>
+            {currentStep !== 2 && currentStep !== 3 && (
+              <button
+                onClick={() => {
+                  if (window.confirm('Bạn có chắc chắn muốn hủy đặt sân? Thông tin đã nhập sẽ bị mất.')) {
+                    navigate('/book');
+                  }
+                }}
+                className="px-6 py-2 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg text-sm font-medium transition-all border border-gray-300 hover:border-red-300"
+              >
+                Hủy đặt sân
+              </button>
+            )}
           </div>
-            {currentStep < 3 ? (
+            {currentStep === 1 ? (
               <button
                 onClick={handleNext}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-all shadow-sm hover:shadow-md"
-              >
-                Tiếp tục
-              <ArrowRight className="w-4 h-4" />
-              </button>
-            ) : (
-              <button
-                onClick={handleConfirmBooking}
                 disabled={loading}
-              className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     Đang xử lý...
                   </>
                 ) : (
                   <>
-                    Xác nhận đặt sân
-                  <Check className="w-4 h-4" />
+                    Tiếp tục
+                    <ArrowRight className="w-4 h-4" />
                   </>
                 )}
+              </button>
+            ) : currentStep === 2 ? (
+              <div className="text-sm text-gray-600">
+                Vui lòng hoàn tất thanh toán để tiếp tục
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate('/book')}
+              className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-all shadow-sm hover:shadow-md"
+              >
+                Hoàn tất
+                <Check className="w-4 h-4" />
               </button>
             )}
         </div>

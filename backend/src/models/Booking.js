@@ -23,10 +23,18 @@ bookingSchema.index({ fieldId: 1, startTime: 1, endTime: 1 });
 // Pre-save hook để tính duration và totalPrice
 bookingSchema.pre('save', async function(next) {
   if (this.startTime && this.endTime) {
-    this.duration = (this.endTime - this.startTime) / (1000 * 60 * 60); // Tính giờ
-    const field = await mongoose.model('Field').findById(this.fieldId);
-    if (field) {
-      this.totalPrice = this.duration * field.pricePerHour;
+    this.duration = (this.endTime - this.startTime) / (1000 * 60 * 60); // Tính giờ (chỉ để lưu, không dùng tính giá)
+    
+    // Chỉ tính totalPrice nếu chưa có (tránh override giá đã tính đúng từ controller)
+    if (!this.totalPrice) {
+      const field = await mongoose.model('Field').findById(this.fieldId);
+      const timeSlot = await mongoose.model('TimeSlot').findById(this.timeSlotId);
+      
+      if (field && timeSlot) {
+        const multiplier = timeSlot.multiplier || 1.0;
+        // GIÁ CỐ ĐỊNH THEO CA: pricePerHour × multiplier (KHÔNG nhân duration)
+        this.totalPrice = field.pricePerHour * multiplier;
+      }
     }
   }
   next();

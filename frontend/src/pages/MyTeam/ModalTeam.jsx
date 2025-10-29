@@ -135,9 +135,9 @@ const ModalTeam = ({ isOpen, onClose, team, onUpdated, onSubmit }) => {
         console.log('✅ Create API call completed');
       }
 
-      console.log('📥 API Response:', response);
-      console.log('📥 Response status:', response.status);
-      console.log('📥 Response data:', response.data);
+      // console.log('📥 API Response:', response);
+      // console.log('📥 Response status:', response.status);
+      // console.log('📥 Response data:', response.data);
 
       if (response.status === 201 || response.status === 200) {
         setMessage(`✅ ${team ? "Update" : "Create"} team success!`);

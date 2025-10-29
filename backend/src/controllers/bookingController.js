@@ -124,6 +124,23 @@ const createBooking = async (req, res) => {
       });
     }
 
+    // Validate ObjectId format
+    const isValidObjectId = (id) => /^[0-9a-fA-F]{24}$/.test(id);
+    
+    if (!isValidObjectId(fieldId)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'ID sân không hợp lệ' 
+      });
+    }
+
+    if (!isValidObjectId(timeSlotId)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'ID khung giờ không hợp lệ' 
+      });
+    }
+
     // Get field details
     const field = await Field.findById(fieldId);
     if (!field) {
@@ -169,7 +186,7 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // Calculate duration and total price based on time slot multiplier
+    // Calculate duration (chỉ để lưu, không dùng tính giá)
     const calculatedDuration = (endTime - startTime) / (1000 * 60 * 60); // hours
     const finalDuration = duration || calculatedDuration;
     
@@ -179,6 +196,7 @@ const createBooking = async (req, res) => {
        timeSlot.timeType === 'ca_chieu' ? 1.2 :
        timeSlot.timeType === 'ca_toi' ? 1.5 : 1.0);
     
+    // GIÁ CỐ ĐỊNH THEO CA: giá sân × hệ số ca (KHÔNG nhân duration)
     const finalTotalPrice = totalPrice || (field.pricePerHour * timeSlotMultiplier);
 
     // Create booking
