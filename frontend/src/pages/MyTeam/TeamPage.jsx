@@ -5,6 +5,7 @@ import PlayerList from './PlayerList';
 import TeamInfo from './TeamInfo';
 import ModalTeam from './ModalTeam';
 import PlayerModal from './PlayerModal';
+import PlayerProfileModal from './PlayerProfileModal';
 import teamApi from '../../api/teamManagement/teamApi';
 import memberApi from '../../api/memberManagement/memberApi';
 
@@ -15,6 +16,7 @@ const TeamPage = () => {
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null);
+  const [profilePlayer, setProfilePlayer] = useState(null);
 
 
   useEffect(() => {
@@ -228,6 +230,7 @@ const TeamPage = () => {
                   onAddClick={() => { setEditingPlayer(null); setIsPlayerModalOpen(true); }}
                   onEditClick={handleEditPlayer}
                   onDeleteClick={handleDeletePlayer}
+                  onViewClick={(p) => setProfilePlayer(p)}
                 />
               )}
 
@@ -248,6 +251,7 @@ const TeamPage = () => {
       </div>
 
       {/* Modal tạo/chỉnh sửa đội */}
+      <PlayerProfileModal isOpen={!!profilePlayer} onClose={() => setProfilePlayer(null)} player={profilePlayer} />
       <ModalTeam
         isOpen={isTeamModalOpen}
         onClose={() => setIsTeamModalOpen(false)}

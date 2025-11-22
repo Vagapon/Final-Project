@@ -33,6 +33,24 @@ const Step1Content = ({
     }
   }, [field, selectedBookingDate, availableTimeSlots]);
 
+  // Clear selected slot if it becomes invalid
+  useEffect(() => {
+    if (!selectedTimeSlotId || !selectedBookingDate) return;
+
+    const selectedSlot = availableTimeSlots.find(
+      (slot) => slot._id === selectedTimeSlotId
+    );
+
+    if (!selectedSlot) return;
+
+    const slotStart = new Date(`${selectedBookingDate}T${selectedSlot.startTime}`);
+    const isPastSlot = slotStart <= new Date();
+
+    if (bookedSlots.has(selectedTimeSlotId) || isPastSlot) {
+      setSelectedTimeSlotId(null);
+    }
+  }, [bookedSlots, availableTimeSlots, selectedTimeSlotId, selectedBookingDate, setSelectedTimeSlotId]);
+
   const checkBookedSlots = async () => {
     try {
       setCheckingAvailability(true);
@@ -47,7 +65,11 @@ const Step1Content = ({
             slot._id
           );
           
-          if (!isAvailable) {
+          const availableFlag = typeof isAvailable === 'boolean'
+            ? isAvailable
+            : !!isAvailable;
+
+          if (!availableFlag) {
             booked.add(slot._id);
           }
         } catch (error) {
@@ -63,6 +85,12 @@ const Step1Content = ({
     }
   };
 
+  const isSlotInPast = (slot) => {
+    if (!selectedBookingDate) return false;
+    const slotStart = new Date(`${selectedBookingDate}T${slot.startTime}`);
+    return slotStart <= new Date();
+  };
+
   const handleTimeSlotClick = (slot) => {
     // Clear validation error when selecting a time slot
     if (setValidationError) {
@@ -70,7 +98,7 @@ const Step1Content = ({
     }
     
     // Check if slot is booked
-    if (bookedSlots.has(slot._id)) {
+    if (bookedSlots.has(slot._id) || isSlotInPast(slot)) {
       return; // Don't allow selecting booked slots
     }
     
@@ -111,6 +139,10 @@ const Step1Content = ({
                     <div className="w-3 h-3 border-2 border-red-200 bg-red-50 rounded opacity-70"></div>
                     <span className="text-gray-600">Đã đặt</span>
                   </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 border-2 border-gray-300 bg-gray-100 rounded opacity-70"></div>
+                    <span className="text-gray-600">Hết giờ</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -146,16 +178,20 @@ const Step1Content = ({
                 }}>
                   {availableTimeSlots.map((slot) => {
                     const isBooked = bookedSlots.has(slot._id);
+                    const isPastSlot = isSlotInPast(slot);
                     const isSelected = selectedTimeSlotId === slot._id;
+                    const isDisabled = isBooked || isPastSlot;
                     
                     return (
                       <button
                         key={slot._id}
                         onClick={() => handleTimeSlotClick(slot)}
-                        disabled={isBooked}
+                        disabled={isDisabled}
                         className={`p-2.5 rounded-lg border-2 text-left focus:outline-none focus:ring-0 active:transform-none relative transition-all ${
                           isBooked
                             ? 'border-red-200 bg-red-50 cursor-not-allowed opacity-70'
+                            : isPastSlot
+                            ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-60'
                             : isSelected
                             ? 'border-blue-500 bg-blue-50 shadow-sm'
                             : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer'
@@ -168,7 +204,7 @@ const Step1Content = ({
                           outline: 'none',
                           boxSizing: 'border-box'
                         }}
-                      >
+                        >
                         {/* Booked Badge */}
                         {isBooked && (
                           <div className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-0.5">
@@ -177,18 +213,37 @@ const Step1Content = ({
                             </svg>
                           </div>
                         )}
+                        {isPastSlot && !isBooked && (
+                          <div className="absolute top-1 right-1 bg-gray-400 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                            Hết hạn
+                          </div>
+                        )}
                         
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex-1">
-                            <div className={`font-bold text-sm mb-0.5 ${isBooked ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                            <div className={`font-bold text-sm mb-0.5 ${
+                              isBooked
+                                ? 'text-gray-500 line-through'
+                                : isPastSlot
+                                ? 'text-gray-400'
+                                : 'text-gray-900'
+                            }`}>
                               {slot.startTime} - {slot.endTime}
                             </div>
-                            <span className={`text-xs ${isBooked ? 'text-gray-400' : 'text-gray-600'}`}>
-                              {slot.multiplier > 1 ? `+${Math.round((slot.multiplier - 1) * 100)}%` : 'Giá gốc'}
+                            <span className={`text-xs ${
+                              isBooked || isPastSlot ? 'text-gray-400' : 'text-gray-600'
+                            }`}>
+                              {isPastSlot
+                                ? 'Đã qua thời gian'
+                                : slot.multiplier > 1
+                                ? `+${Math.round((slot.multiplier - 1) * 100)}%`
+                                : 'Giá gốc'}
                             </span>
                           </div>
                           <div className="text-right">
-                            <div className={`text-base font-bold ${isBooked ? 'text-gray-400 line-through' : 'text-blue-600'}`}>
+                            <div className={`text-base font-bold ${
+                              isBooked || isPastSlot ? 'text-gray-400 line-through' : 'text-blue-600'
+                            }`}>
                               {new Intl.NumberFormat('vi-VN', {
                                 style: 'currency',
                                 currency: 'VND'
@@ -197,7 +252,7 @@ const Step1Content = ({
                           </div>
                         </div>
                         
-                        {isSelected && !isBooked && (
+                        {isSelected && !isDisabled && (
                           <div className="mt-1.5 pt-1.5 border-t border-blue-200">
                             <div className="flex items-center gap-1 text-blue-600 text-sm font-medium">
                               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">

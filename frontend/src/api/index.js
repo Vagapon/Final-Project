@@ -9,6 +9,8 @@ export * from './teamManagement';
 export * from './memberManagement';
 export * from './seasonManagement';
 export * from './paymentManagement';
+export * from './matchSchedule';
+export * from './blogManagement';
 export { default as axiosClient } from './axiosClient';
 
 // Export base classes for custom implementations

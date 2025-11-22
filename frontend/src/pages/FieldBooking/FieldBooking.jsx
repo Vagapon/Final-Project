@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Users, Star, Search, Filter, ChevronDown, Loader2, Eye } from 'lucide-react';
 import { fieldBookingService } from '../../api';
@@ -10,8 +10,6 @@ const FieldBooking = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
-  const [selectedArea, setSelectedArea] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -24,6 +22,11 @@ const FieldBooking = () => {
   const [fieldDetailLoading, setFieldDetailLoading] = useState(false);
   const { user } = useAuth();
   const [messageApi, contextHolder] = message.useMessage();
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedLocation, setSelectedLocation] = useState('all');
+  const [selectedFeatures, setSelectedFeatures] = useState([]);
+  const [showActiveOnly, setShowActiveOnly] = useState(false);
+  const [priceFilter, setPriceFilter] = useState({ min: '', max: '' });
 
   // Load fields on component mount
   useEffect(() => {
@@ -95,13 +98,119 @@ const FieldBooking = () => {
     }
   };
 
+  const getCategoryLabel = (field) => {
+    if (!field) return 'Khác';
+    if (field.capacity) {
+      if (typeof field.capacity === 'number') {
+        return `Sân ${field.capacity} người`;
+      }
+      const match = field.capacity.toString().match(/\d+/);
+      if (match) {
+        return `Sân ${match[0]} người`;
+      }
+      return field.capacity;
+    }
+    if (field.purpose === 'event') return 'Sân giải đấu';
+    if (field.purpose === 'rental') return 'Sân thuê';
+    return 'Khác';
+  };
 
-  const areas = ['Tất cả khu vực', 'Khu A', 'Khu B', 'Khu C', 'Khu D'];
+  const priceStats = useMemo(() => {
+    if (!fields.length) return { min: 0, max: 0 };
+    const prices = fields
+      .map((field) => Number(field.pricePerHour) || 0)
+      .filter((price) => !Number.isNaN(price));
+    if (!prices.length) return { min: 0, max: 0 };
+    return {
+      min: Math.min(...prices),
+      max: Math.max(...prices),
+    };
+  }, [fields]);
+
+  useEffect(() => {
+    if (!fields.length) return;
+    setPriceFilter((prev) => ({
+      min: prev.min === '' ? priceStats.min.toString() : prev.min,
+      max: prev.max === '' ? priceStats.max.toString() : prev.max,
+    }));
+  }, [fields, priceStats]);
+
+  const categoryOptions = useMemo(() => {
+    const counts = {};
+    fields.forEach((field) => {
+      const label = getCategoryLabel(field);
+      counts[label] = (counts[label] || 0) + 1;
+    });
+    return Object.entries(counts).map(([label, count]) => ({ label, count }));
+  }, [fields]);
+
+  const locationOptions = useMemo(() => {
+    const counts = {};
+    fields.forEach((field) => {
+      const label = field.location?.trim() || 'Khác';
+      counts[label] = (counts[label] || 0) + 1;
+    });
+    return Object.entries(counts).map(([label, count]) => ({ label, count }));
+  }, [fields]);
+
+  const featureOptions = useMemo(() => {
+    const counts = {};
+    fields.forEach((field) => {
+      if (Array.isArray(field.features)) {
+        field.features.forEach((feature) => {
+          counts[feature] = (counts[feature] || 0) + 1;
+        });
+      }
+    });
+    return Object.entries(counts).map(([label, count]) => ({ label, count }));
+  }, [fields]);
+
+  const handlePriceChange = (key, value) => {
+    setPriceFilter((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const toggleFeature = (feature) => {
+    setSelectedFeatures((prev) =>
+      prev.includes(feature)
+        ? prev.filter((item) => item !== feature)
+        : [...prev, feature]
+    );
+  };
+
+  const resetFilters = () => {
+    setSelectedCategory('all');
+    setSelectedLocation('all');
+    setSelectedFeatures([]);
+    setShowActiveOnly(false);
+    setPriceFilter({
+      min: priceStats.min.toString(),
+      max: priceStats.max.toString(),
+    });
+  };
+
 
   const filteredFields = fields.filter(field => {
     const matchesSearch = field.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesArea = selectedArea === '' || selectedArea === 'Tất cả khu vực' || field.location === selectedArea;
-    return matchesSearch && matchesArea;
+    const categoryLabel = getCategoryLabel(field);
+    const matchesCategory = selectedCategory === 'all' || categoryLabel === selectedCategory;
+    const priceValue = Number(field.pricePerHour) || 0;
+    const minPriceValue = priceFilter.min === '' ? null : Number(priceFilter.min);
+    const maxPriceValue = priceFilter.max === '' ? null : Number(priceFilter.max);
+    const matchesPrice =
+      (minPriceValue === null || priceValue >= minPriceValue) &&
+      (maxPriceValue === null || priceValue <= maxPriceValue);
+    const locationLabel = field.location?.trim() || 'Khác';
+    const matchesLocation = selectedLocation === 'all' || locationLabel === selectedLocation;
+    const matchesActive = !showActiveOnly || field.status === 'active';
+    const fieldFeatures = Array.isArray(field.features) ? field.features : [];
+    const matchesFeatures =
+      selectedFeatures.length === 0 ||
+      selectedFeatures.every((feature) => fieldFeatures.includes(feature));
+
+    return matchesSearch && matchesCategory && matchesPrice && matchesLocation && matchesActive && matchesFeatures;
   });
 
   const formatPrice = (price) => {
@@ -167,29 +276,43 @@ const FieldBooking = () => {
               
               {/* Category Filter */}
               <div className="mb-4 sm:mb-6">
-                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">Category</h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs sm:text-sm font-semibold text-gray-900">Loại sân</h3>
+                  <button
+                    onClick={resetFilters}
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    Đặt lại
+                  </button>
+                </div>
                 <div className="space-y-1">
-                  {[
-                    { id: 'all', name: 'All categories', count: 188, active: true },
-                    { id: '5v5', name: 'Sân 5 người', count: 68 },
-                    { id: '7v7', name: 'Sân 7 người', count: 43 },
-                    { id: '11v11', name: 'Sân 11 người', count: 31 },
-
-                  ].map((category) => (
+                  <button
+                    onClick={() => setSelectedCategory('all')}
+                    className={`w-full flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 text-left transition-colors rounded ${
+                      selectedCategory === 'all'
+                        ? 'bg-gray-900 text-white'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="text-xs sm:text-sm font-medium">Tất cả</span>
+                    <span className="text-xs text-gray-500">({fields.length})</span>
+                  </button>
+                  {categoryOptions.map((category) => (
                     <button
-                      key={category.id}
+                      key={category.label}
+                      onClick={() => setSelectedCategory(category.label)}
                       className={`w-full flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 text-left transition-colors rounded ${
-                        category.active 
-                          ? 'bg-gray-900 text-white' 
+                        selectedCategory === category.label
+                          ? 'bg-gray-900 text-white'
                           : 'text-gray-600 hover:bg-gray-50'
                       }`}
                     >
-                      <span className="text-xs sm:text-sm font-medium">{category.name}</span>
+                      <span className="text-xs sm:text-sm font-medium">{category.label}</span>
                       <span className="text-xs text-gray-500">({category.count})</span>
                     </button>
                   ))}
                 </div>
-        </div>
+              </div>
 
               {/* Price Filter */}
               <div className="mb-4 sm:mb-6">
@@ -197,32 +320,36 @@ const FieldBooking = () => {
                 <div className="flex items-center space-x-1 sm:space-x-2">
                   <input
                     type="number"
-                    placeholder="$4"
+                    min="0"
+                    value={priceFilter.min}
+                    onChange={(e) => handlePriceChange('min', e.target.value)}
                     className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded text-xs sm:text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   />
                   <span className="text-gray-500 text-xs sm:text-sm">-</span>
                   <input
                     type="number"
-                    placeholder="$150"
+                    min="0"
+                    value={priceFilter.max}
+                    onChange={(e) => handlePriceChange('max', e.target.value)}
                     className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded text-xs sm:text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   />
-                  <button className="bg-gray-900 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm hover:bg-gray-800">
-                    →
-                  </button>
+                  <span className="text-xs text-gray-500">đ/khung</span>
                 </div>
               </div>
 
-              {/* On Sale Filter */}
+              {/* Active Filter */}
               <div className="mb-4 sm:mb-6">
-                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">On Sale</h3>
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">Tình trạng</h3>
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    id="onsale"
+                    id="active-only"
+                    checked={showActiveOnly}
+                    onChange={(e) => setShowActiveOnly(e.target.checked)}
                     className="w-3 h-3 sm:w-4 sm:h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
                   />
-                  <label htmlFor="onsale" className="text-xs sm:text-sm text-gray-600">
-                    Yes (9)
+                  <label htmlFor="active-only" className="text-xs sm:text-sm text-gray-600">
+                    Chỉ hiển thị sân đang hoạt động
                   </label>
                 </div>
               </div>
@@ -231,17 +358,29 @@ const FieldBooking = () => {
               <div className="mb-4 sm:mb-6">
                 <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">Location</h3>
                 <div className="space-y-1">
-                  {areas.map((area, index) => (
+                  <button
+                    onClick={() => setSelectedLocation('all')}
+                    className={`w-full flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 text-left transition-colors rounded ${
+                      selectedLocation === 'all'
+                        ? 'bg-gray-900 text-white'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="text-xs sm:text-sm font-medium">Tất cả khu vực</span>
+                    <span className="text-xs text-gray-500">({fields.length})</span>
+                  </button>
+                  {locationOptions.map((area) => (
                     <button
-                      key={area}
+                      key={area.label}
+                      onClick={() => setSelectedLocation(area.label)}
                       className={`w-full flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 text-left transition-colors rounded ${
-                        index === 0 
-                          ? 'bg-gray-900 text-white' 
+                        selectedLocation === area.label
+                          ? 'bg-gray-900 text-white'
                           : 'text-gray-600 hover:bg-gray-50'
                       }`}
                     >
-                      <span className="text-xs sm:text-sm font-medium">{area}</span>
-                      <span className="text-xs text-gray-500">({Math.floor(Math.random() * 50) + 10})</span>
+                      <span className="text-xs sm:text-sm font-medium">{area.label}</span>
+                      <span className="text-xs text-gray-500">({area.count})</span>
                     </button>
                   ))}
                 </div>
@@ -251,21 +390,21 @@ const FieldBooking = () => {
               <div className="mb-4 sm:mb-6">
                 <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">Features</h3>
                 <div className="space-y-2">
-                  {[
-                    { id: 'lighting', name: 'Lighting', count: 45 },
-                    { id: 'roof', name: 'Covered', count: 32 },
-                    { id: 'parking', name: 'Parking', count: 67 },
-                    { id: 'changing', name: 'Changing Room', count: 28 }
-                  ].map((feature) => (
-                    <div key={feature.id} className="flex items-center justify-between">
+                  {featureOptions.length === 0 && (
+                    <p className="text-xs text-gray-500">Chưa có dữ liệu tiện ích</p>
+                  )}
+                  {featureOptions.map((feature) => (
+                    <div key={feature.label} className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <input
                           type="checkbox"
-                          id={feature.id}
+                          id={feature.label}
+                          checked={selectedFeatures.includes(feature.label)}
+                          onChange={() => toggleFeature(feature.label)}
                           className="w-3 h-3 sm:w-4 sm:h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
                         />
-                        <label htmlFor={feature.id} className="text-xs sm:text-sm text-gray-600">
-                          {feature.name}
+                        <label htmlFor={feature.label} className="text-xs sm:text-sm text-gray-600">
+                          {feature.label}
                         </label>
                       </div>
                       <span className="text-xs text-gray-500">({feature.count})</span>
@@ -325,9 +464,17 @@ const FieldBooking = () => {
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => navigate('/booking-history')}
+                  className="px-3 py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Lịch sử đặt sân
                 </button>
               </div>
-            </div>
         </div>
 
             {/* Fields Grid */}

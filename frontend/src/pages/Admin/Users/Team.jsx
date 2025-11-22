@@ -239,60 +239,7 @@ const handleDelete = async (teamId) => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Total Teams
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {teams.length}
-              </p>
-            </div>
-            <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Active Teams
-              </p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {teams.filter((t) => t.status === "Active").length}
-              </p>
-            </div>
-            <Trophy className="h-8 w-8 text-green-600 dark:text-green-400" />
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Suspended
-              </p>
-              <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {teams.filter((t) => t.status === "Suspended").length}
-              </p>
-            </div>
-            <Calendar className="h-8 w-8 text-red-600 dark:text-red-400" />
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Total Players
-              </p>
-              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                {teams.reduce((sum, team) => sum + team.players, 0)}
-              </p>
-            </div>
-            <Users className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-          </div>
-        </div>
-      </div>
+  
 
       {/* Controls */}
       <div className="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">

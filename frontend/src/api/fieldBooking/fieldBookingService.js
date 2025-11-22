@@ -44,7 +44,20 @@ class FieldBookingService extends BaseService {
       date,
       timeSlotId
     });
-    return result.success ? result.data : null;
+    if (!result.success) {
+      return null;
+    }
+
+    const payload = result.data;
+    if (typeof payload === 'boolean') {
+      return payload;
+    }
+
+    if (payload && typeof payload.isAvailable !== 'undefined') {
+      return payload.isAvailable;
+    }
+
+    return null;
   }
 
   // Create booking

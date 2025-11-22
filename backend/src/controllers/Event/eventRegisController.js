@@ -1,6 +1,10 @@
 const EventRegistration = require('../../models/Event/EventRegistration');
 const Team = require('../../models/Team/Team');
 const Event = require('../../models/Event/Event');
+const { createNotification } = require('../notificationController');
+const UserRole = require('../../models/UserModel/UserRole');
+const Role = require('../../models/UserModel/Role');
+const User = require('../../models/UserModel/User');
 
 const eventRegistrationController = {
 
@@ -36,6 +40,38 @@ const eventRegistrationController = {
                 status: 'pending'
             });
             await registration.save();
+
+            // Tạo notification cho tất cả admin users
+            try {
+                // Lấy role ADMIN
+                const adminRole = await Role.findOne({ code: 'ADMIN' });
+                if (adminRole) {
+                    // Lấy tất cả admin users
+                    const adminUserRoles = await UserRole.find({ role_id: adminRole._id }).populate('user_id');
+                    const adminUsers = adminUserRoles.map(ur => ur.user_id);
+
+                    // Tạo notification cho mỗi admin
+                    const teamName = team.name || 'Một đội';
+                    const eventName = event.name || 'sự kiện';
+                    const content = `Đội "${teamName}" đã đăng ký tham gia sự kiện "${eventName}"`;
+
+                    for (const admin of adminUsers) {
+                        await createNotification(
+                            req.user.id, // senderId (người đăng ký)
+                            admin._id,   // receiveId (admin)
+                            'event_registration',
+                            content,
+                            teamId,
+                            eventId,     // eventId
+                            null         // bookingId
+                        );
+                    }
+                }
+            } catch (notifError) {
+                console.error('Error creating notification:', notifError);
+                // Không fail request nếu notification lỗi
+            }
+
             res.status(201).json({ message: 'Registration successful', registration });
         } catch (error) {
             if (error.code === 11000) { // Duplicate key error
@@ -62,15 +98,58 @@ const eventRegistrationController = {
             const { status } = req.body;
 
             // Role check is done in route middleware (checkRole(['ADMIN']))
-            const registration = await EventRegistration.findByIdAndUpdate(
-                registrationId,
-                { status,
-                    updatedAt: Date.now()
-                 } ,
-            );
+            const registration = await EventRegistration.findById(registrationId);
             if (!registration) {
                 return res.status(404).json({ message: 'Registration not found' });
             }
+
+            // Lưu status cũ để so sánh
+            const oldStatus = registration.status;
+
+            // Cập nhật status
+            registration.status = status;
+            registration.updatedAt = Date.now();
+            await registration.save();
+
+            // Tạo notification cho team manager khi status thay đổi (approve hoặc reject)
+            if ((status === 'approved' || status === 'rejected') && oldStatus !== status) {
+                try {
+                    const team = await Team.findById(registration.teamId);
+                    const event = await Event.findById(registration.eventId);
+                    
+                    if (team && team.managerId && event) {
+                        const eventName = event.name || 'sự kiện';
+                        const teamName = team.name || 'đội của bạn';
+                        
+                        let content;
+                        let notificationType;
+                        
+                        if (status === 'approved') {
+                            content = `Đội "${teamName}" đã được phê duyệt tham gia sự kiện "${eventName}"`;
+                            notificationType = 'event_approved';
+                        } else if (status === 'rejected') {
+                            content = `Đội "${teamName}" đã bị từ chối tham gia sự kiện "${eventName}"`;
+                            notificationType = 'other'; // Có thể thêm 'event_rejected' vào enum nếu cần
+                        }
+
+                        console.log(`📝 Creating ${status} notification for team manager: ${team.managerId}`);
+                        const notification = await createNotification(
+                            req.user.id,        // senderId (admin)
+                            team.managerId,     // receiveId (team manager)
+                            notificationType,
+                            content,
+                            registration.teamId,
+                            registration.eventId,
+                            null
+                        );
+                        console.log(`✅ ${status} notification created: ${notification._id}`);
+                    }
+                } catch (notifError) {
+                    console.error('Error creating status update notification:', notifError);
+                    // Không fail request nếu notification lỗi
+                }
+            }
+
             res.status(200).json({ message: 'Registration status updated', registration });
         } catch (error) {
             res.status(500).json({ message: 'Server error', error: error.message });

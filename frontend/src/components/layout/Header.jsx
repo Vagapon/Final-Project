@@ -9,13 +9,116 @@ import {
   ChevronDown,
   LogOut,
   Settings,
+  Calendar,
+  Users,
+  CheckCircle,
 } from "lucide-react";
 import { useAuth } from "../../pages/Authen/AuthContext";
+import { notificationService } from "../../api/notificationManagement";
+import { useNavigate } from "react-router-dom";
+import { useSocket } from "../../contexts/SocketContext";
+import { toast } from "sonner";
+
 const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const { user, logout } = useAuth();
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
   const userDropdownRef = useRef(null);
+  const notificationRef = useRef(null);
+  const navigate = useNavigate();
+  const { socket } = useSocket();
+
+  // Load notifications
+  const loadNotifications = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const result = await notificationService.getNotifications(1, 10);
+      // Đảm bảo data luôn là array
+      const notificationsArray = Array.isArray(result.data) ? result.data : [];
+      setNotifications(notificationsArray);
+      setUnreadCount(result.unreadCount || 0);
+    } catch (error) {
+      console.error('Load notifications error:', error);
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load unread count
+  const loadUnreadCount = async () => {
+    if (!user) return;
+    try {
+      const result = await notificationService.getUnreadCount();
+      if (result.success) {
+        setUnreadCount(result.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Load unread count error:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadNotifications();
+    loadUnreadCount();
+  }, [user]);
+
+  // Listen real-time notifications từ Socket.io
+  useEffect(() => {
+    if (!socket || !user) return;
+
+    // Join user's notification room
+    socket.emit('joinChat', user.id);
+
+    // Listen new notification event
+    const handleNewNotification = (notification) => {
+      // Thêm notification mới vào đầu danh sách
+      setNotifications(prev => {
+        // Kiểm tra xem notification đã tồn tại chưa (tránh duplicate)
+        const exists = prev.some(n => n._id === notification._id);
+        if (exists) return prev;
+        return [notification, ...prev];
+      });
+      
+      // Tăng unread count
+      setUnreadCount(prev => prev + 1);
+
+      // Hiển thị toast notification với Sonner
+      const getNotificationTitle = () => {
+        switch (notification.type) {
+          case 'event_registration':
+            return 'Đăng ký sự kiện';
+          case 'booking':
+            return 'Đặt sân bóng';
+          case 'event_approved':
+            return 'Sự kiện được duyệt';
+          case 'booking_confirmed':
+            return 'Đặt sân được xác nhận';
+          default:
+            return 'Thông báo mới';
+        }
+      };
+
+      toast.success(getNotificationTitle(), {
+        description: notification.content,
+        duration: 5000,
+        action: {
+          label: 'Xem',
+          onClick: () => setShowNotifications(true),
+        },
+      });
+    };
+
+    socket.on('newNotification', handleNewNotification);
+
+    return () => {
+      socket.off('newNotification', handleNewNotification);
+    };
+  }, [socket, user]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -25,45 +128,122 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
       ) {
         setUserDropdownOpen(false);
       }
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setShowNotifications(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const notifications = [
-    {
-      id: 1,
-      user: "Terry Franci",
-      action: "requests permission to change",
-      project: "Project - Nganfor App",
-      time: "5 min ago",
-      avatar: "TF",
-    },
-    {
-      id: 2,
-      user: "Alena Franci",
-      action: "requests permission to change",
-      project: "Project - Nganfor App",
-      time: "8 min ago",
-      avatar: "AF",
-    },
-    {
-      id: 3,
-      user: "Jocelyn Kenter",
-      action: "requests permission to change",
-      project: "Project - Nganfor App",
-      time: "15 min ago",
-      avatar: "JK",
-    },
-    {
-      id: 4,
-      user: "Brandon Philips",
-      action: "requests permission to change",
-      project: "Project - Nganfor App",
-      time: "1 hr ago",
-      avatar: "BP",
-    },
-  ];
+  // Format time ago - hiển thị chính xác thời gian
+  const formatTimeAgo = (dateString) => {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    
+    // Kiểm tra date hợp lệ
+    if (isNaN(date.getTime())) return '';
+
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    const diffInHours = Math.floor(diffInSeconds / 3600);
+    const diffInDays = Math.floor(diffInSeconds / 86400);
+
+    // Nếu là hôm nay
+    if (diffInDays === 0) {
+      if (diffInSeconds < 60) return 'Vừa xong';
+      if (diffInMinutes < 60) {
+        return `${diffInMinutes} phút trước`;
+      }
+      return `${diffInHours} giờ trước`;
+    }
+
+    // Nếu là hôm qua
+    if (diffInDays === 1) {
+      return 'Hôm qua';
+    }
+
+    // Nếu trong tuần này
+    if (diffInDays < 7) {
+      return `${diffInDays} ngày trước`;
+    }
+
+    // Nếu trong tháng này
+    if (diffInDays < 30) {
+      const weeks = Math.floor(diffInDays / 7);
+      return `${weeks} tuần trước`;
+    }
+
+    // Nếu trong năm này
+    if (date.getFullYear() === now.getFullYear()) {
+      return date.toLocaleDateString('vi-VN', { 
+        day: 'numeric', 
+        month: 'long' 
+      });
+    }
+
+    // Nếu khác năm
+    return date.toLocaleDateString('vi-VN', { 
+      day: 'numeric', 
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  // Get notification icon
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'event_registration':
+        return <Users className="w-5 h-5 text-blue-500" />;
+      case 'booking':
+        return <Calendar className="w-5 h-5 text-orange-500" />;
+      case 'event_approved':
+      case 'booking_confirmed':
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
+      default:
+        return <Bell className="w-5 h-5 text-gray-500" />;
+    }
+  };
+
+  // Get avatar initials
+  const getAvatarInitials = (name) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  // Handle mark as read
+  const handleMarkAsRead = async (notificationId) => {
+    try {
+      await notificationService.markAsRead(notificationId);
+      setNotifications(prev => 
+        prev.map(n => n._id === notificationId ? { ...n, isRead: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Mark as read error:', error);
+    }
+  };
+
+  // Handle mark all as read
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Mark all as read error:', error);
+    }
+  };
+
 
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
@@ -98,54 +278,125 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
               <Moon className="w-5 h-5 dark:text-white" />
             )}
           </button>
-          <div className="relative">
+          <div className="relative" ref={notificationRef}>
             <button
-              onClick={() => setShowNotifications(!showNotifications)}
+              onClick={() => {
+                setShowNotifications(!showNotifications);
+                if (!showNotifications) {
+                  loadNotifications();
+                }
+              }}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 relative"
             >
               <Bell className="w-5 h-5 dark:text-white" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </button>
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700 z-50">
-                <div className="p-4 border-b dark:border-gray-700">
+                <div className="p-4 border-b dark:border-gray-700 flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Notification
+                    Thông báo
                   </h3>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={handleMarkAllAsRead}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Đánh dấu tất cả đã đọc
+                    </button>
+                  )}
                 </div>
                 <div className="max-h-80 overflow-y-auto">
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className="p-4 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <div className="flex items-start space-x-3">
-                        <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                          {notification.avatar}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 dark:text-white">
-                            <span className="font-medium">
-                              {notification.user}
-                            </span>{" "}
-                            {notification.action}
-                          </p>
-                          <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                            {notification.project}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Project • {notification.time}
-                          </p>
+                  {loading ? (
+                    <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                      Đang tải...
+                    </div>
+                  ) : !Array.isArray(notifications) || notifications.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                      Không có thông báo nào
+                    </div>
+                  ) : (
+                    notifications.map((notification) => (
+                      <div
+                        key={notification._id}
+                        onClick={() => {
+                          if (!notification.isRead) {
+                            handleMarkAsRead(notification._id);
+                          }
+                        }}
+                        className={`p-4 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
+                          !notification.isRead ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                        }`}
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div className="flex-shrink-0">
+                            {notification.senderId?.avatar ? (
+                              <img
+                                src={notification.senderId.avatar}
+                                alt={notification.senderId.name}
+                                className="w-10 h-10 rounded-full"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                {getAvatarInitials(notification.senderId?.name || 'U')}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <p className="text-sm text-gray-900 dark:text-white">
+                                  {notification.content}
+                                </p>
+                                {notification.teamId && (
+                                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                    Đội: {notification.teamId.name}
+                                  </p>
+                                )}
+                                {notification.eventId && (
+                                  <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                                    Sự kiện: {notification.eventId.name}
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  {formatTimeAgo(notification.createdAt)}
+                                  {notification.createdAt && (
+                                    <span className="ml-2 text-gray-400">
+                                      • {new Date(notification.createdAt).toLocaleTimeString('vi-VN', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit' 
+                                      })}
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                              <div className="ml-2 flex-shrink-0">
+                                {getNotificationIcon(notification.type)}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
-                <div className="p-4 text-center">
-                  <button className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline">
-                    View All Notifications
-                  </button>
-                </div>
+                {notifications.length > 0 && (
+                  <div className="p-4 text-center border-t dark:border-gray-700">
+                    <button 
+                      onClick={() => {
+                        setShowNotifications(false);
+                        // Có thể navigate đến trang notifications nếu có
+                      }}
+                      className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline"
+                    >
+                      Xem tất cả thông báo
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

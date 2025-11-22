@@ -3,6 +3,9 @@ const Field = require('../models/Field');
 const TimeSlot = require('../models/TimeSlot');
 const User = require('../models/UserModel/User');
 const mongoose = require('mongoose');
+const { createNotification } = require('./notificationController');
+const UserRole = require('../models/UserModel/UserRole');
+const Role = require('../models/UserModel/Role');
 
 // Get all bookings with filters
 const getAllBookings = async (req, res) => {
@@ -170,6 +173,14 @@ const createBooking = async (req, res) => {
     // Create start and end time
     const startTime = new Date(`${date}T${timeSlot.startTime}`);
     const endTime = new Date(`${date}T${timeSlot.endTime}`);
+    const now = new Date();
+
+    if (startTime <= now) {
+      return res.status(400).json({
+        success: false,
+        message: 'Không thể đặt sân cho thời gian trong quá khứ'
+      });
+    }
 
     // Check for conflicts
     const existingBooking = await Booking.findOne({
@@ -214,6 +225,44 @@ const createBooking = async (req, res) => {
     });
 
     await booking.save();
+
+    // Tạo notification cho tất cả admin users
+    try {
+        // Lấy role ADMIN
+        const adminRole = await Role.findOne({ code: 'ADMIN' });
+        if (adminRole) {
+            // Lấy tất cả admin users
+            const adminUserRoles = await UserRole.find({ role_id: adminRole._id }).populate('user_id');
+            const adminUsers = adminUserRoles.map(ur => ur.user_id);
+
+            // Tạo notification cho mỗi admin
+            const fieldName = field.name || 'sân bóng';
+            const teamName = booking.teamId ? (await mongoose.model('Team').findById(booking.teamId))?.name : null;
+            const userName = (await User.findById(userId))?.name || 'Người dùng';
+            
+            let content;
+            if (teamName) {
+                content = `Đội "${teamName}" đã đặt sân "${fieldName}"`;
+            } else {
+                content = `${userName} đã đặt sân "${fieldName}"`;
+            }
+
+            for (const admin of adminUsers) {
+                await createNotification(
+                    userId,      // senderId (người đặt sân)
+                    admin._id,   // receiveId (admin)
+                    'booking',
+                    content,
+                    booking.teamId || null,
+                    null,        // eventId
+                    booking._id  // bookingId
+                );
+            }
+        }
+    } catch (notifError) {
+        console.error('Error creating notification:', notifError);
+        // Không fail request nếu notification lỗi
+    }
 
     // Populate and return
     const populatedBooking = await Booking.findById(booking._id)
@@ -422,6 +471,14 @@ const checkAvailability = async (req, res) => {
     // Create start and end time
     const startTime = new Date(`${date}T${timeSlot.startTime}`);
     const endTime = new Date(`${date}T${timeSlot.endTime}`);
+    const now = new Date();
+
+    if (startTime <= now) {
+      return res.status(400).json({
+        success: false,
+        message: 'Không thể kiểm tra/đặt sân cho thời gian trong quá khứ'
+      });
+    }
 
     // Check for conflicts
     const existingBooking = await Booking.findOne({

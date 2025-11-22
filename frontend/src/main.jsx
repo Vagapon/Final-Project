@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Toaster } from "sonner";
 import "./index.css";
 import App from "./App.jsx";
 
@@ -19,6 +20,7 @@ import Blog from "./pages/Blogs/Blog.jsx";
 import Challenge from "./pages/Challenges/Challenge.jsx";
 import Booking from "./pages/FieldBooking/FieldBooking.jsx";
 import BookingPage from "./pages/FieldBooking/BookingPage.jsx";
+import BookingHistory from "./pages/FieldBooking/BookingHistory.jsx";
 import Match from "./pages/Admin/Event/Match.jsx"; 
 import Register from "./pages/Authen/Register.jsx"; 
 import ProtectedRoute from "./routes/ProtectedRoute.jsx"; 
@@ -28,6 +30,7 @@ import Unauthorized from "./pages/Authen/Unauthorized.jsx";
 import CreateStaff from "./pages/Admin/Users/CreateStaff.jsx"; 
 import Season from "./pages/Admin/Event/Season.jsx"; 
 import Stadium from "./pages/Admin/Booking/Stadium.jsx";
+import BlogManagement from "./pages/Admin/Blog/BlogManagement.jsx";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Failed to find root element");
@@ -36,6 +39,7 @@ createRoot(rootElement).render(
   <BrowserRouter>
     <AuthProvider>
       <SocketProvider>
+        <Toaster position="top-right" richColors />
         <Routes>
           <Route path="/" element={<App />}>
             <Route index element={<Home />} />
@@ -44,6 +48,7 @@ createRoot(rootElement).render(
               <Route path="/blog" element={<Blog />} />
               <Route path="/challenge" element={<Challenge />} />
               <Route path="/book" element={<Booking />} />
+              <Route path="/booking-history" element={<BookingHistory />} />
               <Route path="/booking/:fieldId/:timeSlotId/:date" element={<BookingPage />} />
             </Route>
           </Route>
@@ -62,6 +67,7 @@ createRoot(rootElement).render(
               <Route path="create-staff" element={<CreateStaff />} />
               <Route path="seasons" element={<Season />} />
               <Route path="stadium" element={<Stadium />} />
+              <Route path="blogs" element={<BlogManagement />} />
             </Route>
           </Route>
 

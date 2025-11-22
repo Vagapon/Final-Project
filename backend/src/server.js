@@ -69,9 +69,11 @@ const PORT = process.env.PORT || 5000;
       // Send current online users to the newly connected user
       socket.emit("onlineUsers", Array.from(onlineUsers.keys()));
 
-      // Join specific chat room
+      // Join specific chat room (cũng dùng cho notifications)
       socket.on("joinChat", (chatId) => {
-        socket.join(chatId);
+        const roomId = chatId.toString ? chatId.toString() : String(chatId);
+        socket.join(roomId);
+        console.log(`👤 User ${userId} joined room: ${roomId}`);
       });
 
       // Leave specific chat room
@@ -191,6 +193,9 @@ const PORT = process.env.PORT || 5000;
         socket.broadcast.emit("userOffline", { userId });
       });
     });
+
+    // Export io để dùng trong controllers
+    global.io = io;
 
     // 🚀 Khởi động server
     server.listen(PORT, () => {

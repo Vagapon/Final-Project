@@ -13,6 +13,9 @@ const authApi = {
   
   // Forgot password
   forgotPassword: (data) => axiosClient.post("/auth/forgot-password", data),
+
+  // Verify reset OTP
+  verifyResetOtp: (data) => axiosClient.post("/auth/verify-reset-otp", data),
   
   // Reset password
   resetPassword: (data) => axiosClient.post("/auth/reset-password", data),

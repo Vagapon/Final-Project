@@ -178,57 +178,7 @@ const Event = () => {
 
       <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Events</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {eventData.length || 0}
-                </p>
-              </div>
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg transition-colors duration-200">
-                <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Storage Used</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">234.5 GB</p>
-              </div>
-              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg transition-colors duration-200">
-                <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Events</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{eventData.length}</p>
-              </div>
-              <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg transition-colors duration-200">
-                <Star className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Categories</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">6</p>
-              </div>
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg transition-colors duration-200">
-                <MapPin className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-            </div>
-          </div>
-        </div>
+       
 
         {/* Clean Search and Actions Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-8 border border-gray-200 dark:border-gray-700 shadow-sm">

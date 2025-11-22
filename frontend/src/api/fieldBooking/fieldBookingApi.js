@@ -18,7 +18,7 @@ const fieldBookingApi = {
   createBooking: (data) => axiosClient.post("/bookings", data),
   
   // Get user bookings
-  getUserBookings: (params) => axiosClient.get("/bookings", { params }),
+  getUserBookings: (params) => axiosClient.get("/bookings/user", { params }),
   
   // Get booking by ID
   getBookingById: (id) => axiosClient.get(`/bookings/${id}`),

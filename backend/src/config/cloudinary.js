@@ -46,10 +46,19 @@ const fieldStorage = new CloudinaryStorage({
   },
 });
 
+const blogStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "blog_images",
+    allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+  },
+});
+
 const staffUpload = multer({ storage: staffStorage });
 const eventUpload = multer({ storage: eventStorage });
 const teamUpload = multer({ storage: teamStrorage });
 const userUpload = multer({ storage: userStorage });
 const fieldUpload = multer({ storage: fieldStorage });
+const blogUpload = multer({ storage: blogStorage });
 
-module.exports = { cloudinary, staffUpload, eventUpload, teamUpload, userUpload, fieldUpload };
+module.exports = { cloudinary, staffUpload, eventUpload, teamUpload, userUpload, fieldUpload, blogUpload };

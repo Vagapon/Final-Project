@@ -288,10 +288,7 @@ const User = () => {
             </div>
           </div>
 
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md">
-            <Plus className="h-4 w-4" />
-            Add User
-          </button>
+      
         </div>
       </div>
 

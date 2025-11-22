@@ -1,8 +1,10 @@
-const Match = require('../models/Event/Match');
-const Event = require('../models/Event/Event');
-const Team = require('../models/Team/Team');
-const Field = require('../models/Field');
-const { generateRoundRobinSchedule, calculateTotalMatches, allocateMatchTimes } = require('../utils/scheduleGenerator');
+const Match = require('../../models/Event/Match');
+const Event = require('../../models/Event/Event');
+const EventRegistration = require('../../models/Event/EventRegistration');
+const Team = require('../../models/Team/Team');
+const Field = require('../../models/Field');
+const { generateRoundRobinSchedule, calculateTotalMatches, allocateMatchTimes } = require('../../utils/scheduleGenerator');
+const { createNotification } = require('../notificationController');
 
 /**
  * Tạo lịch thi đấu vòng tròn cho một event
@@ -32,6 +34,24 @@ const createRoundRobinSchedule = async (req, res) => {
 
     if (teamIds.length > event.maxTeams) {
       return res.status(400).json({ message: `Số đội không được vượt quá ${event.maxTeams}` });
+    }
+
+    // Kiểm tra các đội đã được approve cho event này chưa
+    const approvedRegistrations = await EventRegistration.find({
+      eventId: eventId,
+      teamId: { $in: teamIds },
+      status: 'approved'
+    });
+    
+    const approvedTeamIds = approvedRegistrations.map(reg => reg.teamId.toString());
+    const unapprovedTeams = teamIds.filter(teamId => !approvedTeamIds.includes(teamId.toString()));
+    
+    if (unapprovedTeams.length > 0) {
+      const unapprovedTeamNames = await Team.find({ _id: { $in: unapprovedTeams } }).select('name');
+      return res.status(400).json({ 
+        message: 'Một số đội chưa được approve cho event này',
+        unapprovedTeams: unapprovedTeamNames.map(t => t.name)
+      });
     }
 
     // Lấy thông tin các đội
@@ -80,6 +100,41 @@ const createRoundRobinSchedule = async (req, res) => {
       numberOfMatch: totalMatches,
       status: 'ongoing'
     });
+
+    // Tạo notification cho các team managers khi lịch thi đấu được tạo
+    try {
+      const eventName = event.name || 'sự kiện';
+      const uniqueTeamIds = [...new Set(teams.map(t => t._id.toString()))];
+      
+      // Lấy thông tin teams với managerId
+      const teamsWithManagers = await Team.find({ 
+        _id: { $in: uniqueTeamIds } 
+      }).select('_id name managerId');
+
+      // Gửi notification cho mỗi team manager
+      for (const team of teamsWithManagers) {
+        if (team.managerId) {
+          const teamName = team.name || 'đội của bạn';
+          const content = `Lịch thi đấu cho sự kiện "${eventName}" đã được sắp xếp. Đội "${teamName}" có ${savedMatches.filter(m => 
+            m.team1Id.toString() === team._id.toString() || 
+            m.team2Id.toString() === team._id.toString()
+          ).length} trận đấu.`;
+
+          await createNotification(
+            req.user.id,        // senderId (admin)
+            team.managerId,     // receiveId (team manager)
+            'match_scheduled',
+            content,
+            team._id,
+            eventId,
+            null
+          );
+        }
+      }
+    } catch (notifError) {
+      console.error('Error creating match schedule notifications:', notifError);
+      // Không fail request nếu notification lỗi
+    }
 
     res.status(201).json({
       message: 'Tạo lịch thi đấu thành công',
@@ -274,6 +329,24 @@ const createSingleMatch = async (req, res) => {
       return res.status(400).json({ message: 'Một hoặc cả hai đội không tồn tại' });
     }
 
+    // Kiểm tra các đội đã được approve cho event này chưa
+    const approvedRegistrations = await EventRegistration.find({
+      eventId: eventId,
+      teamId: { $in: [team1Id, team2Id] },
+      status: 'approved'
+    });
+    
+    const approvedTeamIds = approvedRegistrations.map(reg => reg.teamId.toString());
+    const unapprovedTeams = [team1Id, team2Id].filter(teamId => !approvedTeamIds.includes(teamId.toString()));
+    
+    if (unapprovedTeams.length > 0) {
+      const unapprovedTeamNames = await Team.find({ _id: { $in: unapprovedTeams } }).select('name');
+      return res.status(400).json({ 
+        message: 'Một hoặc cả hai đội chưa được approve cho event này',
+        unapprovedTeams: unapprovedTeamNames.map(t => t.name)
+      });
+    }
+
     // Kiểm tra sân có tồn tại không (nếu có)
     if (fieldId) {
       const field = await Field.findById(fieldId);
@@ -340,6 +413,50 @@ const createSingleMatch = async (req, res) => {
       { path: 'team2Id', select: 'name shortName avatar' },
       { path: 'fieldId', select: 'name address' }
     ]);
+
+    // Tạo notification cho các team managers khi trận đấu được tạo
+    try {
+      const event = await Event.findById(eventId);
+      const eventName = event?.name || 'sự kiện';
+      const team1 = await Team.findById(team1Id).select('name managerId');
+      const team2 = await Team.findById(team2Id).select('name managerId');
+      
+      const matchDateStr = matchDate ? new Date(matchDate).toLocaleDateString('vi-VN') : '';
+      const matchTimeStr = matchTime || '';
+      
+      // Notification cho team 1
+      if (team1 && team1.managerId) {
+        const content = `Trận đấu của đội "${team1.name}" vs "${team2?.name || 'đối thủ'}" trong sự kiện "${eventName}" đã được sắp xếp${matchDateStr ? ` vào ${matchDateStr}` : ''}${matchTimeStr ? ` lúc ${matchTimeStr}` : ''}.`;
+        
+        await createNotification(
+          req.user.id,        // senderId (admin)
+          team1.managerId,    // receiveId (team 1 manager)
+          'match_scheduled',
+          content,
+          team1Id,
+          eventId,
+          savedMatch._id
+        );
+      }
+
+      // Notification cho team 2
+      if (team2 && team2.managerId) {
+        const content = `Trận đấu của đội "${team2.name}" vs "${team1?.name || 'đối thủ'}" trong sự kiện "${eventName}" đã được sắp xếp${matchDateStr ? ` vào ${matchDateStr}` : ''}${matchTimeStr ? ` lúc ${matchTimeStr}` : ''}.`;
+        
+        await createNotification(
+          req.user.id,        // senderId (admin)
+          team2.managerId,    // receiveId (team 2 manager)
+          'match_scheduled',
+          content,
+          team2Id,
+          eventId,
+          savedMatch._id
+        );
+      }
+    } catch (notifError) {
+      console.error('Error creating match notification:', notifError);
+      // Không fail request nếu notification lỗi
+    }
 
     res.status(201).json({
       message: 'Tạo trận đấu thành công',
@@ -562,8 +679,21 @@ const getScheduleResources = async (req, res) => {
       return res.status(404).json({ message: 'Event không tồn tại' });
     }
 
-    // Lấy danh sách teams
-    const teams = await Team.find({})
+    // Lấy danh sách teams đã đăng ký và được approve cho event này
+    const approvedRegistrations = await EventRegistration.find({
+      eventId: eventId,
+      status: 'approved'
+    })
+      .populate('teamId', 'name shortName avatar')
+      .select('teamId');
+
+    // Lấy danh sách team IDs đã được approve
+    const approvedTeamIds = approvedRegistrations
+      .map(reg => reg.teamId)
+      .filter(team => team !== null);
+
+    // Lấy thông tin đầy đủ của các teams đã được approve
+    const teams = await Team.find({ _id: { $in: approvedTeamIds.map(t => t._id || t) } })
       .select('name shortName avatar')
       .sort({ name: 1 });
 
@@ -597,6 +727,110 @@ const getScheduleResources = async (req, res) => {
   }
 };
 
+/**
+ * Tự động cập nhật trạng thái các trận đấu dựa trên thời gian
+ * Hàm này sẽ được gọi định kỳ để cập nhật trạng thái từ:
+ * - upcoming → ongoing (khi đến giờ bắt đầu)
+ * - ongoing → completed (khi hết thời gian thi đấu)
+ */
+const autoUpdateMatchStatus = async () => {
+  try {
+    const now = new Date();
+    
+    // Lấy tất cả các trận đấu chưa kết thúc và chưa bị hủy
+    const matches = await Match.find({
+      status: { $in: ['upcoming', 'ongoing'] }
+    }).populate('team1Id team2Id fieldId');
+
+    let updatedCount = 0;
+
+    for (const match of matches) {
+      if (!match.matchDate) continue;
+
+      // Tạo thời gian bắt đầu trận đấu
+      const matchDate = new Date(match.matchDate);
+      let matchStartTime = new Date(matchDate);
+      
+      // Nếu có matchTime, kết hợp với matchDate
+      if (match.matchTime) {
+        const [hours, minutes] = match.matchTime.split(':').map(Number);
+        matchStartTime.setHours(hours || 0, minutes || 0, 0, 0);
+      }
+
+      // Tính thời gian kết thúc = thời gian bắt đầu + duration
+      const duration = match.duration || 90; // Mặc định 90 phút
+      const matchEndTime = new Date(matchStartTime.getTime() + duration * 60 * 1000);
+
+      let newStatus = null;
+
+      // Kiểm tra và cập nhật trạng thái
+      if (match.status === 'upcoming' && now >= matchStartTime && now < matchEndTime) {
+        // Chuyển từ "sắp diễn ra" sang "đang diễn ra"
+        newStatus = 'ongoing';
+      } else if (match.status === 'ongoing' && now >= matchEndTime) {
+        // Chuyển từ "đang diễn ra" sang "đã kết thúc"
+        newStatus = 'completed';
+      }
+
+      // Cập nhật trạng thái nếu có thay đổi
+      if (newStatus) {
+        await Match.findByIdAndUpdate(match._id, { 
+          status: newStatus,
+          updatedAt: Date.now()
+        });
+        updatedCount++;
+        console.log(`Đã cập nhật trận đấu ${match._id} từ ${match.status} sang ${newStatus}`);
+      }
+    }
+
+    if (updatedCount > 0) {
+      console.log(`Đã tự động cập nhật ${updatedCount} trận đấu`);
+    }
+
+    return {
+      success: true,
+      updatedCount,
+      message: `Đã cập nhật ${updatedCount} trận đấu`
+    };
+  } catch (error) {
+    console.error('Lỗi khi tự động cập nhật trạng thái trận đấu:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+/**
+ * API endpoint để gọi thủ công hàm tự động cập nhật
+ * Có thể được gọi từ cron job hoặc scheduler
+ */
+const manualUpdateMatchStatus = async (req, res) => {
+  try {
+    const result = await autoUpdateMatchStatus();
+    
+    if (result.success) {
+      res.status(200).json({
+        success: true,
+        message: result.message,
+        updatedCount: result.updatedCount
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Lỗi khi cập nhật trạng thái',
+        error: result.error
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi cập nhật trạng thái',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   // API tự động (giữ lại để dùng sau)
   createRoundRobinSchedule,
@@ -609,5 +843,9 @@ module.exports = {
   updateSingleMatch,
   deleteSingleMatch,
   getEventMatches,
-  getScheduleResources
+  getScheduleResources,
+  
+  // Tự động cập nhật trạng thái
+  autoUpdateMatchStatus,
+  manualUpdateMatchStatus
 };

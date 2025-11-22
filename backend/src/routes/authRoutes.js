@@ -9,6 +9,9 @@ const {
   login,
   createStaff,
   getMe,
+  requestPasswordReset,
+  verifyResetOTP,
+  resetPasswordWithOTP,
   // checkGoogleOAuthStatus
 } = require("../controllers/authController");
 const { verifyToken, checkRole, isAuthenticated } = require("../middlewares/authMiddleware");
@@ -16,6 +19,9 @@ const { verifyToken, checkRole, isAuthenticated } = require("../middlewares/auth
 router.post("/register", register);
 router.post("/login", login);
 router.post("/firebase-login", firebaseLogin);
+router.post("/forgot-password", requestPasswordReset);
+router.post("/verify-reset-otp", verifyResetOTP);
+router.post("/reset-password", resetPasswordWithOTP);
 // router.get("/google-status", checkGoogleOAuthStatus); // Route kiểm tra trạng thái Google OAuth
 router.post("/create-staff" , verifyToken, isAuthenticated, checkRole(["Admin"]), staffUpload.single("avatar"), createStaff);
 router.get("/admin", verifyToken, isAuthenticated,checkRole(["Admin"]),  (req, res) => {

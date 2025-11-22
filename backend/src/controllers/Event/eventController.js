@@ -2,6 +2,8 @@
 const Event = require("../../models/Event/Event");
 const EventRegistration = require("../../models/Event/EventRegistration");
 const Season = require("../../models/Event/Season");
+const Team = require("../../models/Team/Team");
+const { createNotification } = require("../notificationController");
 const mongoose = require("mongoose");
 
 // Utility: validate dates + season
@@ -310,6 +312,9 @@ getAll : async (req, res) => {
 
         registration.status = "approved";
         await registration.save({ session });
+
+        // Notification sẽ được tạo trong updateRegistrationStatus nếu route đó được gọi
+        // Không tạo notification ở đây để tránh duplicate
 
         await session.commitTransaction();
         res.status(200).json({ message: "Registration approved", registration });

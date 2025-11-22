@@ -10,6 +10,7 @@ import {
   Table,
   X,
   UserPlus,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "../../pages/Authen/AuthContext";
 
@@ -19,6 +20,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     task: false,
     forms: false,
     setting: false,
+    blog: false,
   });
   const { user } = useAuth();
 
@@ -64,6 +66,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         { label: "Match Manager", path: "/admin/matches" },
         { label: "Season Manager", path: "/admin/seasons" },
       ],
+    },
+    {
+      id: "blog",
+      icon: BookOpen,
+      label: "Blog",
+      submenu: [{ label: "Blog Manager", path: "/admin/blogs" }],
     },
     {
       id: "booking",

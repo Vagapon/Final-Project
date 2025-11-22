@@ -4,7 +4,12 @@ const Role = require("../models/UserModel/Role");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const admin = require("../config/firebase");
+const crypto = require("crypto");
+const { sendPasswordResetEmail, isEmailConfigured } = require("../utils/emailService");
 const { staffUpload } = require("../config/cloudinary");
+
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+const hashOTP = (otp) => crypto.createHash("sha256").update(otp).digest("hex");
 
 const firebaseLogin = async (req, res) => {
   try {
@@ -220,10 +225,130 @@ const getMe = async (req, res) => {
   }
 };
 
+
+const requestPasswordReset = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ message: "Vui lòng cung cấp email" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      // Không tiết lộ thông tin tồn tại của email
+      return res.status(200).json({
+        message: "Nếu email tồn tại, hệ thống sẽ gửi OTP đặt lại mật khẩu",
+      });
+    }
+
+    const otp = generateOTP();
+    user.passwordResetOTP = hashOTP(otp);
+    user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 phút
+    await user.save();
+
+    const emailEnabled = isEmailConfigured();
+    const allowDevOtp = !emailEnabled && process.env.NODE_ENV !== "production";
+
+    if (emailEnabled) {
+      await sendPasswordResetEmail({ to: email, otp });
+    } else {
+      console.warn(
+        "[ForgotPassword] SMTP chưa được cấu hình. OTP dev:",
+        otp
+      );
+    }
+
+    res.status(200).json({
+      message: emailEnabled
+        ? "OTP đã được gửi đến email của bạn"
+        : "SMTP chưa cấu hình, OTP đã được ghi lại trong server log",
+      expiresIn: 600,
+      devOtp: allowDevOtp ? otp : undefined,
+    });
+  } catch (error) {
+    console.error("requestPasswordReset error:", error);
+    res.status(500).json({ message: "Không thể gửi OTP, vui lòng thử lại sau" });
+  }
+};
+
+const verifyResetOTP = async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) {
+    return res.status(400).json({ message: "Thiếu email hoặc mã OTP" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (
+      !user ||
+      !user.passwordResetOTP ||
+      !user.passwordResetExpires ||
+      user.passwordResetExpires < Date.now()
+    ) {
+      return res.status(400).json({ message: "Mã OTP không hợp lệ hoặc đã hết hạn" });
+    }
+
+    if (hashOTP(otp) !== user.passwordResetOTP) {
+      return res.status(400).json({ message: "Mã OTP không đúng" });
+    }
+
+    res.status(200).json({ message: "Xác thực OTP thành công" });
+  } catch (error) {
+    console.error("verifyResetOTP error:", error);
+    res.status(500).json({ message: "Không thể xác thực OTP" });
+  }
+};
+
+const resetPasswordWithOTP = async (req, res) => {
+  const { email, otp, newPassword, confirmPassword } = req.body;
+
+  if (!email || !otp || !newPassword || !confirmPassword) {
+    return res.status(400).json({ message: "Vui lòng cung cấp đầy đủ thông tin" });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ message: "Mật khẩu xác nhận không khớp" });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: "Mật khẩu phải có ít nhất 6 ký tự" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (
+      !user ||
+      !user.passwordResetOTP ||
+      !user.passwordResetExpires ||
+      user.passwordResetExpires < Date.now()
+    ) {
+      return res.status(400).json({ message: "Mã OTP không hợp lệ hoặc đã hết hạn" });
+    }
+
+    if (hashOTP(otp) !== user.passwordResetOTP) {
+      return res.status(400).json({ message: "Mã OTP không đúng" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.passwordResetOTP = null;
+    user.passwordResetExpires = null;
+    await user.save();
+
+    res.status(200).json({ message: "Đặt lại mật khẩu thành công" });
+  } catch (error) {
+    console.error("resetPasswordWithOTP error:", error);
+    res.status(500).json({ message: "Không thể đặt lại mật khẩu" });
+  }
+};
+
 module.exports = {
   firebaseLogin,
   register,
   createStaff,
   login,
   getMe,
+  requestPasswordReset,
+  verifyResetOTP,
+  resetPasswordWithOTP,
 };

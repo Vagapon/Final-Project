@@ -84,10 +84,25 @@ const authService = {
     }
   },
 
-  // Reset password
-  async resetPassword(token, password) {
+  // Verify OTP
+  async verifyResetOtp(email, otp) {
     try {
-      const response = await authApi.resetPassword({ token, password });
+      const response = await authApi.verifyResetOtp({ email, otp });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Reset password
+  async resetPassword({ email, otp, newPassword, confirmPassword }) {
+    try {
+      const response = await authApi.resetPassword({
+        email,
+        otp,
+        newPassword,
+        confirmPassword,
+      });
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
