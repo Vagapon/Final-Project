@@ -98,16 +98,16 @@ const Step3Content = ({
           </div>
           
           <div className={`transition-all duration-1000 delay-500 ${showAnimation ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-            <h1 className="text-xl lg:text-2xl font-bold text-slate-800 mb-2">Đặt sân thành công!</h1>
+            <h1 className="text-xl lg:text-2xl font-bold text-slate-800 mb-2">Booking Successful!</h1>
             <p className="text-slate-600 text-sm max-w-2xl mx-auto">
-              Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi. Booking đã được xác nhận!
+              Thank you for trusting our service. Your booking has been confirmed!
             </p>
           </div>
         </div>
 
       {/* Booking Details */}
       <div className={`transition-all duration-1000 delay-700 ${showAnimation ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-        <h3 className="text-base font-bold text-slate-800 mb-3">Chi tiết đặt sân</h3>
+        <h3 className="text-base font-bold text-slate-800 mb-3">Booking Details</h3>
               
               {/* Booking ID */}
               <div className="bg-green-50 rounded-lg p-4 mb-4 border border-green-200">
@@ -116,7 +116,7 @@ const Step3Content = ({
                     <CheckCircle2 className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <div className="font-semibold text-green-800 text-sm">Mã đặt sân</div>
+                    <div className="font-semibold text-green-800 text-sm">Booking ID</div>
                     <div className="text-sm text-green-600 font-mono">#{Date.now().toString().slice(-8)}</div>
                   </div>
                 </div>
@@ -136,10 +136,10 @@ const Step3Content = ({
                     <div className="font-bold text-slate-800 text-base">{field.name}</div>
                     <div className="text-sm text-slate-600">{field.location}</div>
                     <div className="text-xs text-slate-500">
-                      {selectedBookingDate} - {timeSlot?.startTime} đến {timeSlot?.endTime}
+                      {selectedBookingDate} - {timeSlot?.startTime} to {timeSlot?.endTime}
                       {timeSlot?.timeType && (
                         <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
-                          Ca {getTimeTypeText(timeSlot.timeType)}
+                          {getTimeTypeText(timeSlot.timeType)} Slot
                         </span>
                       )}
                     </div>
@@ -149,19 +149,19 @@ const Step3Content = ({
 
               {/* Contact Info */}
               <div className="bg-slate-50 rounded-lg p-4 mb-4">
-                <h4 className="font-bold text-slate-800 mb-3 text-sm">Thông tin liên hệ</h4>
+                <h4 className="font-bold text-slate-800 mb-3 text-sm">Contact Information</h4>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm text-slate-600">
                     <User className="w-4 h-4 text-slate-400" />
-                    <span>{user?.name || 'Chưa có thông tin'}</span>
+                    <span>{user?.name || 'No information'}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-slate-600">
                     <Mail className="w-4 h-4 text-slate-400" />
-                    <span>{user?.email || 'Chưa có thông tin'}</span>
+                    <span>{user?.email || 'No information'}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-slate-600">
                     <Phone className="w-4 h-4 text-slate-400" />
-                    <span>{user?.phone_number || 'Chưa có thông tin'}</span>
+                    <span>{user?.phone_number || 'No information'}</span>
                   </div>
                 </div>
               </div>
@@ -169,26 +169,26 @@ const Step3Content = ({
         {/* Notes */}
         {bookingNotes && (
           <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-            <h4 className="font-bold text-slate-800 mb-2 text-sm">Ghi chú</h4>
+            <h4 className="font-bold text-slate-800 mb-2 text-sm">Notes</h4>
             <p className="text-sm text-slate-600">{bookingNotes}</p>
           </div>
         )}
 
         {/* Next Steps */}
         <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 mt-4">
-          <h4 className="font-bold text-slate-800 mb-3 text-sm">Bước tiếp theo</h4>
+          <h4 className="font-bold text-slate-800 mb-3 text-sm">Next Steps</h4>
           <div className="space-y-2 text-xs text-slate-600">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span>Kiểm tra email xác nhận đặt sân</span>
+              <span>Check your email for booking confirmation</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span>Đến sân đúng giờ đã đặt</span>
+              <span>Arrive at the field on time</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span>Liên hệ hotline nếu cần hỗ trợ</span>
+              <span>Contact hotline if you need support</span>
             </div>
           </div>
         </div>

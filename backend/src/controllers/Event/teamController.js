@@ -1,5 +1,7 @@
 const Team = require('../../models/Team/Team');
 const TeamMatch = require('../../models/Team/TeamMatch');
+const TeamMember = require('../../models/Team/TeamMember');
+const EventRegistration = require('../../models/Event/EventRegistration');
 const mongoose = require('mongoose');
 
 const teamController = {
@@ -56,7 +58,7 @@ const teamController = {
   // Cập nhật team
   updateTeam: async (req, res) => {
     try {
-      const { id } = req.params;
+      const id = req.params.teamId || req.params.id;
       const { name, shortName, description, avatar } = req.body;
 
       if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -105,7 +107,7 @@ const teamController = {
   // Xóa team
   deleteTeam: async (req, res) => {
     try {
-      const { id } = req.params;
+      const id = req.params.teamId || req.params.id;
 
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ message: 'Invalid team ID' });
@@ -127,6 +129,18 @@ const teamController = {
         return res.status(400).json({ message: 'Cannot delete team associated with matches' });
       }
 
+      // Check nếu team có event registrations
+      const associatedRegistrations = await EventRegistration.findOne({ teamId: id });
+      if (associatedRegistrations) {
+        return res.status(400).json({ 
+          message: 'Cannot delete team. Team has registered for events. Please cancel registrations first.' 
+        });
+      }
+
+      // Xóa tất cả members của team trước
+      await TeamMember.deleteMany({ teamId: id });
+
+      // Xóa team
       await Team.findByIdAndDelete(id);
       res.status(200).json({ message: 'Team deleted successfully' });
     } catch (error) {

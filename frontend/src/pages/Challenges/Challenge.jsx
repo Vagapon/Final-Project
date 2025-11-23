@@ -70,28 +70,28 @@ const Challenge = () => {
   const stats = useMemo(
     () => [
       {
-        label: "Tổng sự kiện",
+        label: "Total Events",
         value: events.length,
         icon: Trophy,
         change: "+12",
         color: "bg-blue-500",
       },
       {
-        label: "Đang diễn ra",
-        value: events.filter((event) => event.status === "Đang diễn ra").length,
+        label: "Ongoing",
+        value: events.filter((event) => event.status === "Đang diễn ra" || event.status === "ongoing").length,
         icon: Clock,
         change: "+5",
         color: "bg-green-500",
       },
       {
-        label: "Người tham gia",
+        label: "Participants",
         value: events.reduce((acc, curr) => acc + (curr.participants || 0), 0),
         icon: Users,
         change: "+25",
         color: "bg-purple-500",
       },
       {
-        label: "Tổng giải thưởng",
+        label: "Total Prizes",
         value: "2.8B",
         icon: Award,
         change: "+8",
@@ -159,7 +159,7 @@ const Challenge = () => {
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
           >
-            Thử lại
+            Try Again
           </button>
         </div>
       </div>
@@ -183,15 +183,15 @@ const Challenge = () => {
         {/* Results Info */}
         <div className="mb-6">
           <p className="text-gray-600">
-            Hiển thị{" "}
+            Showing{" "}
             <span className="font-semibold text-gray-900">
               {filteredEvents.length}
             </span>{" "}
-            sự kiện
+            event{filteredEvents.length !== 1 ? 's' : ''}
             {searchTerm && (
               <span>
                 {" "}
-                cho "
+                for "
                 <span className="font-semibold text-blue-600">
                   {searchTerm}
                 </span>

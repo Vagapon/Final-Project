@@ -8,12 +8,12 @@ const SearchFilter = ({
   setSearchTerm,
 }) => {
   const filters = [
-    { key: "all", label: "Tất cả", icon: Zap },
-    { key: "five", label: "Bóng đá 5", icon: Activity },
-    { key: "seven", label: "Bóng đá 7", icon: Bike },
-    { key: "eleven", label: "Bóng đá 11", icon: Waves },
-    { key: "joined", label: "Đã tham gia", icon: Heart },
-    { key: "ongoing", label: "Đang diễn ra", icon: Clock },
+    { key: "all", label: "All", icon: Zap },
+    { key: "five", label: "5-a-side", icon: Activity },
+    { key: "seven", label: "7-a-side", icon: Bike },
+    { key: "eleven", label: "11-a-side", icon: Waves },
+    { key: "joined", label: "Joined", icon: Heart },
+    { key: "ongoing", label: "Ongoing", icon: Clock },
   ];
 
   return (
@@ -25,13 +25,13 @@ const SearchFilter = ({
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Tìm kiếm thử thách thể thao..."
+          placeholder="Search sports challenges..."
           className="flex-1 px-3 bg-transparent outline-none text-gray-700 placeholder-gray-400"
         />
         <div className="h-6 w-px bg-gray-200 mx-3" />
         <button className="flex items-center gap-1 text-gray-500 hover:text-blue-600 transition">
           <Filter className="w-5 h-5" />
-          <span className="hidden sm:inline text-sm font-medium">Bộ lọc</span>
+          <span className="hidden sm:inline text-sm font-medium">Filter</span>
         </button>
       </div>
 

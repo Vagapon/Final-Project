@@ -5,21 +5,21 @@ const ProgressIndicator = ({ currentStep }) => {
   const steps = [
     {
       id: 1,
-      title: "Chọn ngày & giờ",
+      title: "Select Date & Time",
       icon: Calendar,
-      description: "Chọn ngày, giờ và thông tin người đặt",
+      description: "Select date, time and booking information",
     },
     {
       id: 2,
-      title: "Thanh toán",
+      title: "Payment",
       icon: CreditCard,
-      description: "Thanh toán online banking",
+      description: "Online banking payment",
     },
     {
       id: 3,
-      title: "Hoàn tất",
+      title: "Complete",
       icon: Check,
-      description: "Xác nhận đặt sân thành công",
+      description: "Booking confirmed successfully",
     },
   ];
 

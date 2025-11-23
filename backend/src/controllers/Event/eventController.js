@@ -4,9 +4,10 @@ const EventRegistration = require("../../models/Event/EventRegistration");
 const Season = require("../../models/Event/Season");
 const Team = require("../../models/Team/Team");
 const { createNotification } = require("../notificationController");
+const UserRole = require("../../models/UserModel/UserRole");
 const mongoose = require("mongoose");
 
-// Utility: validate dates + season
+// Tiện ích: kiểm tra ngày tháng + mùa giải
 const validateDates = async (startDate, endDate, seasonId) => {
   
   try {
@@ -26,7 +27,7 @@ const validateDates = async (startDate, endDate, seasonId) => {
     }
 
 
-    // Convert season dates to Date objects for comparison
+    // Chuyển đổi ngày mùa giải sang đối tượng Date để so sánh
     const seasonStart = new Date(season.startDate);
     const seasonEnd = new Date(season.endDate);
     
@@ -43,12 +44,12 @@ const validateDates = async (startDate, endDate, seasonId) => {
 };
 
 const eventController = {
-  // CREATE
+  // TẠO MỚI
   create: async (req, res) => {
     
     const { name, description, sportTypeId, seasonId, startDate, endDate, location, status, address, maxTeams } = req.body;
     
-    // Validate required fields
+    // Kiểm tra các trường bắt buộc
     if (!name) {
       return res.status(400).json({ message: "Event name is required" });
     }
@@ -112,7 +113,7 @@ const eventController = {
         });
       }
       
-      // Return specific error message
+      // Trả về thông báo lỗi cụ thể
       res.status(400).json({ 
         success: false,
         message: error.message || "Có lỗi xảy ra khi tạo sự kiện",
@@ -121,13 +122,13 @@ const eventController = {
     }
   },
 
-  // UPDATE
+  // CẬP NHẬT
   update: async (req, res) => {
     try {
       const { eventId } = req.params;
       const updates = { ...req.body };
 
-      // Validate ngày nếu có update
+      // Kiểm tra ngày nếu có cập nhật
       if (updates.startDate || updates.endDate || updates.seasonId) {
         const { start, end } = await validateDates(
           updates.startDate || undefined,
@@ -144,13 +145,38 @@ const eventController = {
         updates.numberOfMatch = Math.floor((updates.maxTeams * (updates.maxTeams - 1)) / 2);
       }
 
-      // STAFF can only update their own events
-      if (req.user && req.user.role && req.user.role.toUpperCase() === 'STAFF') {
-        const existing = await Event.findById(eventId);
-        if (!existing) return res.status(404).json({ message: "Event not found" });
-        if (existing.createdBy?.toString() !== req.user.id) {
-          return res.status(403).json({ message: "Not authorized to update this event" });
+      // Kiểm tra quyền: Staff không thể cập nhật sự kiện được tạo bởi Admin
+      const existing = await Event.findById(eventId);
+      if (!existing) return res.status(404).json({ message: "Event not found" });
+      
+      const UserRole = require('../../models/UserModel/UserRole');
+      const isAdmin = async (userId) => {
+        try {
+          const userRole = await UserRole.findOne({ user_id: userId }).populate('role_id');
+          if (!userRole || !userRole.role_id) return false;
+          const roleCode = userRole.role_id.code?.toUpperCase();
+          return roleCode === 'ADMIN';
+        } catch (error) {
+          return false;
         }
+      };
+      
+      const canStaffEdit = async (currentUserId, creatorId) => {
+        const currentUserIsAdmin = await isAdmin(currentUserId);
+        if (currentUserIsAdmin) return true;
+        
+        if (!creatorId) return true;
+        const creatorIsAdmin = await isAdmin(creatorId);
+        if (creatorIsAdmin) return false;
+        return creatorId?.toString() === currentUserId?.toString();
+      };
+      
+      const canEdit = await canStaffEdit(req.user.id, existing.createdBy);
+      if (!canEdit) {
+        return res.status(403).json({ 
+          success: false,
+          message: "Bạn không có quyền chỉnh sửa sự kiện này. Chỉ có thể xem." 
+        });
       }
 
       const event = await Event.findByIdAndUpdate(eventId, updates, { new: true, runValidators: true });
@@ -179,10 +205,10 @@ const eventController = {
     }
   },
 
-  // GET ALL
+  // LẤY TẤT CẢ
 getAll : async (req, res) => {
   try {
-    // Add lean() để convert mongoose document sang plain object
+    // Thêm lean() để chuyển đổi mongoose document sang plain object
     const events = await Event.find()
       .populate({
         path: 'sportTypeId',
@@ -191,16 +217,25 @@ getAll : async (req, res) => {
       .lean()
       .exec();
 
-    // Calculate approved teams count for each event
+    // Tính số đội đã được phê duyệt và populate createdBy role cho mỗi sự kiện
     const eventsWithParticipants = await Promise.all(
       events.map(async (event) => {
         const approvedCount = await EventRegistration.countDocuments({
           eventId: event._id,
           status: "approved"
         });
+        
+        // Populate createdBy role để kiểm tra quyền
+        let createdByRole = null;
+        if (event.createdBy) {
+          const creatorRole = await UserRole.findOne({ user_id: event.createdBy }).populate('role_id');
+          createdByRole = creatorRole?.role_id?.code || null;
+        }
+        
         return {
           ...event,
-          participants: approvedCount
+          participants: approvedCount,
+          createdByRole: createdByRole
         };
       })
     );
@@ -219,14 +254,14 @@ getAll : async (req, res) => {
 },
 
 
-  // GET BY ID
+  // LẤY THEO ID
   getById: async (req, res) => {
     try {
       const { id } = req.params;
       const event = await Event.findById(id);
       if (!event) return res.status(404).json({ message: "Event not found" });
       
-      // Calculate approved teams count
+      // Tính số đội đã được phê duyệt
       const approvedCount = await EventRegistration.countDocuments({
         eventId: event._id,
         status: "approved"
@@ -243,15 +278,48 @@ getAll : async (req, res) => {
     }
   },
 
-  // DELETE
+  // XÓA
   delete: async (req, res) => {
     try {
       const { eventId } = req.params;
-      const event = await Event.findByIdAndDelete(eventId);
+      const event = await Event.findById(eventId);
       if (!event) return res.status(404).json({ 
         success: false,
         message: "Event not found" 
       });
+      
+      // Kiểm tra quyền: Staff không thể xóa sự kiện được tạo bởi Admin
+      const UserRole = require('../../models/UserModel/UserRole');
+      const isAdmin = async (userId) => {
+        try {
+          const userRole = await UserRole.findOne({ user_id: userId }).populate('role_id');
+          if (!userRole || !userRole.role_id) return false;
+          const roleCode = userRole.role_id.code?.toUpperCase();
+          return roleCode === 'ADMIN';
+        } catch (error) {
+          return false;
+        }
+      };
+      
+      const canStaffEdit = async (currentUserId, creatorId) => {
+        const currentUserIsAdmin = await isAdmin(currentUserId);
+        if (currentUserIsAdmin) return true;
+        
+        if (!creatorId) return true;
+        const creatorIsAdmin = await isAdmin(creatorId);
+        if (creatorIsAdmin) return false;
+        return creatorId?.toString() === currentUserId?.toString();
+      };
+      
+      const canDelete = await canStaffEdit(req.user.id, event.createdBy);
+      if (!canDelete) {
+        return res.status(403).json({ 
+          success: false,
+          message: "Bạn không có quyền xóa sự kiện này. Chỉ có thể xem." 
+        });
+      }
+      
+      await Event.findByIdAndDelete(eventId);
       res.status(200).json({ 
         success: true,
         message: "Event deleted successfully" 
@@ -265,7 +333,7 @@ getAll : async (req, res) => {
     }
   },
 
-  // APPROVE REGISTRATION
+  // PHÊ DUYỆT ĐĂNG KÝ
   approveRegistration: async (req, res) => {
     try {
       const { registrationId } = req.params;
@@ -290,7 +358,7 @@ getAll : async (req, res) => {
           return res.status(404).json({ message: "Event not found" });
         }
 
-        // STAFF can only approve registrations for their own events
+        // STAFF chỉ có thể phê duyệt đăng ký cho sự kiện của chính họ
         if (req.user && req.user.role && req.user.role.toUpperCase() === 'STAFF') {
           if (event.createdBy?.toString() !== req.user.id) {
             await session.abortTransaction();
@@ -314,7 +382,7 @@ getAll : async (req, res) => {
         await registration.save({ session });
 
         // Notification sẽ được tạo trong updateRegistrationStatus nếu route đó được gọi
-        // Không tạo notification ở đây để tránh duplicate
+        // Không tạo notification ở đây để tránh trùng lặp
 
         await session.commitTransaction();
         res.status(200).json({ message: "Registration approved", registration });

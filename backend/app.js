@@ -23,6 +23,8 @@ const messageRoutes = require("./src/routes/messageRoutes");
 const paymentRoutes = require("./src/routes/paymentRoutes");
 const notificationRoutes = require("./src/routes/notificationRoutes");
 const blogRoutes = require("./src/routes/blogRoutes");
+const commentRoutes = require("./src/routes/commentRoutes");
+const rankingRoutes = require("./src/routes/rankingRoutes");
 // const matchScheduleRoutes = require("./src/routes/matchScheduleRoutes");
 // const TeamMatch = require("./src/models/Team/TeamMatch");
 
@@ -58,6 +60,7 @@ require("./src/models/TimeSlot");
 require("./src/models/Booking");
 require("./src/models/Notification");
 require("./src/models/Blog");
+require("./src/models/Event/Ranking");
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -76,6 +79,8 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/blogs", blogRoutes);
+app.use("/api/comments", commentRoutes);
+app.use("/api/rankings", rankingRoutes);
 
 // Alias route cho SePay webhook (không có 's')
 app.use("/api/payment", paymentRoutes);

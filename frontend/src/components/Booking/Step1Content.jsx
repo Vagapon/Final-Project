@@ -107,13 +107,13 @@ const Step1Content = ({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-          <h3 className="text-base font-bold text-gray-900 mb-3">Thông tin đặt sân</h3>
+          <h3 className="text-base font-bold text-gray-900 mb-3">Booking Information</h3>
           <div className="space-y-3">
             {/* Date Selection & Legend - Horizontal */}
             <div className="flex flex-col md:flex-row gap-3 items-start md:items-end justify-between">
               {/* Date Selection - Left */}
               <div className="w-full md:w-auto md:flex-1 md:max-w-xs">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Chọn ngày *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Select Date *</label>
                 <input
                   type="date"
                   value={selectedBookingDate}
@@ -129,19 +129,19 @@ const Step1Content = ({
                 <div className="flex items-center gap-2.5 text-sm whitespace-nowrap">
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 border-2 border-gray-200 bg-white rounded"></div>
-                    <span className="text-gray-600">Khả dụng</span>
+                    <span className="text-gray-600">Available</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 border-2 border-blue-500 bg-blue-50 rounded"></div>
-                    <span className="text-gray-600">Đã chọn</span>
+                    <span className="text-gray-600">Selected</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 border-2 border-red-200 bg-red-50 rounded opacity-70"></div>
-                    <span className="text-gray-600">Đã đặt</span>
+                    <span className="text-gray-600">Booked</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 border-2 border-gray-300 bg-gray-100 rounded opacity-70"></div>
-                    <span className="text-gray-600">Hết giờ</span>
+                    <span className="text-gray-600">Past</span>
                   </div>
                 </div>
               </div>
@@ -149,7 +149,7 @@ const Step1Content = ({
 
             {/* Time Slot Selection */}
             <div data-section="timeslot">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Chọn khung giờ *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Time Slot *</label>
               
               {/* Validation Error Message */}
               {validationError && (
@@ -258,7 +258,7 @@ const Step1Content = ({
                               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                               </svg>
-                              Đã chọn
+                              Selected
                             </div>
                           </div>
                         )}
@@ -273,15 +273,15 @@ const Step1Content = ({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <p className="text-sm">Không có khung giờ khả dụng</p>
-                  <p className="text-sm text-gray-400 mt-0.5">Vui lòng chọn ngày khác</p>
+                  <p className="text-sm">No available time slots</p>
+                  <p className="text-sm text-gray-400 mt-0.5">Please select another date</p>
                 </div>
               )}
             </div>
 
             {/* Personal Information */}
             <div className="border-t pt-3">
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">Thông tin người đặt</h4>
+              <h4 className="text-sm font-semibold text-gray-900 mb-2">Booker Information</h4>
               
               {/* User Avatar & Basic Info */}
               <div className="flex items-center gap-2.5 mb-2 p-2.5 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-100">
@@ -308,7 +308,7 @@ const Step1Content = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú thêm</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
                 <textarea
                   value={bookingNotes}
                   onChange={(e) => setBookingNotes(e.target.value)}

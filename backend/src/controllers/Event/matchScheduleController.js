@@ -3,6 +3,8 @@ const Event = require('../../models/Event/Event');
 const EventRegistration = require('../../models/Event/EventRegistration');
 const Team = require('../../models/Team/Team');
 const Field = require('../../models/Field');
+const Ranking = require('../../models/Event/Ranking');
+const Season = require('../../models/Event/Season');
 const { generateRoundRobinSchedule, calculateTotalMatches, allocateMatchTimes } = require('../../utils/scheduleGenerator');
 const { createNotification } = require('../notificationController');
 
@@ -211,17 +213,20 @@ const getEventSchedule = async (req, res) => {
 };
 
 /**
- * Cập nhật kết quả trận đấu
+ * Cập nhật kết quả trận đấu và tự động cập nhật ranking
  */
 const updateMatchResult = async (req, res) => {
   try {
     const { matchId } = req.params;
     const { score, status } = req.body;
 
-    const match = await Match.findById(matchId);
+    const match = await Match.findById(matchId).populate('eventId');
     if (!match) {
       return res.status(404).json({ message: 'Trận đấu không tồn tại' });
     }
+
+    // Lưu điểm cũ để tính toán lại ranking nếu cần
+    const oldScore = match.score;
 
     // Cập nhật kết quả
     const updateData = {};
@@ -237,7 +242,18 @@ const updateMatchResult = async (req, res) => {
       updateData, 
       { new: true }
     ).populate('team1Id', 'name shortName')
-     .populate('team2Id', 'name shortName');
+     .populate('team2Id', 'name shortName')
+     .populate('eventId');
+
+    // Nếu có điểm và trận đấu đã kết thúc, cập nhật ranking
+    if (score && updatedMatch.status === 'completed' && updatedMatch.eventId) {
+      try {
+        await updateRankingFromMatch(updatedMatch, oldScore);
+      } catch (rankingError) {
+        console.error('Error updating ranking:', rankingError);
+        // Không fail request nếu ranking update lỗi
+      }
+    }
 
     res.status(200).json({
       message: 'Cập nhật kết quả trận đấu thành công',
@@ -248,6 +264,138 @@ const updateMatchResult = async (req, res) => {
     console.error('Error updating match result:', error);
     res.status(500).json({ message: 'Lỗi server khi cập nhật kết quả', error: error.message });
   }
+};
+
+/**
+ * Hàm helper để cập nhật ranking dựa trên kết quả trận đấu
+ */
+const updateRankingFromMatch = async (match, oldScore = null) => {
+  if (!match.score || !match.eventId || !match.team1Id || !match.team2Id) {
+    return;
+  }
+
+  const { team1: score1, team2: score2 } = match.score;
+  const team1Id = match.team1Id._id || match.team1Id;
+  const team2Id = match.team2Id._id || match.team2Id;
+  const eventId = match.eventId._id || match.eventId;
+
+  // Lấy season từ event
+  const event = await Event.findById(eventId);
+  if (!event || !event.seasonId) {
+    console.log('Event không có seasonId, bỏ qua cập nhật ranking');
+    return;
+  }
+
+  const seasonId = event.seasonId;
+
+  // Nếu có điểm cũ, trừ đi điểm cũ trước
+  if (oldScore && oldScore.team1 !== undefined && oldScore.team2 !== undefined) {
+    await revertRankingFromOldScore(team1Id, team2Id, eventId, seasonId, oldScore);
+  }
+
+  // Tính toán kết quả
+  let team1Result = 'draw'; // draw
+  let team2Result = 'draw';
+
+  if (score1 > score2) {
+    team1Result = 'win';
+    team2Result = 'loss';
+  } else if (score1 < score2) {
+    team1Result = 'loss';
+    team2Result = 'win';
+  }
+
+  // Cập nhật ranking cho team 1
+  await updateTeamRanking(team1Id, eventId, seasonId, {
+    result: team1Result,
+    goalsFor: score1,
+    goalsAgainst: score2
+  });
+
+  // Cập nhật ranking cho team 2
+  await updateTeamRanking(team2Id, eventId, seasonId, {
+    result: team2Result,
+    goalsFor: score2,
+    goalsAgainst: score1
+  });
+};
+
+/**
+ * Hàm helper để revert ranking từ điểm cũ
+ */
+const revertRankingFromOldScore = async (team1Id, team2Id, eventId, seasonId, oldScore) => {
+  const { team1: oldScore1, team2: oldScore2 } = oldScore;
+
+  let oldTeam1Result = 'draw';
+  let oldTeam2Result = 'draw';
+
+  if (oldScore1 > oldScore2) {
+    oldTeam1Result = 'win';
+    oldTeam2Result = 'loss';
+  } else if (oldScore1 < oldScore2) {
+    oldTeam1Result = 'loss';
+    oldTeam2Result = 'win';
+  }
+
+  // Revert team 1
+  await updateTeamRanking(team1Id, eventId, seasonId, {
+    result: oldTeam1Result,
+    goalsFor: oldScore1,
+    goalsAgainst: oldScore2,
+    revert: true
+  });
+
+  // Revert team 2
+  await updateTeamRanking(team2Id, eventId, seasonId, {
+    result: oldTeam2Result,
+    goalsFor: oldScore2,
+    goalsAgainst: oldScore1,
+    revert: true
+  });
+};
+
+/**
+ * Hàm helper để cập nhật ranking cho một team
+ */
+const updateTeamRanking = async (teamId, eventId, seasonId, { result, goalsFor, goalsAgainst, revert = false }) => {
+  // Tìm hoặc tạo ranking record
+  let ranking = await Ranking.findOne({ teamId, eventId, seasonId });
+
+  if (!ranking) {
+    ranking = new Ranking({
+      teamId,
+      eventId,
+      seasonId,
+      win: 0,
+      loss: 0,
+      draw: 0,
+      gf: 0,
+      ga: 0,
+      point: 0
+    });
+  }
+
+  // Cập nhật số liệu
+  const multiplier = revert ? -1 : 1;
+
+  if (result === 'win') {
+    ranking.win = Math.max(0, ranking.win + (1 * multiplier));
+    ranking.point = Math.max(0, ranking.point + (3 * multiplier));
+  } else if (result === 'loss') {
+    ranking.loss = Math.max(0, ranking.loss + (1 * multiplier));
+    // Loss không cộng điểm
+  } else if (result === 'draw') {
+    ranking.draw = Math.max(0, ranking.draw + (1 * multiplier));
+    ranking.point = Math.max(0, ranking.point + (1 * multiplier));
+  }
+
+  // Cập nhật số bàn thắng/thua
+  ranking.gf = Math.max(0, ranking.gf + (goalsFor * multiplier));
+  ranking.ga = Math.max(0, ranking.ga + (goalsAgainst * multiplier));
+  ranking.gd = ranking.gf - ranking.ga;
+  ranking.updatedAt = Date.now();
+
+  await ranking.save();
 };
 
 /**
@@ -484,10 +632,13 @@ const updateSingleMatch = async (req, res) => {
     const updateData = req.body;
 
     // Kiểm tra trận đấu có tồn tại không
-    const match = await Match.findById(matchId);
+    const match = await Match.findById(matchId).populate('eventId');
     if (!match) {
       return res.status(404).json({ message: 'Trận đấu không tồn tại' });
     }
+
+    // Lưu điểm cũ nếu có cập nhật điểm
+    const oldScore = match.score;
 
     // Validation cho việc cập nhật đội
     if (updateData.team1Id && updateData.team2Id) {
@@ -557,8 +708,19 @@ const updateSingleMatch = async (req, res) => {
     ).populate([
       { path: 'team1Id', select: 'name shortName avatar' },
       { path: 'team2Id', select: 'name shortName avatar' },
-      { path: 'fieldId', select: 'name address' }
+      { path: 'fieldId', select: 'name address' },
+      { path: 'eventId' }
     ]);
+
+    // Nếu có cập nhật điểm và trận đấu đã kết thúc, cập nhật ranking
+    if (updateData.score && updatedMatch.status === 'completed' && updatedMatch.eventId) {
+      try {
+        await updateRankingFromMatch(updatedMatch, oldScore);
+      } catch (rankingError) {
+        console.error('Error updating ranking:', rankingError);
+        // Không fail request nếu ranking update lỗi
+      }
+    }
 
     res.status(200).json({
       message: 'Cập nhật trận đấu thành công',
@@ -600,6 +762,47 @@ const deleteSingleMatch = async (req, res) => {
   } catch (error) {
     console.error('Error deleting match:', error);
     res.status(500).json({ message: 'Lỗi server khi xóa trận đấu', error: error.message });
+  }
+};
+
+/**
+ * Lấy tất cả trận đấu (cho trang quản lý trận đấu - không lọc theo event)
+ */
+const getAllMatches = async (req, res) => {
+  try {
+    const { status, round, teamId, eventId } = req.query;
+
+    // Tạo query filter
+    const filter = {};
+    if (status) filter.status = status;
+    if (round) filter.round = round;
+    if (eventId) filter.eventId = eventId;
+    if (teamId) {
+      filter.$or = [
+        { team1Id: teamId },
+        { team2Id: teamId }
+      ];
+    }
+
+    // Lấy danh sách trận đấu với populate event
+    const matches = await Match.find(filter)
+      .populate('team1Id', 'name shortName avatar')
+      .populate('team2Id', 'name shortName avatar')
+      .populate('fieldId', 'name address')
+      .populate('eventId', 'name startDate endDate status createdBy')
+      .sort({ matchDate: 1, matchTime: 1 });
+
+    res.status(200).json({
+      message: 'Lấy danh sách trận đấu thành công',
+      data: {
+        totalMatches: matches.length,
+        allMatches: matches
+      }
+    });
+
+  } catch (error) {
+    console.error('Error getting all matches:', error);
+    res.status(500).json({ message: 'Lỗi server khi lấy danh sách trận đấu', error: error.message });
   }
 };
 
@@ -843,6 +1046,7 @@ module.exports = {
   updateSingleMatch,
   deleteSingleMatch,
   getEventMatches,
+  getAllMatches,
   getScheduleResources,
   
   // Tự động cập nhật trạng thái

@@ -11,6 +11,7 @@ const {
   updateSingleMatch,
   deleteSingleMatch,
   getEventMatches,
+  getAllMatches,
   getScheduleResources,
   manualUpdateMatchStatus
 } = require('../controllers/Event/matchScheduleController');
@@ -31,6 +32,9 @@ router.delete('/:eventId', verifyToken, checkRole(['ADMIN']), eventController.de
 router.post('/registrations/:registrationId/approve', verifyToken, checkRole(['ADMIN','STAFF']), eventController.approveRegistration);
 
 // ===== MATCH SCHEDULE ROUTES =====
+// Lấy tất cả trận đấu (cho trang quản lý trận đấu)
+router.get('/matches/all', verifyToken, checkRole(['ADMIN', 'STAFF']), getAllMatches);
+
 // Lấy danh sách teams, fields và rounds cho UI
 router.get('/:eventId/schedule/resources', getScheduleResources);
 

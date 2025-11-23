@@ -1,8 +1,28 @@
 import { Calendar, Users, MapPin, Clock, Star, Heart, Edit, Trash2, Share2, Download, Trophy, Target, Award } from 'lucide-react';
 import BaseModal from '../../components/Modal/BaseModal';
+import { useAuth } from '../../pages/Authen/AuthContext';
 
 const Detail = ({ isOpen, onClose, event, onEdit, onDelete }) => {
+  const { user } = useAuth();
+  
   if (!event) return null;
+
+  // Check if current user can edit/delete this event
+  const canEditEvent = () => {
+    if (!user || !event) return false;
+    if (user.role === 'ADMIN') return true; // Admin can edit everything
+    
+    if (user.role === 'STAFF') {
+      // Staff can only edit if they created it or if creator is not admin
+      // If createdByRole is 'ADMIN', staff cannot edit
+      if (event.createdByRole === 'ADMIN') return false; // Staff cannot edit admin's events
+      // If createdByRole is undefined/null, allow edit for backward compatibility
+      // If createdByRole is 'STAFF' or not 'ADMIN', allow edit
+      return true; // Staff can edit their own or other staff's events
+    }
+    
+    return false;
+  };
 
   const handleEdit = () => {
     onEdit(event);
@@ -228,22 +248,24 @@ const Detail = ({ isOpen, onClose, event, onEdit, onDelete }) => {
             </button>
           </div>
 
-          <div className="flex space-x-2">
-            <button
-              onClick={handleEdit}
-              className="flex items-center space-x-1 px-4 py-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
-            >
-              <Edit className="w-3 h-3" />
-              <span>Edit</span>
-            </button>
-            <button
-              onClick={handleDelete}
-              className="flex items-center space-x-1 px-4 py-2 text-xs font-medium text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
-            >
-              <Trash2 className="w-3 h-3" />
-              <span>Delete</span>
-            </button>
-          </div>
+          {canEditEvent() && (
+            <div className="flex space-x-2">
+              <button
+                onClick={handleEdit}
+                className="flex items-center space-x-1 px-4 py-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
+              >
+                <Edit className="w-3 h-3" />
+                <span>Edit</span>
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex items-center space-x-1 px-4 py-2 text-xs font-medium text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
+              >
+                <Trash2 className="w-3 h-3" />
+                <span>Delete</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </BaseModal>

@@ -26,14 +26,14 @@ const PlayerList = ({ players = [], onAddClick, onEditClick, onDeleteClick, onVi
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
           <Users className="text-green-500" />
-          Danh sách cầu thủ
+          Players
           <span className="text-sm font-medium text-gray-500">({players.length})</span>
         </h3>
         <button
           onClick={onAddClick}
           className="inline-flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors shadow"
         >
-          <Plus size={16} /> Thêm cầu thủ
+          <Plus size={16} /> Add Player
         </button>
       </div>
 
@@ -41,15 +41,15 @@ const PlayerList = ({ players = [], onAddClick, onEditClick, onDeleteClick, onVi
         // Empty state
         <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
           <Users className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-semibold text-gray-900">Chưa có thành viên</h3>
-          <p className="mt-1 text-sm text-gray-500">Bắt đầu bằng việc thêm thành viên vào đội của bạn.</p>
+          <h3 className="mt-2 text-sm font-semibold text-gray-900">No members yet</h3>
+          <p className="mt-1 text-sm text-gray-500">Start by adding members to your team.</p>
           <div className="mt-6">
             <button
               onClick={onAddClick}
               className="inline-flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors shadow"
             >
               <Plus size={16} />
-              Thêm thành viên mới
+              Add New Member
             </button>
           </div>
         </div>
@@ -85,7 +85,7 @@ const PlayerList = ({ players = [], onAddClick, onEditClick, onDeleteClick, onVi
                       <button
                         onClick={() => onViewClick && onViewClick(player)}
                         className="text-left block text-lg md:text-xl font-extrabold tracking-tight text-gray-900 hover:text-blue-600 truncate"
-                        title="Xem chi tiết"
+                        title="View details"
                       >
                         {player.name}
                       </button>
@@ -97,14 +97,14 @@ const PlayerList = ({ players = [], onAddClick, onEditClick, onDeleteClick, onVi
                       <button
                         onClick={() => onEditClick && onEditClick(player)}
                         className="p-2 rounded-md border text-gray-600 hover:text-blue-600 hover:border-blue-200"
-                        title="Sửa"
+                        title="Edit"
                       >
                         <Edit2 size={16} />
                       </button>
                       <button
                         onClick={() => onDeleteClick && onDeleteClick(player)}
                         className="p-2 rounded-md border text-gray-600 hover:text-red-600 hover:border-red-200"
-                        title="Xóa"
+                        title="Delete"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -131,8 +131,8 @@ const PlayerList = ({ players = [], onAddClick, onEditClick, onDeleteClick, onVi
 
                   {/* Meta below */}
                   <div className="mt-2.5 text-xs text-gray-700 flex items-center gap-4">
-                    <span className="inline-flex items-center gap-1.5"><Shield className="w-4 h-4 text-gray-500" />Số áo: <span className="font-semibold">{player.number || '-'}</span></span>
-                    <span className="inline-flex items-center gap-1.5"><User2 className="w-4 h-4 text-gray-500" />{player.isCaptain ? 'Đội trưởng' : 'Thành viên'}</span>
+                    <span className="inline-flex items-center gap-1.5"><Shield className="w-4 h-4 text-gray-500" />Number: <span className="font-semibold">{player.number || '-'}</span></span>
+                    <span className="inline-flex items-center gap-1.5"><User2 className="w-4 h-4 text-gray-500" />{player.isCaptain ? 'Captain' : 'Member'}</span>
                   </div>
                 </div>
               </div>

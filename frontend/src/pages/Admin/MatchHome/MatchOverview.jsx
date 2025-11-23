@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Edit,
   Trash2,
@@ -7,6 +7,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Modal from "../../ModalEvent/MatchModal"; // Import Modal component
+import { matchScheduleApi } from "../../../api";
+import { message } from "antd";
 
 const MatchOverview = () => {
   const [showEditModal, setShowEditModal] = useState(false);
@@ -14,6 +16,8 @@ const MatchOverview = () => {
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [editFormData, setEditFormData] = useState({});
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Sample match data for slides
   const featuredMatches = [
@@ -64,129 +68,65 @@ const MatchOverview = () => {
     }
   ];
 
-  const matches = [
-    {
-      id: 1,
-      homeTeam: "Crystal Palace",
-      homeTeamShort: "CRY",
-      awayTeam: "Arsenal",
-      awayTeamShort: "ARS",
-      homeImg:
-        "https://upload.wikimedia.org/wikipedia/vi/a/a2/Crystal_Palace_FC_logo_%282022%29.svg.png",
-      awayImg: "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg",
-      date: "Thứ 7, 6/8",
-      time: "02:00",
-      status: "scheduled",
-    },
-    {
-      id: 2,
-      homeTeam: "Fulham",
-      homeTeamShort: "FUL",
-      awayTeam: "Liverpool",
-      awayTeamShort: "LIV",
-      homeFlag: "⚪",
-      awayFlag: "🔴",
-      date: "Thứ 7, 6/8",
-      time: "18:30",
-      status: "scheduled",
-    },
-    {
-      id: 3,
-      homeTeam: "Bournemouth",
-      homeTeamShort: "BOU",
-      awayTeam: "Aston Villa",
-      awayTeamShort: "AVL",
-      homeFlag: "🍒",
-      awayFlag: "🦁",
-      date: "Thứ 7, 6/8",
-      time: "21:00",
-      status: "scheduled",
-    },
-    {
-      id: 4,
-      homeTeam: "Newcastle",
-      homeTeamShort: "NEW",
-      awayTeam: "Nottm Forest",
-      awayTeamShort: "NFO",
-      homeFlag: "⚫",
-      awayFlag: "🌲",
-      date: "Thứ 7, 6/8",
-      time: "21:00",
-      status: "scheduled",
-    },
-    {
-      id: 5,
-      homeTeam: "Tottenham",
-      homeTeamShort: "TOT",
-      awayTeam: "Southampton",
-      awayTeamShort: "SOU",
-      homeFlag: "⚪",
-      awayFlag: "🔴",
-      date: "Thứ 7, 6/8",
-      time: "21:00",
-      status: "scheduled",
-    },
-    {
-      id: 6,
-      homeTeam: "Leeds United",
-      homeTeamShort: "LEE",
-      awayTeam: "Wolves",
-      awayTeamShort: "WOL",
-      homeFlag: "⚪",
-      awayFlag: "🟡",
-      date: "Thứ 7, 6/8",
-      time: "21:00",
-      status: "scheduled",
-    },
-    {
-      id: 7,
-      homeTeam: "Everton",
-      homeTeamShort: "EVE",
-      awayTeam: "Chelsea",
-      awayTeamShort: "CHE",
-      homeFlag: "🔵",
-      awayFlag: "🔵",
-      date: "Thứ 7, 6/8",
-      time: "23:30",
-      status: "scheduled",
-    },
-    {
-      id: 8,
-      homeTeam: "Leicester City",
-      homeTeamShort: "LEI",
-      awayTeam: "Brentford",
-      awayTeamShort: "BRE",
-      homeFlag: "🦊",
-      awayFlag: "🐝",
-      date: "Chủ nhật, 7/8",
-      time: "20:00",
-      status: "scheduled",
-    },
-    {
-      id: 9,
-      homeTeam: "Man United",
-      homeTeamShort: "MUN",
-      awayTeam: "Brighton",
-      awayTeamShort: "BHA",
-      homeFlag: "🔴",
-      awayFlag: "⚪",
-      date: "Chủ nhật, 7/8",
-      time: "20:00",
-      status: "scheduled",
-    },
-    {
-      id: 10,
-      homeTeam: "West Ham",
-      homeTeamShort: "WHU",
-      awayTeam: "Man City",
-      awayTeamShort: "MCI",
-      homeFlag: "⚒️",
-      awayFlag: "🔵",
-      date: "Chủ nhật, 7/8",
-      time: "22:30",
-      status: "scheduled",
-    },
-  ];
+  // Format date to English format
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayName = days[date.getDay()];
+      const day = date.getDate();
+      const month = date.getMonth() + 1;
+      return `${dayName}, ${day}/${month}`;
+    } catch {
+      return '';
+    }
+  };
+
+  // Fetch upcoming matches from API
+  useEffect(() => {
+    const fetchUpcomingMatches = async () => {
+      setLoading(true);
+      try {
+        const response = await matchScheduleApi.getAllMatches({ status: 'upcoming' });
+        const matchesData = response.data?.data?.allMatches || [];
+        
+        // Transform API data to match UI format
+        const transformedMatches = matchesData.map((match, index) => {
+          const team1Name = match.team1Id?.name || match.team1Id?.shortName || 'N/A';
+          const team2Name = match.team2Id?.name || match.team2Id?.shortName || 'N/A';
+          const team1Avatar = match.team1Id?.avatar || match.team1Id?.logo;
+          const team2Avatar = match.team2Id?.avatar || match.team2Id?.logo;
+          
+          return {
+            id: match._id || index + 1,
+            homeTeam: team1Name,
+            homeTeamShort: match.team1Id?.shortName || team1Name.substring(0, 3).toUpperCase(),
+            awayTeam: team2Name,
+            awayTeamShort: match.team2Id?.shortName || team2Name.substring(0, 3).toUpperCase(),
+            homeImg: team1Avatar,
+            awayImg: team2Avatar,
+            homeFlag: team1Avatar ? null : '⚪',
+            awayFlag: team2Avatar ? null : '🔴',
+            date: formatDate(match.matchDate),
+            time: match.matchTime || '00:00',
+            status: match.status || 'scheduled',
+            matchData: match // Keep original match data for reference
+          };
+        });
+        
+        setMatches(transformedMatches);
+      } catch (error) {
+        console.error('Error fetching matches:', error);
+        message.error('Unable to load matches');
+        setMatches([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUpcomingMatches();
+  }, []);
 
   const handleEdit = (match) => {
     setSelectedMatch(match);
@@ -201,8 +141,8 @@ const MatchOverview = () => {
 
   const handleDelete = (matchId, e) => {
     e.stopPropagation();
-    if (window.confirm("Bạn có chắc chắn muốn xóa trận đấu này?")) {
-      console.log("Xóa trận đấu:", matchId);
+    if (window.confirm("Are you sure you want to delete this match?")) {
+      console.log("Delete match:", matchId);
     }
   };
 
@@ -212,7 +152,7 @@ const MatchOverview = () => {
   };
 
   const handleSaveEdit = () => {
-    console.log("Lưu chỉnh sửa:", editFormData);
+    console.log("Save edit:", editFormData);
     setShowEditModal(false);
   };
 
@@ -355,16 +295,25 @@ return (
     {/* Header */}
     <div className="mb-2 px-3 sm:px-6">
       <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
-        Lịch thi đấu
+        Match Schedule
       </h1>
       <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-        Quản lý các trận đấu sắp tới
+        Manage upcoming matches
       </p>
     </div>
 
     {/* Matches Grid - Responsive layout */}
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 mx-3 sm:mx-6 md:mx-8 lg:mx-12">
-      {matches.map((match) => (
+      {loading ? (
+        <div className="col-span-2 text-center py-8 text-gray-500 dark:text-gray-400">
+          Loading data...
+        </div>
+      ) : matches.length === 0 ? (
+        <div className="col-span-2 text-center py-8 text-gray-500 dark:text-gray-400">
+          No upcoming matches
+        </div>
+      ) : (
+        matches.map((match) => (
         <div
           key={match.id}
           className="group bg-white dark:bg-gray-800 rounded-none border border-gray-200 dark:border-gray-700 p-3 sm:p-4 hover:shadow-lg cursor-pointer transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-500"
@@ -375,12 +324,29 @@ return (
             <div className="flex-1">
               {/* Home Team */}
               <div className="flex items-center space-x-2 sm:space-x-3 mb-2">
-                <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full overflow-hidden flex-shrink-0">
-                  <img
-                    src={match.homeImg}
-                    alt={match.homeTeam}
-                    className="w-full h-full object-contain"
-                  />
+                <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                  {match.homeImg ? (
+                    <img
+                      src={match.homeImg}
+                      alt={match.homeTeam}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        const fallback = e.target.nextElementSibling;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  {match.homeFlag && (
+                    <span className="text-lg" style={{ display: match.homeImg ? 'none' : 'flex' }}>
+                      {match.homeFlag}
+                    </span>
+                  )}
+                  {!match.homeImg && !match.homeFlag && (
+                    <span className="text-xs font-bold text-gray-500" style={{ display: 'flex' }}>
+                      {(match.homeTeam || 'T').charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <span className="text-xs sm:text-sm md:text-base font-medium text-gray-900 dark:text-gray-100 truncate">
                   {match.homeTeam}
@@ -389,12 +355,29 @@ return (
 
               {/* Away Team */}
               <div className="flex items-center space-x-2 sm:space-x-3 mb-2">
-                <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full overflow-hidden flex-shrink-0">
-                  <img
-                    src={match.awayImg}
-                    alt={match.awayTeam}
-                    className="w-full h-full object-contain"
-                  />
+                <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                  {match.awayImg ? (
+                    <img
+                      src={match.awayImg}
+                      alt={match.awayTeam}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        const fallback = e.target.nextElementSibling;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  {match.awayFlag && (
+                    <span className="text-lg" style={{ display: match.awayImg ? 'none' : 'flex' }}>
+                      {match.awayFlag}
+                    </span>
+                  )}
+                  {!match.awayImg && !match.awayFlag && (
+                    <span className="text-xs font-bold text-gray-500" style={{ display: 'flex' }}>
+                      {(match.awayTeam || 'T').charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <span className="text-xs sm:text-sm md:text-base font-medium text-gray-900 dark:text-gray-100 truncate">
                   {match.awayTeam}
@@ -419,33 +402,34 @@ return (
               <button
                 onClick={(e) => handleEditClick(match, e)}
                 className="text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 p-2 sm:p-1"
-                title="Chỉnh sửa"
+                title="Edit"
               >
                 <Edit className="w-5 h-5 sm:w-4 sm:h-4" />
               </button>
               <button
                 onClick={(e) => handleDelete(match.id, e)}
                 className="text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200 p-2 sm:p-1"
-                title="Xóa"
+                title="Delete"
               >
                 <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
               </button>
             </div>
           </div>
         </div>
-      ))}
+        ))
+      )}
     </div>
 
     {/* Edit Modal */}
     <Modal
       isOpen={showEditModal}
       onClose={() => setShowEditModal(false)}
-      title="Chỉnh sửa trận đấu"
+      title="Edit Match"
     >
       <div className="space-y-3 sm:space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Đội chủ nhà
+            Home Team
           </label>
           <input
             type="text"
@@ -458,7 +442,7 @@ return (
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Đội khách
+            Away Team
           </label>
           <input
             type="text"
@@ -471,7 +455,7 @@ return (
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Ngày thi đấu
+            Match Date
           </label>
           <input
             type="text"
@@ -484,7 +468,7 @@ return (
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Giờ thi đấu
+            Match Time
           </label>
           <input
             type="time"
@@ -500,14 +484,14 @@ return (
             onClick={() => setShowEditModal(false)}
             className="px-3 py-2 sm:px-4 text-sm sm:text-base text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors order-2 sm:order-1"
           >
-            Hủy
+            Cancel
           </button>
           <button
             onClick={handleSaveEdit}
             className="px-3 py-2 sm:px-4 text-sm sm:text-base bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center gap-2 transition-colors order-1 sm:order-2"
           >
             <Save className="w-4 h-4" />
-            Lưu
+            Save
           </button>
         </div>
       </div>
@@ -517,7 +501,7 @@ return (
     <Modal
       isOpen={showDetailModal}
       onClose={() => setShowDetailModal(false)}
-      title="Chi tiết trận đấu"
+      title="Match Details"
     >
       {selectedMatch && (
         <div className="space-y-3 sm:space-y-4">
@@ -545,16 +529,16 @@ return (
           <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
               <div>
-                <span className="font-medium text-gray-600">Ngày:</span>
+                <span className="font-medium text-gray-600">Date:</span>
                 <div className="text-gray-900">{selectedMatch.date}</div>
               </div>
               <div>
-                <span className="font-medium text-gray-600">Giờ:</span>
+                <span className="font-medium text-gray-600">Time:</span>
                 <div className="text-gray-900">{selectedMatch.time}</div>
               </div>
               <div>
-                <span className="font-medium text-gray-600">Trạng thái:</span>
-                <div className="text-gray-900">Sắp diễn ra</div>
+                <span className="font-medium text-gray-600">Status:</span>
+                <div className="text-gray-900">Upcoming</div>
               </div>
               <div>
                 <span className="font-medium text-gray-600">ID:</span>

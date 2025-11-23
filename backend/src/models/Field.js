@@ -48,7 +48,7 @@ fieldSchema.index({ name: 'text', address: 'text', fieldNumber: 'text' });
 fieldSchema.index({ purpose: 1, status: 1 });
 fieldSchema.index({ managedBy: 1 });
 
-// Middleware auto update `updatedAt`
+// Middleware tự động cập nhật `updatedAt`
 fieldSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();

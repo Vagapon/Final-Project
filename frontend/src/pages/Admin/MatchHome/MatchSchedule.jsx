@@ -22,6 +22,7 @@ import { ExclamationCircleFilled } from '@ant-design/icons';
 import { matchScheduleApi } from '../../../api';
 import { eventApi } from '../../../api';
 import EditMatchModal from './EditMatchModal';
+import MatchDetailModal from './MatchDetailModal';
 
 const MatchSchedule = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,32 +40,33 @@ const MatchSchedule = () => {
   
   // Modal states
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
 
   const statusConfig = {
     upcoming: { 
-      label: 'Chưa diễn ra', 
+      label: 'Upcoming', 
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-700',
       dotColor: 'bg-blue-500',
       borderColor: 'border-blue-200'
     },
     ongoing: { 
-      label: 'Đang diễn ra', 
+      label: 'Ongoing', 
       bgColor: 'bg-red-50',
       textColor: 'text-red-700',
       dotColor: 'bg-red-500',
       borderColor: 'border-red-200'
     },
     completed: { 
-      label: 'Đã kết thúc', 
+      label: 'Completed', 
       bgColor: 'bg-green-50',
       textColor: 'text-green-700',
       dotColor: 'bg-green-500',
       borderColor: 'border-green-200'
     },
     cancelled: { 
-      label: 'Đã hủy', 
+      label: 'Cancelled', 
       bgColor: 'bg-gray-50',
       textColor: 'text-gray-700',
       dotColor: 'bg-gray-500',
@@ -73,10 +75,10 @@ const MatchSchedule = () => {
   };
 
   const filterShortcuts = [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'upcoming', label: 'Sắp diễn ra' },
-    { value: 'ongoing', label: 'Đang diễn ra' },
-    { value: 'completed', label: 'Đã kết thúc' }
+    { value: 'all', label: 'All' },
+    { value: 'upcoming', label: 'Upcoming' },
+    { value: 'ongoing', label: 'Ongoing' },
+    { value: 'completed', label: 'Completed' }
   ];
 
   // Hàm tính toán trạng thái dựa trên thời gian
@@ -116,7 +118,7 @@ const MatchSchedule = () => {
 
   // Hàm cập nhật trạng thái cho tất cả các trận đấu
   const updateMatchesStatus = useCallback(async () => {
-    if (!selectedEventId || matches.length === 0) return;
+    if (matches.length === 0) return;
 
     const matchesToUpdate = [];
     
@@ -144,14 +146,15 @@ const MatchSchedule = () => {
         setLoading(true);
         try {
           const params = {};
+          if (selectedEventId) params.eventId = selectedEventId;
           if (filterStatus !== 'all') params.status = filterStatus;
           if (filterRound !== 'all') params.round = filterRound;
           
-          const response = await matchScheduleApi.getEventMatches(selectedEventId, params);
+          const response = await matchScheduleApi.getAllMatches(params);
           const matchesData = response.data?.data?.allMatches || [];
           setMatches(matchesData);
         } catch (error) {
-          message.error('Không thể tải danh sách trận đấu');
+          message.error('Unable to load matches');
           console.error('Error fetching matches:', error);
           setMatches([]);
         } finally {
@@ -161,7 +164,7 @@ const MatchSchedule = () => {
         console.error('Error updating match statuses:', error);
       }
     }
-  }, [selectedEventId, matches, filterStatus, filterRound]);
+  }, [matches, filterStatus, filterRound]);
 
   // Fetch events
   const fetchEvents = async () => {
@@ -173,25 +176,25 @@ const MatchSchedule = () => {
         setSelectedEventId(eventList[0]._id);
       }
     } catch (error) {
-      message.error('Không thể tải danh sách event');
+      message.error('Unable to load events');
       console.error('Error fetching events:', error);
     }
   };
 
   const fetchMatches = useCallback(async () => {
-    if (!selectedEventId) return;
-    
     setLoading(true);
     try {
       const params = {};
+      if (selectedEventId) params.eventId = selectedEventId;
       if (filterStatus !== 'all') params.status = filterStatus;
       if (filterRound !== 'all') params.round = filterRound;
       
-      const response = await matchScheduleApi.getEventMatches(selectedEventId, params);
+      // Lấy tất cả trận đấu (không cần eventId bắt buộc)
+      const response = await matchScheduleApi.getAllMatches(params);
       const matchesData = response.data?.data?.allMatches || [];
       setMatches(matchesData);
     } catch (error) {
-      message.error('Không thể tải danh sách trận đấu');
+      message.error('Unable to load match list');
       console.error('Error fetching matches:', error);
       setMatches([]);
     } finally {
@@ -220,19 +223,17 @@ const MatchSchedule = () => {
     fetchEvents();
   }, []);
 
-  // Fetch matches when event is selected
+  // Fetch matches when filters change
   useEffect(() => {
+    fetchMatches();
     if (selectedEventId) {
-      fetchMatches();
       fetchResources();
-    } else {
-      setMatches([]);
     }
-  }, [selectedEventId, fetchMatches]);
+  }, [fetchMatches]);
 
   // Tự động cập nhật trạng thái trận đấu mỗi phút
   useEffect(() => {
-    if (!selectedEventId || matches.length === 0) return;
+    if (matches.length === 0) return;
 
     // Cập nhật ngay lập tức (sau một chút delay để tránh conflict)
     const timeoutId = setTimeout(() => {
@@ -248,7 +249,7 @@ const MatchSchedule = () => {
       clearTimeout(timeoutId);
       clearInterval(interval);
     };
-  }, [selectedEventId, matches.length, updateMatchesStatus]);
+  }, [matches.length, updateMatchesStatus]);
 
   const filteredMatches = matches.filter(match => {
     const team1Name = match.team1Id?.name || '';
@@ -289,34 +290,39 @@ const MatchSchedule = () => {
     setShowEditModal(true);
   };
 
+  const handleViewDetail = (match) => {
+    setSelectedMatch(match);
+    setShowDetailModal(true);
+  };
+
   const handleUpdateMatch = async (matchId, matchData) => {
     try {
       await matchScheduleApi.updateSingleMatch(matchId, matchData);
-      message.success('Cập nhật trận đấu thành công!');
+      message.success('Match updated successfully!');
       setShowEditModal(false);
       setSelectedMatch(null);
       fetchMatches();
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Không thể cập nhật trận đấu';
+      const errorMessage = error.response?.data?.message || 'Unable to update match';
       message.error(errorMessage);
     }
   };
 
   const handleDeleteMatch = (matchId) => {
     Modal.confirm({
-      title: 'Xóa trận đấu',
+      title: 'Delete Match',
       icon: <ExclamationCircleFilled />,
-      content: 'Bạn có chắc chắn muốn xóa trận đấu này?',
-      okText: 'Xóa',
+      content: 'Are you sure you want to delete this match?',
+      okText: 'Delete',
       okType: 'danger',
-      cancelText: 'Hủy',
+      cancelText: 'Cancel',
       onOk: async () => {
         try {
           await matchScheduleApi.deleteSingleMatch(matchId);
-          message.success('Xóa trận đấu thành công!');
+          message.success('Match deleted successfully!');
           fetchMatches();
         } catch (error) {
-          const errorMessage = error.response?.data?.message || 'Không thể xóa trận đấu';
+          const errorMessage = error.response?.data?.message || 'Unable to delete match';
           message.error(errorMessage);
         }
       }
@@ -326,10 +332,10 @@ const MatchSchedule = () => {
   const handleUpdateStatus = async (matchId, newStatus) => {
     try {
       await matchScheduleApi.updateSingleMatch(matchId, { status: newStatus });
-      message.success('Cập nhật trạng thái thành công!');
+      message.success('Status updated successfully!');
       fetchMatches();
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Không thể cập nhật trạng thái';
+      const errorMessage = error.response?.data?.message || 'Unable to update status';
       message.error(errorMessage);
     }
   };
@@ -338,20 +344,20 @@ const MatchSchedule = () => {
     if (selectedMatches.length === 0) return;
     
     Modal.confirm({
-      title: 'Xóa nhiều trận đấu',
+      title: 'Delete Multiple Matches',
       icon: <ExclamationCircleFilled />,
-      content: `Bạn có chắc chắn muốn xóa ${selectedMatches.length} trận đấu đã chọn?`,
-      okText: 'Xóa',
+      content: `Are you sure you want to delete ${selectedMatches.length} selected matches?`,
+      okText: 'Delete',
       okType: 'danger',
-      cancelText: 'Hủy',
+      cancelText: 'Cancel',
       onOk: async () => {
         try {
           await Promise.all(selectedMatches.map(id => matchScheduleApi.deleteSingleMatch(id)));
-          message.success(`Đã xóa ${selectedMatches.length} trận đấu!`);
+          message.success(`Deleted ${selectedMatches.length} matches!`);
           setSelectedMatches([]);
           fetchMatches();
         } catch (error) {
-          message.error('Có lỗi xảy ra khi xóa trận đấu');
+          message.error('An error occurred while deleting matches');
         }
       }
     });
@@ -366,16 +372,16 @@ const MatchSchedule = () => {
         return (
           <>
             <button 
-              onClick={() => handleEditMatch(match)}
+              onClick={() => handleViewDetail(match)}
               className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-              title="Chỉnh sửa"
+              title="View Details"
             >
-              <Edit className="w-4 h-4" />
+              <Eye className="w-4 h-4" />
             </button>
             <button 
               onClick={() => handleUpdateStatus(match._id, 'ongoing')}
               className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
-              title="Bắt đầu"
+              title="Start"
             >
               <Play className="w-4 h-4" />
             </button>
@@ -385,9 +391,16 @@ const MatchSchedule = () => {
         return (
           <>
             <button 
+              onClick={() => handleViewDetail(match)}
+              className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+              title="View Details"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+            <button 
               onClick={() => handleUpdateStatus(match._id, 'completed')}
               className="p-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors"
-              title="Kết thúc"
+              title="End"
             >
               <Pause className="w-4 h-4" />
             </button>
@@ -396,9 +409,9 @@ const MatchSchedule = () => {
       case 'completed':
         return (
           <button 
-            onClick={() => handleEditMatch(match)}
+            onClick={() => handleViewDetail(match)}
             className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-            title="Xem chi tiết"
+            title="View Details"
           >
             <Eye className="w-4 h-4" />
           </button>
@@ -406,9 +419,9 @@ const MatchSchedule = () => {
       case 'cancelled':
         return (
           <button 
-            onClick={() => handleEditMatch(match)}
+            onClick={() => handleViewDetail(match)}
             className="p-2 text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-            title="Xem chi tiết"
+            title="View Details"
           >
             <Eye className="w-4 h-4" />
           </button>
@@ -431,10 +444,10 @@ const MatchSchedule = () => {
           </div>
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">
-              Quản lý trận đấu
+              Match Management
             </h2>
             <p className="text-gray-600 text-sm">
-              Quản lý và theo dõi tất cả các trận đấu trong hệ thống
+              Manage and track all matches in the system
             </p>
           </div>
         </div>
@@ -450,7 +463,7 @@ const MatchSchedule = () => {
               </div>
               <input
                 type="text"
-                placeholder="Tìm kiếm trận đấu, đội..."
+                placeholder="Search matches, teams..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full h-12 pl-11 pr-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-inner"
@@ -462,7 +475,7 @@ const MatchSchedule = () => {
               className={`w-full md:w-12 h-12 inline-flex items-center justify-center bg-white border border-gray-200 rounded-2xl text-gray-700 hover:bg-gray-50 transition-all shadow-sm ${
                 showFilters ? 'ring-2 ring-blue-500' : ''
               }`}
-              aria-label="Bộ lọc nâng cao"
+              aria-label="Advanced filters"
             >
               <Filter className="w-4 h-4" />
             </button>
@@ -484,7 +497,7 @@ const MatchSchedule = () => {
                     onChange={(e) => setSelectedEventId(e.target.value)}
                     className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
                   >
-                    <option value="">-- Chọn event --</option>
+                    <option value="">-- Select event --</option>
                     {events.map(event => (
                       <option key={event._id} value={event._id}>
                         {event.name || event.title}
@@ -495,7 +508,7 @@ const MatchSchedule = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Trạng thái
+                    Status
                   </label>
                   <select
                     value={filterStatus}
@@ -505,17 +518,17 @@ const MatchSchedule = () => {
                     }}
                     className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
                   >
-                    <option value="all">Tất cả</option>
-                    <option value="upcoming">Sắp diễn ra</option>
-                    <option value="ongoing">Đang diễn ra</option>
-                    <option value="completed">Đã kết thúc</option>
-                    <option value="cancelled">Đã hủy</option>
+                    <option value="all">All</option>
+                    <option value="upcoming">Upcoming</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Vòng đấu
+                    Round
                   </label>
                   <select
                     value={filterRound}
@@ -525,7 +538,7 @@ const MatchSchedule = () => {
                     }}
                     className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
                   >
-                    <option value="all">Tất cả</option>
+                    <option value="all">All</option>
                     {rounds.map(round => (
                       <option key={round} value={round}>
                         {round}
@@ -536,7 +549,7 @@ const MatchSchedule = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nhanh
+                    Quick Actions
                   </label>
                   <div className="flex gap-2">
                     <button
@@ -555,7 +568,7 @@ const MatchSchedule = () => {
                       onClick={() => fetchMatches()}
                       className="flex-1 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 shadow-sm"
                     >
-                      Áp dụng
+                      Apply
                     </button>
                   </div>
                 </div>
@@ -574,7 +587,7 @@ const MatchSchedule = () => {
                   <Users className="w-5 h-5 text-blue-600" />
                 </div>
                 <span className="text-gray-800 font-semibold">
-                  Đã chọn {selectedMatches.length} trận đấu
+                  {selectedMatches.length} matches selected
                 </span>
               </div>
               <div className="flex gap-2">
@@ -583,7 +596,7 @@ const MatchSchedule = () => {
                   className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
                 >
                   <Trash2 className="w-4 h-4 inline mr-2" />
-                  Xóa đã chọn
+                  Delete Selected
                 </button>
               </div>
             </div>
@@ -607,11 +620,11 @@ const MatchSchedule = () => {
                 className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
               />
               <div className="grid grid-cols-12 gap-4 flex-1 text-sm font-semibold text-gray-700">
-                <div className="col-span-5 lg:col-span-4">Trận đấu</div>
-                <div className="col-span-2 hidden lg:block">Vòng đấu</div>
-                <div className="col-span-2">Thời gian</div>
-                <div className="col-span-2 lg:col-span-2">Trạng thái</div>
-                <div className="col-span-1">Thao tác</div>
+                <div className="col-span-5 lg:col-span-4">Match</div>
+                <div className="col-span-2 hidden lg:block">Round</div>
+                <div className="col-span-2">Time</div>
+                <div className="col-span-2 lg:col-span-2">Status</div>
+                <div className="col-span-1">Actions</div>
               </div>
             </div>
           </div>
@@ -625,7 +638,7 @@ const MatchSchedule = () => {
               const team2Name = match.team2Id?.name || match.team2Id?.shortName || 'N/A';
               const team1Avatar = match.team1Id?.avatar || match.team1Id?.logo;
               const team2Avatar = match.team2Id?.avatar || match.team2Id?.logo;
-              const fieldName = match.fieldId?.name || 'Chưa chọn sân';
+              const fieldName = match.fieldId?.name || 'No field selected';
               
               return (
                 <div
@@ -713,7 +726,7 @@ const MatchSchedule = () => {
                       {/* Time */}
                       <div className="col-span-2">
                         <div className="text-gray-900 text-sm font-medium">
-                          {match.matchDate ? new Date(match.matchDate).toLocaleDateString('vi-VN') : 'N/A'}
+                          {match.matchDate ? new Date(match.matchDate).toLocaleDateString('en-US') : 'N/A'}
                         </div>
                         <div className="text-gray-600 text-xs">
                           {match.matchTime || 'N/A'}
@@ -735,8 +748,8 @@ const MatchSchedule = () => {
                             )}
                             {/* Hiển thị cảnh báo nếu trạng thái hiển thị khác với DB */}
                             {displayStatus !== match.status && match.status !== 'cancelled' && (
-                              <div className="text-xs text-yellow-700 bg-yellow-50 px-2 py-0.5 rounded border border-yellow-200 inline-block w-fit" title="Trạng thái sẽ được cập nhật tự động">
-                                ⚠ Đang cập nhật...
+                              <div className="text-xs text-yellow-700 bg-yellow-50 px-2 py-0.5 rounded border border-yellow-200 inline-block w-fit" title="Status will be updated automatically">
+                                ⚠ Updating...
                               </div>
                             )}
                           </div>
@@ -750,7 +763,7 @@ const MatchSchedule = () => {
                           <button 
                             onClick={() => handleDeleteMatch(match._id)}
                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Xóa"
+                            title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -766,36 +779,22 @@ const MatchSchedule = () => {
       )}
 
       {/* Empty State */}
-      {!loading && filteredMatches.length === 0 && selectedEventId && (
+      {!loading && filteredMatches.length === 0 && (
         <div className="text-center py-16 bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-6">
             <GamepadIcon className="w-10 h-10 text-gray-400" />
           </div>
           <h3 className="text-2xl font-bold text-gray-800 mb-3">
-            {matches.length === 0 ? 'Chưa có trận đấu nào' : 'Không tìm thấy trận đấu'}
+            {matches.length === 0 ? 'No matches yet' : 'No matches found'}
           </h3>
           <p className="text-gray-600 mb-6 max-w-md mx-auto">
             {matches.length === 0 
-              ? 'Hãy tạo trận đấu mới từ trang "Tạo trận đấu" để bắt đầu quản lý các trận đấu cho event này' 
-              : 'Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc để tìm trận đấu bạn cần'}
+              ? 'Create a new match from the "Create Match" page to start managing matches' 
+              : 'Try changing your search keywords or filters to find the matches you need'}
           </p>
         </div>
       )}
 
-      {/* No Event Selected */}
-      {!selectedEventId && (
-        <div className="text-center py-16 bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-6">
-            <Calendar className="w-10 h-10 text-gray-400" />
-          </div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-3">
-            Chưa chọn event
-          </h3>
-          <p className="text-gray-600 max-w-md mx-auto">
-            Vui lòng chọn một event từ danh sách ở trên để bắt đầu quản lý trận đấu
-          </p>
-        </div>
-      )}
 
       {/* Modals */}
       {showEditModal && selectedMatch && (
@@ -808,6 +807,20 @@ const MatchSchedule = () => {
           onSubmit={handleUpdateMatch}
           match={selectedMatch}
           resources={resources}
+        />
+      )}
+
+      {showDetailModal && selectedMatch && (
+        <MatchDetailModal
+          isOpen={showDetailModal}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedMatch(null);
+          }}
+          match={selectedMatch}
+          onUpdate={() => {
+            fetchMatches();
+          }}
         />
       )}
     </div>

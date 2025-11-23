@@ -1,29 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, ChevronDown, TrendingUp } from 'lucide-react';
+import { rankingApi, seasonApi, eventApi } from '../../../api';
+import { message } from 'antd';
 
 const Ranking = () => {
-  const [selectedSeason, setSelectedSeason] = useState('2024-25');
+  const [selectedSeason, setSelectedSeason] = useState('');
   const [selectedEvent, setSelectedEvent] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Dữ liệu mẫu cho các mùa giải
-  const seasons = [
-    { id: '2024-25', name: '2024-25' },
-    { id: '2023-24', name: '2023-24' },
-    { id: '2022-23', name: '2022-23' },
-    { id: '2021-22', name: '2021-22' }
-  ];
-
-  // Dữ liệu mẫu cho các loại giải đấu
-  const eventTypes = [
-    { id: 'all', name: 'Tất cả giải đấu' },
-    { id: 'premier-league', name: 'Premier League' },
-    { id: 'champions-league', name: 'Champions League' },
-    { id: 'la-liga', name: 'La Liga' },
-    { id: 'serie-a', name: 'Serie A' }
-  ];
-
-  // Dữ liệu mẫu cho bảng xếp hạng (theo style của ảnh)
+  // Dữ liệu thực từ API
+  const [seasons, setSeasons] = useState([]);
+  const [events, setEvents] = useState([]);
   const [leaderboardData, setLeaderboardData] = useState([
     { 
       id: 1, 
@@ -147,9 +135,98 @@ const Ranking = () => {
     }
   ]);
 
+  // Fetch seasons
+  useEffect(() => {
+    const fetchSeasons = async () => {
+      try {
+        const response = await seasonApi.getAllSeasons();
+        const seasonsData = response.data?.data || [];
+        setSeasons(seasonsData);
+        if (seasonsData.length > 0 && !selectedSeason) {
+          setSelectedSeason(seasonsData[0]._id);
+        }
+      } catch (error) {
+        console.error('Error fetching seasons:', error);
+      }
+    };
+    fetchSeasons();
+  }, []);
+
+  // Fetch events
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await eventApi.getAllEvents();
+        const eventsData = response.data?.data || [];
+        setEvents(eventsData);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      }
+    };
+    fetchEvents();
+  }, []);
+
+  // Fetch rankings
+  useEffect(() => {
+    const fetchRankings = async () => {
+      if (!selectedSeason) return;
+      
+      setLoading(true);
+      try {
+        const params = { seasonId: selectedSeason };
+        if (selectedEvent !== 'all') {
+          params.eventId = selectedEvent;
+        }
+        
+        const response = await rankingApi.getAllRankings(params);
+        const rankingsData = response.data?.data || [];
+        
+        // Transform API data to match UI format
+        const transformedData = rankingsData.map((ranking, index) => {
+          const team = ranking.teamId || {};
+          const event = ranking.eventId || {};
+          
+          return {
+            id: ranking._id || index + 1,
+            team: team.name || team.shortName || 'N/A',
+            img: team.avatar || team.logo,
+            event: event._id || event,
+            eventName: event.name,
+            mp: (ranking.win || 0) + (ranking.draw || 0) + (ranking.loss || 0),
+            w: ranking.win || 0,
+            d: ranking.draw || 0,
+            l: ranking.loss || 0,
+            gf: ranking.gf || 0,
+            ga: ranking.ga || 0,
+            gd: ranking.gd || 0,
+            pts: ranking.point || 0,
+            form: ranking.form || [] // Form từ API
+          };
+        });
+        
+        // Sort by points, goal difference, goals for
+        transformedData.sort((a, b) => {
+          if (b.pts !== a.pts) return b.pts - a.pts;
+          if (b.gd !== a.gd) return b.gd - a.gd;
+          return b.gf - a.gf;
+        });
+        
+        setLeaderboardData(transformedData);
+      } catch (error) {
+        console.error('Error fetching rankings:', error);
+        message.error('Unable to load rankings');
+        setLeaderboardData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRankings();
+  }, [selectedSeason, selectedEvent]);
+
   // Filter dữ liệu
   const filteredData = leaderboardData.filter(team => {
-    const matchesEvent = selectedEvent === 'all' || team.event === selectedEvent;
+    const matchesEvent = selectedEvent === 'all' || team.event === selectedEvent || team.event?.toString() === selectedEvent;
     const matchesSearch = team.team.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesEvent && matchesSearch;
   });
@@ -194,11 +271,15 @@ const Ranking = () => {
                   onChange={(e) => setSelectedSeason(e.target.value)}
                   className="w-full appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 text-blue-600 dark:text-blue-400 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-300"
                 >
-                  {seasons.map(season => (
-                    <option key={season.id} value={season.id}>
-                      {season.name}
-                    </option>
-                  ))}
+                  {seasons.length === 0 ? (
+                    <option value="">Loading seasons...</option>
+                  ) : (
+                    seasons.map(season => (
+                      <option key={season._id} value={season._id}>
+                        {season.name}
+                      </option>
+                    ))
+                  )}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-600 dark:text-blue-400 pointer-events-none" />
               </div>
@@ -215,8 +296,9 @@ const Ranking = () => {
                 onChange={(e) => setSelectedEvent(e.target.value)}
                 className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-300"
               >
-                {eventTypes.map(event => (
-                  <option key={event.id} value={event.id}>
+                <option value="all">All Events</option>
+                {events.map(event => (
+                  <option key={event._id} value={event._id}>
                     {event.name}
                   </option>
                 ))}
@@ -259,7 +341,20 @@ const Ranking = () => {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
-                {filteredData.map((team, index) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan="10" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                      Loading rankings...
+                    </td>
+                  </tr>
+                ) : filteredData.length === 0 ? (
+                  <tr>
+                    <td colSpan="10" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                      No rankings found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredData.map((team, index) => (
                   <tr key={team.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -267,15 +362,24 @@ const Ranking = () => {
                           <span className="text-lg font-semibold text-gray-500 dark:text-gray-400">{index + 1}</span>
                         </div>
                         <div className="flex items-center">
-                            <img 
-                            src={team.img} 
-                            alt={`${team.team} logo`}
-                            className="w-6 h-6 mr-3 object-contain"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'inline-block';
-                            }}
-                          />
+                            {team.img ? (
+                              <img 
+                                src={team.img} 
+                                alt={`${team.team} logo`}
+                                className="w-6 h-6 mr-3 object-contain"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  const fallback = e.target.nextElementSibling;
+                                  if (fallback) fallback.style.display = 'inline-block';
+                                }}
+                              />
+                            ) : null}
+                            <div 
+                              className="w-6 h-6 mr-3 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300"
+                              style={{ display: team.img ? 'none' : 'inline-block' }}
+                            >
+                              {(team.team || 'T').charAt(0).toUpperCase()}
+                            </div>
                           <span className="text-sm font-medium text-gray-900 dark:text-white">{team.team}</span>
                         </div>
                       </div>
@@ -294,11 +398,14 @@ const Ranking = () => {
                     <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-900 dark:text-white">{team.pts}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex justify-center space-x-1">
-                        {renderForm(team.form)}
+                        {team.form && team.form.length > 0 ? renderForm(team.form) : (
+                          <span className="text-xs text-gray-400">No matches</span>
+                        )}
                       </div>
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -321,12 +428,42 @@ const Ranking = () => {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
-                {filteredData.map((team, index) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan="8" className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+                      Loading rankings...
+                    </td>
+                  </tr>
+                ) : filteredData.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+                      No rankings found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredData.map((team, index) => (
                   <tr key={team.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center">
                         <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-2">{index + 1}</span>
-                        <span className="text-lg mr-2">{team.logo}</span>
+                        {team.img ? (
+                          <img 
+                            src={team.img} 
+                            alt={`${team.team} logo`}
+                            className="w-6 h-6 mr-2 object-contain"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              const fallback = e.target.nextElementSibling;
+                              if (fallback) fallback.style.display = 'inline-block';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-6 h-6 mr-2 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300"
+                          style={{ display: team.img ? 'none' : 'inline-block' }}
+                        >
+                          {(team.team || 'T').charAt(0).toUpperCase()}
+                        </div>
                         <span className="text-sm font-medium text-gray-900 dark:text-white">{team.team}</span>
                       </div>
                     </td>
@@ -340,11 +477,14 @@ const Ranking = () => {
                     <td className="px-3 py-3 text-center text-sm font-bold text-gray-900 dark:text-white">{team.pts}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-center space-x-1">
-                        {renderForm(team.form.slice(-3))}
+                        {team.form && team.form.length > 0 ? renderForm(team.form.slice(-3)) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
                       </div>
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -395,7 +535,9 @@ const Ranking = () => {
                   <span className="text-gray-600 dark:text-gray-400">GD: <span className="font-medium text-gray-900 dark:text-gray-100">{team.gd > 0 ? '+' : ''}{team.gd}</span></span>
                 </div>
                 <div className="flex space-x-1">
-                  {renderForm(team.form.slice(-3))}
+                  {team.form && team.form.length > 0 ? renderForm(team.form.slice(-3)) : (
+                    <span className="text-xs text-gray-400">-</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -409,10 +551,10 @@ const Ranking = () => {
               <Search className="w-12 h-12 mx-auto" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              Không tìm thấy kết quả
+              No results found
             </h3>
             <p className="text-gray-600 dark:text-gray-300">
-              Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
+              Try changing filters or search keywords
             </p>
           </div>
         )}

@@ -11,11 +11,11 @@ const eventRegistrationController = {
     registration : async (req, res) => {
         try {
             const { teamId, eventId } = req.body;
-            const adminId = req.user.id; // From verifyToken -> req.user.id
+            const adminId = req.user.id; // Từ verifyToken -> req.user.id
             if (!teamId || !eventId) {
                 return res.status(400).json({ message: 'teamId and eventId are required' });
             }
-            // Check if team exists and belongs to current user (manager) unless ADMIN registers on behalf
+            // Kiểm tra đội có tồn tại và thuộc về user hiện tại (quản lý) trừ khi ADMIN đăng ký thay mặt
             const team = await Team.findById(teamId);
             if (!team) {
                 return res.status(404).json({ message: 'Team not found' });
@@ -24,7 +24,7 @@ const eventRegistrationController = {
             if (roleUpper !== 'ADMIN' && team.managerId.toString() !== req.user.id) {
                 return res.status(403).json({ message: 'Only the team manager can register the team for an event' });
             }
-            // Check if team exists
+            // Kiểm tra sự kiện có tồn tại không
             const event = await Event.findById(eventId);
             if (!event) {
                 return res.status(404).json({ message: 'Event not found' });
@@ -74,7 +74,7 @@ const eventRegistrationController = {
 
             res.status(201).json({ message: 'Registration successful', registration });
         } catch (error) {
-            if (error.code === 11000) { // Duplicate key error
+            if (error.code === 11000) { // Lỗi trùng khóa
                 return res.status(400).json({ message: 'This team has already registered for this event' });
             }
             res.status(500).json({ message: 'Server error', error: error.message });
@@ -97,7 +97,7 @@ const eventRegistrationController = {
             const { registrationId } = req.params;
             const { status } = req.body;
 
-            // Role check is done in route middleware (checkRole(['ADMIN']))
+            // Kiểm tra role được thực hiện trong route middleware (checkRole(['ADMIN']))
             const registration = await EventRegistration.findById(registrationId);
             if (!registration) {
                 return res.status(404).json({ message: 'Registration not found' });
@@ -135,7 +135,7 @@ const eventRegistrationController = {
                         console.log(`📝 Creating ${status} notification for team manager: ${team.managerId}`);
                         const notification = await createNotification(
                             req.user.id,        // senderId (admin)
-                            team.managerId,     // receiveId (team manager)
+                            team.managerId,     // receiveId (quản lý đội)
                             notificationType,
                             content,
                             registration.teamId,
@@ -161,7 +161,7 @@ const eventRegistrationController = {
             const registrations = await EventRegistration.find({ eventId })
                 .populate({ path: 'teamId', select: 'name avatar managerId', populate: { path: 'managerId', select: 'name email avatar' } })
                 .populate('adminId', 'name email')
-                .sort({ createdAt: -1 }); // Sort by most recent
+                .sort({ createdAt: -1 }); // Sắp xếp theo mới nhất
             res.status(200).json(registrations);
         } catch (error) {
             res.status(500).json({ message: 'Server error', error: error.message });
@@ -179,7 +179,7 @@ const eventRegistrationController = {
             res.status(500).json({ message: 'Server error', error: error.message });
         }
     },
-    // Current user's team registrations (for FE to disable button / filter joined)
+    // Đăng ký đội của user hiện tại (cho FE để vô hiệu hóa nút / lọc đã tham gia)
     getMyTeamRegistrations: async (req, res) => {
         try {
             const team = await Team.findOne({ managerId: req.user.id }).select('_id');
@@ -194,7 +194,7 @@ console.log('team.managerId:', team?.managerId);
             res.status(500).json({ message: 'Server error', error: error.message });
         }
     },
-    // For ADMIN: all teams registered in events created by current admin
+    // Đối với ADMIN: tất cả đội đã đăng ký trong sự kiện được tạo bởi admin hiện tại
     getAllTeamsRegisteredForMyEvents: async (req, res) => {
         try {
             const adminId = req.user.id;
@@ -211,7 +211,7 @@ console.log('team.managerId:', team?.managerId);
             res.status(500).json({ message: 'Server error', error: error.message });
         }
     },
-    // Delete a registration (ADMIN only)
+    // Xóa một đăng ký (chỉ ADMIN)
     deleteRegistration: async (req, res) => {
         try {
             const { registrationId } = req.params;

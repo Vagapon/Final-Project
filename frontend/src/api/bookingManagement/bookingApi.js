@@ -2,7 +2,7 @@ import BaseApiClient from '../base/BaseApiClient';
 
 class BookingApiClient extends BaseApiClient {
   constructor() {
-    super('/api/bookings');
+    super('/bookings');
   }
 
   // Get all bookings

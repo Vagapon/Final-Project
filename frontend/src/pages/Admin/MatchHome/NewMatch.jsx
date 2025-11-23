@@ -52,9 +52,9 @@ const NewMatch = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
 
   const fieldTypes = [
-    { value: '5', label: 'Sân 5 người', icon: '⚽' },
-    { value: '7', label: 'Sân 7 người', icon: '🥅' },
-    { value: '11', label: 'Sân 11 người', icon: '🏟️' }
+    { value: '5', label: '5-a-side Field', icon: '⚽' },
+    { value: '7', label: '7-a-side Field', icon: '🥅' },
+    { value: '11', label: '11-a-side Field', icon: '🏟️' }
   ];
 
   // Fetch data from API
@@ -84,7 +84,7 @@ const NewMatch = () => {
       const eventList = response.data?.data || [];
       setEvents(eventList);
     } catch (error) {
-      message.error('Không thể tải danh sách event');
+      message.error('Unable to load event list');
       console.error('Error fetching events:', error);
     }
   };
@@ -103,10 +103,10 @@ const NewMatch = () => {
       setTeams(eventTeams);
       
       if (eventTeams.length === 0) {
-        message.warning('Chưa có đội nào được approve cho event này');
+        message.warning('No teams have been approved for this event yet');
       }
     } catch (error) {
-      message.error('Không thể tải danh sách đội đã được approve');
+      message.error('Unable to load approved team list');
       console.error('Error fetching approved teams:', error);
       setTeams([]);
     } finally {
@@ -180,14 +180,14 @@ const NewMatch = () => {
       if (team2Id !== teamId) {
         setFormData(prev => ({ ...prev, team1: team }));
       } else {
-        message.warning('Hai đội không được giống nhau');
+        message.warning('The two teams cannot be the same');
       }
     } else if (position === 'team2') {
       const team1Id = formData.team1?._id || formData.team1?.id;
       if (team1Id !== teamId) {
         setFormData(prev => ({ ...prev, team2: team }));
       } else {
-        message.warning('Hai đội không được giống nhau');
+        message.warning('The two teams cannot be the same');
       }
     }
   };
@@ -201,17 +201,17 @@ const NewMatch = () => {
     
     // Validation
     if (!formData.team1 || !formData.team2) {
-      message.error('Vui lòng chọn cả hai đội thi đấu');
+      message.error('Please select both teams');
       return;
     }
     
     if (!formData.eventId) {
-      message.error('Vui lòng chọn giải đấu');
+      message.error('Please select a tournament');
       return;
     }
     
     if (!formData.date || !formData.time) {
-      message.error('Vui lòng chọn ngày và giờ thi đấu');
+      message.error('Please select match date and time');
       return;
     }
     
@@ -232,10 +232,10 @@ const NewMatch = () => {
       };
       
       await matchScheduleApi.createSingleMatch(formData.eventId, matchData);
-      message.success('Tạo trận đấu thành công!');
+      message.success('Match created successfully!');
       resetForm();
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Không thể tạo trận đấu';
+      const errorMessage = error.response?.data?.message || 'Unable to create match';
       message.error(errorMessage);
       console.error('Error creating match:', error);
     } finally {
@@ -286,7 +286,7 @@ return (
             <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
               <div>
                 <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                  Giải đấu
+                  Tournament
                 </label>
                 <select
                   name="eventId"
@@ -294,7 +294,7 @@ return (
                   onChange={handleFilterChange}
                   className="w-full px-2 sm:px-3 py-2 text-sm sm:text-base bg-gray-50 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">All Event</option>
+                  <option value="">All Events</option>
                   {events.map(event => (
                     <option key={event._id} value={event._id}>
                       {event.name || event.title}
@@ -317,7 +317,7 @@ return (
                     value={filters.searchTerm}
                     onChange={handleFilterChange}
                     className="w-full pl-8 sm:pl-10 pr-2 sm:pr-3 py-2 text-sm sm:text-base bg-gray-50 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Tên đội..."
+                    placeholder="Team name..."
                   />
                 </div>
               </div>
@@ -329,14 +329,14 @@ return (
                 Team list ({filteredTeams.length})
                 {formData.eventId && (
                   <span className="text-xs text-gray-500 font-normal ml-2">
-                    (Đã được approve)
+                    (Approved)
                   </span>
                 )}
               </h4>
               {!formData.eventId ? (
                 <div className="text-center py-8 text-gray-500 text-sm">
-                  <p className="mb-2">Vui lòng chọn giải đấu</p>
-                  <p className="text-xs text-gray-400">Chỉ hiển thị các đội đã được approve</p>
+                  <p className="mb-2">Please select a tournament</p>
+                  <p className="text-xs text-gray-400">Only approved teams will be displayed</p>
                 </div>
               ) : loadingTeams ? (
                 <div className="flex justify-center py-8">
@@ -344,8 +344,8 @@ return (
                 </div>
               ) : filteredTeams.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 text-sm">
-                  <p className="mb-2">Chưa có đội nào được approve</p>
-                  <p className="text-xs text-gray-400">Vui lòng approve các đội đăng ký trước</p>
+                  <p className="mb-2">No teams have been approved yet</p>
+                  <p className="text-xs text-gray-400">Please approve registered teams first</p>
                 </div>
               ) : (
                 filteredTeams.map(team => (
@@ -394,13 +394,13 @@ return (
                 <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg">
                   <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                 </div>
-                <span className="text-base sm:text-lg">Thông tin trận đấu</span>
+                <span className="text-base sm:text-lg">Match Information</span>
               </h3>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="sm:col-span-2 lg:col-span-1">
                   <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                    Tên trận đấu *
+                    Match Name *
                   </label>
                   <input
                     type="text"
@@ -408,14 +408,14 @@ return (
                     value={formData.matchName}
                     onChange={handleInputChange}
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base bg-gray-50 border border-gray-300 rounded-lg sm:rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    placeholder="VD: Chung kết V.League 2024"
+                    placeholder="e.g., V.League 2024 Final"
                     required
                   />
                 </div>
 
                 <div className="sm:col-span-2 lg:col-span-1">
                   <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                    Vòng đấu
+                    Round
                   </label>
                   <input
                     type="text"
@@ -423,13 +423,13 @@ return (
                     value={formData.round}
                     onChange={handleInputChange}
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base bg-gray-50 border border-gray-300 rounded-lg sm:rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    placeholder="VD: Vòng 26, Bán kết, Chung kết..."
+                    placeholder="e.g., Round 26, Semi-final, Final..."
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                    Giải đấu *
+                    Tournament *
                   </label>
                   <select
                     name="eventId"
@@ -465,7 +465,7 @@ return (
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base bg-gray-50 border border-gray-300 rounded-lg sm:rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     required
                   >
-                    <option value="">Chọn giải đấu</option>
+                    <option value="">Select Tournament</option>
                     {events.map(event => (
                       <option key={event._id} value={event._id}>
                         {event.name || event.title}
@@ -476,17 +476,17 @@ return (
 
                 <div>
                   <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                    Loại sân *
+                    Field Type *
                   </label>
                   {selectedEvent && selectedEvent.sportTypeId ? (
                     <div className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base bg-gray-100 border border-gray-300 rounded-lg sm:rounded-xl text-gray-800">
                       {typeof selectedEvent.sportTypeId === 'object' 
                         ? selectedEvent.sportTypeId.name 
-                        : 'Chưa có thông tin'}
+                        : 'No information'}
                     </div>
                   ) : (
                     <div className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base bg-gray-100 border border-gray-300 rounded-lg sm:rounded-xl text-gray-500 italic">
-                      Vui lòng chọn giải đấu
+                      Please select a tournament
                     </div>
                   )}
                 </div>
@@ -499,7 +499,7 @@ return (
                 <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg">
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                 </div>
-                <span className="text-base sm:text-lg">Đội thi đấu - Kéo thả để chọn</span>
+                <span className="text-base sm:text-lg">Teams - Drag and Drop to Select</span>
               </h3>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -533,13 +533,13 @@ return (
                       <div className="font-semibold text-gray-800 text-sm sm:text-base truncate">
                         {formData.team1.name || formData.team1.shortName}
                       </div>
-                      <div className="text-xs sm:text-sm text-gray-500">Đội 1</div>
+                      <div className="text-xs sm:text-sm text-gray-500">Team 1</div>
                     </div>
                   ) : (
                     <div className="text-center text-gray-500">
                       <Shield className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 mx-auto mb-2 opacity-50" />
-                      <div className="font-medium text-sm sm:text-base">Kéo đội vào đây</div>
-                      <div className="text-xs sm:text-sm">Đội 1</div>
+                      <div className="font-medium text-sm sm:text-base">Drag team here</div>
+                      <div className="text-xs sm:text-sm">Team 1</div>
                     </div>
                   )}
                 </div>
@@ -574,13 +574,13 @@ return (
                       <div className="font-semibold text-gray-800 text-sm sm:text-base truncate">
                         {formData.team2.name || formData.team2.shortName}
                       </div>
-                      <div className="text-xs sm:text-sm text-gray-500">Đội 2</div>
+                      <div className="text-xs sm:text-sm text-gray-500">Team 2</div>
                     </div>
                   ) : (
                     <div className="text-center text-gray-500">
                       <Shield className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 mx-auto mb-2 opacity-50" />
-                      <div className="font-medium text-sm sm:text-base">Kéa đội vào đây</div>
-                      <div className="text-xs sm:text-sm">Đội 2</div>
+                      <div className="font-medium text-sm sm:text-base">Drag team here</div>
+                      <div className="text-xs sm:text-sm">Team 2</div>
                     </div>
                   )}
                 </div>
@@ -593,7 +593,7 @@ return (
                 <div className="p-1.5 sm:p-2 bg-purple-100 rounded-lg">
                   <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                 </div>
-                <span className="text-base sm:text-lg">Lịch thi đấu, Địa điểm & Thông tin bổ sung</span>
+                <span className="text-base sm:text-lg">Schedule, Venue & Additional Information</span>
               </h3>
               
               <div className="space-y-4 sm:space-y-6">
@@ -603,15 +603,15 @@ return (
                     <div className="flex items-center gap-2 mb-1">
                       <Clock className="w-4 h-4 text-blue-600" />
                       <span className="text-xs sm:text-sm font-semibold text-blue-800">
-                        Thời gian giải đấu:
+                        Tournament Period:
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm text-blue-700 ml-6">
-                      {new Date(selectedEvent.startDate).toLocaleDateString('vi-VN', {
+                      {new Date(selectedEvent.startDate).toLocaleDateString('en-US', {
                         day: '2-digit',
                         month: '2-digit',
                         year: 'numeric'
-                      })} - {new Date(selectedEvent.endDate).toLocaleDateString('vi-VN', {
+                      })} - {new Date(selectedEvent.endDate).toLocaleDateString('en-US', {
                         day: '2-digit',
                         month: '2-digit',
                         year: 'numeric'
@@ -623,7 +623,7 @@ return (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                      Ngày thi đấu *
+                      Match Date *
                     </label>
                     <input
                       type="date"
@@ -639,7 +639,7 @@ return (
 
                   <div>
                     <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                      Giờ thi đấu *
+                      Match Time *
                     </label>
                     <input
                       type="time"
@@ -653,7 +653,7 @@ return (
 
                   <div>
                     <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                      Sân vận động
+                      Stadium
                     </label>
                     <select
                       name="fieldId"
@@ -661,7 +661,7 @@ return (
                       onChange={handleInputChange}
                       className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base bg-gray-50 border border-gray-300 rounded-lg sm:rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                     >
-                      <option value="">Chọn sân</option>
+                      <option value="">Select Field</option>
                       {fields.map(field => (
                         <option key={field._id} value={field._id}>
                           {field.name} {field.address ? `- ${field.address}` : ''}
@@ -672,7 +672,7 @@ return (
 
                   <div>
                     <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                      Link trực tiếp
+                      Live Stream URL
                     </label>
                     <input
                       type="url"
@@ -687,7 +687,7 @@ return (
 
                 <div>
                   <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                    Mô tả trận đấu
+                    Match Description
                   </label>
                   <textarea
                     name="description"
@@ -695,7 +695,7 @@ return (
                     onChange={handleInputChange}
                     rows={3}
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base bg-gray-50 border border-gray-300 rounded-lg sm:rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none"
-                    placeholder="Thông tin chi tiết về trận đấu..."
+                    placeholder="Detailed information about the match..."
                   />
                 </div>
 
@@ -709,7 +709,7 @@ return (
                     className="w-4 h-4 text-green-600 bg-gray-50 border-gray-300 rounded focus:ring-green-500 focus:ring-2 mt-0.5"
                   />
                   <label htmlFor="isPublic" className="ml-2 sm:ml-3 text-xs sm:text-sm text-gray-700 font-medium leading-tight">
-                    Công khai trận đấu cho người xem
+                    Make match public for viewers
                   </label>
                 </div>
               </div>
@@ -726,12 +726,12 @@ return (
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                    Đang tạo...
+                    Creating...
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Tạo trận đấu
+                    Create Match
                   </>
                 )}
               </button>
@@ -742,7 +742,7 @@ return (
                 className="flex-1 sm:flex-none bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border border-gray-300 hover:border-gray-400 transform hover:-translate-y-0.5 text-sm sm:text-base touch-manipulation"
               >
                 <X className="w-4 h-4 sm:w-5 sm:h-5" />
-                Hủy bỏ
+                Cancel
               </button>
             </div>
           </div>

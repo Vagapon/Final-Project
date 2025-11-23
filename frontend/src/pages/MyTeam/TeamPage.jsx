@@ -81,13 +81,13 @@ const TeamPage = () => {
   };
 
   const handleDeletePlayer = async (player) => {
-    if (!window.confirm(`Xóa ${player.name}?`)) return;
+    if (!window.confirm(`Delete ${player.name}?`)) return;
     try {
       await memberApi.deleteMember(player._id);
       await fetchTeamPlayers();
     } catch (error) {
       console.error("Delete player error:", error.response?.data || error.message);
-      alert(error.response?.data?.message || 'Xóa thất bại');
+      alert(error.response?.data?.message || 'Failed to delete');
     }
   };
 
@@ -119,7 +119,7 @@ const TeamPage = () => {
         setIsPlayerModalOpen(false);
       } catch (error) {
         console.error("Update player error:", error.response?.data || error.message);
-        alert(error.response?.data?.message || 'Cập nhật thất bại');
+        alert(error.response?.data?.message || 'Failed to update');
       }
       return;
     }
@@ -172,7 +172,7 @@ const TeamPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto pt-6">
 
         <div className="bg-white rounded-lg mb-6">
           <div className="border-b">
@@ -185,7 +185,7 @@ const TeamPage = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Sơ đồ chiến thuật
+                Formation
               </button>
               <button
                 onClick={() => setActiveTab('players')}
@@ -195,7 +195,7 @@ const TeamPage = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Danh sách cầu thủ
+                Players
               </button>
               <button
                 onClick={() => setActiveTab('info')}
@@ -205,7 +205,7 @@ const TeamPage = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Thông tin đội
+                Team Info
               </button>
             </nav>
           </div>
@@ -213,13 +213,13 @@ const TeamPage = () => {
           <div className="p-6">
             {!team ? (
               <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
-                <div className="text-2xl font-semibold text-gray-800">Chưa có đội</div>
-                <div className="text-gray-600 max-w-md">Hãy tạo đội của bạn để quản lý sơ đồ chiến thuật, danh sách cầu thủ và thông tin đội bóng.</div>
+                <div className="text-2xl font-semibold text-gray-800">No Team Yet</div>
+                <div className="text-gray-600 max-w-md">Create your team to manage formations, player lists, and team information.</div>
                 <button
                   onClick={() => setIsTeamModalOpen(true)}
                   className="mt-2 bg-green-500 text-white px-5 py-2 rounded-lg hover:bg-green-600 transition-colors"
                 >
-                  Tạo đội
+                  Create Team
                 </button>
               </div>
             ) : (
@@ -237,7 +237,17 @@ const TeamPage = () => {
               {activeTab === 'info' && (
                 <TeamInfo 
                   team={team} 
-                  playersCount={availablePlayers.length} 
+                  playersCount={availablePlayers.length}
+                  onUpdate={async (updatedTeam) => {
+                    setTeam(updatedTeam);
+                    await fetchMyTeam(); // Refresh để đảm bảo data đồng bộ
+                  }}
+                  onDelete={async () => {
+                    setTeam(null);
+                    setAvailablePlayers([]);
+                    // Có thể hiển thị thông báo thành công
+                    alert('Team deleted successfully');
+                  }}
                 />
               )}
 

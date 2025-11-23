@@ -28,7 +28,7 @@ const FieldInfo = ({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3">
-      <h3 className="text-sm font-bold text-gray-900 mb-2">Thông tin sân</h3>
+      <h3 className="text-sm font-bold text-gray-900 mb-2">Field Information</h3>
       
       {/* Field Image Carousel */}
       <div className="relative mb-2">

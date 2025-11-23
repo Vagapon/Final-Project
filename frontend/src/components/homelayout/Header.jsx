@@ -433,6 +433,14 @@ const Header = () => {
   const { socket } = useSocket();
   const colors = getTextColors(location.pathname);
   const isDarkBackground = DARK_BACKGROUND_PAGES.includes(location.pathname);
+  
+  // Xác định background cho header
+  const getHeaderBackground = () => {
+    if (isDarkBackground) {
+      return ""; // Trang home - header trong suốt
+    }
+    return "bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100 backdrop-blur-sm"; // Các trang khác
+  };
 
   // Load notifications
   const loadNotifications = async () => {
@@ -637,7 +645,7 @@ const Header = () => {
 
   return (
     <>
-      <nav className="absolute top-0 left-0 right-0 z-40">
+      <nav className={`absolute top-0 left-0 right-0 z-40 ${getHeaderBackground()}`}>
         <div className="container mx-auto px-2 sm:px-3 py-4">
           <div className="flex items-center justify-between">
             <Logo isDarkBackground={isDarkBackground} />

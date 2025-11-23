@@ -61,22 +61,22 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
     const newErrors = {};
     
     if (!formData.team1Id) {
-      newErrors.team1Id = 'Vui lòng chọn đội 1';
+      newErrors.team1Id = 'Please select team 1';
     }
     if (!formData.team2Id) {
-      newErrors.team2Id = 'Vui lòng chọn đội 2';
+      newErrors.team2Id = 'Please select team 2';
     }
     if (formData.team1Id === formData.team2Id) {
-      newErrors.team2Id = 'Hai đội không được giống nhau';
+      newErrors.team2Id = 'The two teams cannot be the same';
     }
     if (!formData.matchDate) {
-      newErrors.matchDate = 'Vui lòng chọn ngày thi đấu';
+      newErrors.matchDate = 'Please select match date';
     }
     if (!formData.matchTime) {
-      newErrors.matchTime = 'Vui lòng chọn giờ thi đấu';
+      newErrors.matchTime = 'Please select match time';
     }
     if (!formData.round) {
-      newErrors.round = 'Vui lòng nhập vòng đấu';
+      newErrors.round = 'Please enter round';
     }
     
     setErrors(newErrors);
@@ -104,7 +104,7 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
         <div className="sticky top-0 bg-white/90 backdrop-blur border-b border-gray-200 p-6 flex items-center justify-between rounded-t-2xl">
           <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Calendar className="w-6 h-6" />
-            Chỉnh sửa trận đấu
+            Edit Match
           </h2>
           <button
             onClick={onClose}
@@ -120,7 +120,7 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Đội 1 <span className="text-red-500">*</span>
+                Team 1 <span className="text-red-500">*</span>
               </label>
               <select
                 name="team1Id"
@@ -130,7 +130,7 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
                   errors.team1Id ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
-                <option value="">-- Chọn đội 1 --</option>
+                <option value="">-- Select Team 1 --</option>
                 {resources.teams?.map(team => (
                   <option key={team._id} value={team._id}>
                     {team.name || team.shortName}
@@ -144,7 +144,7 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Đội 2 <span className="text-red-400">*</span>
+                Team 2 <span className="text-red-400">*</span>
               </label>
               <select
                 name="team2Id"
@@ -154,7 +154,7 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
                   errors.team2Id ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
-                <option value="">-- Chọn đội 2 --</option>
+                <option value="">-- Select Team 2 --</option>
                 {resources.teams?.filter(team => team._id !== formData.team1Id).map(team => (
                   <option key={team._id} value={team._id}>
                     {team.name || team.shortName}
@@ -172,7 +172,7 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Calendar className="w-4 h-4 inline mr-2" />
-                Ngày thi đấu <span className="text-red-500">*</span>
+                Match Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -191,7 +191,7 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Clock className="w-4 h-4 inline mr-2" />
-                Giờ thi đấu <span className="text-red-500">*</span>
+                Match Time <span className="text-red-500">*</span>
               </label>
               <input
                 type="time"
@@ -212,7 +212,7 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Vòng đấu <span className="text-red-500">*</span>
+                Round <span className="text-red-500">*</span>
               </label>
               <select
                 name="round"
@@ -233,7 +233,7 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
                 name="round"
                 value={formData.round}
                 onChange={handleChange}
-                placeholder="Hoặc nhập vòng đấu mới"
+                placeholder="Or enter a new round"
                 className="mt-2 w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
               {errors.round && (
@@ -243,7 +243,7 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Số thứ tự trận đấu
+                Match Number
               </label>
               <input
                 type="number"
@@ -257,7 +257,7 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Trạng thái
+                Status
               </label>
               <select
                 name="status"
@@ -265,10 +265,10 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
-                <option value="upcoming">Sắp diễn ra</option>
-                <option value="ongoing">Đang diễn ra</option>
-                <option value="completed">Đã kết thúc</option>
-                <option value="cancelled">Đã hủy</option>
+                <option value="upcoming">Upcoming</option>
+                <option value="ongoing">Ongoing</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
               </select>
             </div>
           </div>
@@ -277,7 +277,7 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <MapPin className="w-4 h-4 inline mr-2" />
-              Sân thi đấu
+              Match Field
             </label>
             <select
               name="fieldId"
@@ -285,7 +285,7 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
               onChange={handleChange}
               className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
-              <option value="">-- Chọn sân (tùy chọn) --</option>
+              <option value="">-- Select Field (Optional) --</option>
               {resources.fields?.map(field => (
                 <option key={field._id} value={field._id}>
                   {field.name} - {field.address}
@@ -298,7 +298,7 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Clock className="w-4 h-4 inline mr-2" />
-              Thời gian thi đấu (phút)
+              Match Duration (minutes)
             </label>
             <input
               type="number"
@@ -316,28 +316,28 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Địa chỉ
+                Address
               </label>
               <input
                 type="text"
                 name="address"
                 value={formData.address}
                 onChange={handleChange}
-                placeholder="Địa chỉ thi đấu"
+                placeholder="Match address"
                 className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Vị trí
+                Location
               </label>
               <input
                 type="text"
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
-                placeholder="Vị trí chi tiết"
+                placeholder="Detailed location"
                 className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
@@ -350,14 +350,14 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
               onClick={onClose}
               className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
               className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-300 flex items-center gap-2"
             >
               <Save className="w-4 h-4" />
-              Cập nhật
+              Update
             </button>
           </div>
         </form>

@@ -48,8 +48,8 @@ const Step2Content = ({ field, timeSlot, selectedBookingDate, basePrice, totalPr
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h3 className="text-lg font-bold text-gray-900 mb-2">Lỗi thanh toán</h3>
-        <p className="text-gray-600 mb-4">Không thể tạo mã QR thanh toán. Vui lòng thử lại.</p>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">Payment Error</h3>
+        <p className="text-gray-600 mb-4">Unable to create payment QR code. Please try again.</p>
         <button
           onClick={() => window.location.reload()}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -72,7 +72,7 @@ const Step2Content = ({ field, timeSlot, selectedBookingDate, basePrice, totalPr
                 <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mx-auto mb-2">
                   <Check className="w-5 h-5 text-white" />
                 </div>
-                <h4 className="text-base font-bold text-slate-800 mb-1">Thanh toán thành công!</h4>
+                <h4 className="text-base font-bold text-slate-800 mb-1">Payment Successful!</h4>
                 <p className="text-xs text-slate-600 mb-2">
                   Giao dịch đã được xử lý. Đang chuyển đến trang xác nhận...
                 </p>
@@ -149,7 +149,7 @@ const Step2Content = ({ field, timeSlot, selectedBookingDate, basePrice, totalPr
                       
                       {/* Transfer Content & Bank Info */}
                       <div className="bg-slate-50 rounded-md p-3">
-                        <div className="text-xs text-slate-600 mb-2">Thông tin chuyển khoản</div>
+                        <div className="text-xs text-slate-600 mb-2">Transfer Information</div>
                         
                         {/* Bank Details */}
                         <div className="space-y-1.5 mb-2 pb-2 border-b border-slate-200">
@@ -179,7 +179,7 @@ const Step2Content = ({ field, timeSlot, selectedBookingDate, basePrice, totalPr
                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                           </svg>
-                          <span>Vui lòng nhập chính xác nội dung</span>
+                          <span>Please enter the exact content</span>
                         </div>
                       </div>
 

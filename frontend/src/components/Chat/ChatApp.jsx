@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, Phone, Video, MoreHorizontal, Paperclip, Smile, Send, MessageCircle, Users, Settings, User, Clock, Globe, ArrowLeft, X } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 import ChatSidebar from './ChatSidebar';    
 import ChatHeader from './ChatHeader';
@@ -10,6 +11,7 @@ import ChatSideInfo from './ChatSideInfo';
 import { useSocket } from '../../contexts/SocketContext';
 
 const ChatApp = () => {
+  const location = useLocation();
   const [selectedChat, setSelectedChat] = useState(null);
   const [activeTab, setActiveTab] = useState('chat');
   const [showSideInfo, setShowSideInfo] = useState(false);
@@ -301,6 +303,41 @@ const ChatApp = () => {
       });
     }
   };
+
+  // Handle navigation from blog page with userId
+  useEffect(() => {
+    if (location.state?.userId && allUsers.length > 0 && currentUser) {
+      const targetUserId = location.state.userId;
+      // Find user in allUsers or chats
+      const targetUser = allUsers.find(u => u._id === targetUserId) || 
+                        chats.find(c => c._id === targetUserId);
+      
+      if (targetUser) {
+        // Create chat object if not exists
+        const chatToSelect = {
+          _id: targetUser._id,
+          otherUser: targetUser,
+          name: targetUser.name || location.state.userName,
+          avatar: targetUser.avatar,
+          email: targetUser.email
+        };
+        handleChatSelect(chatToSelect);
+      } else {
+        // User not found in list, create a temporary chat object
+        const tempChat = {
+          _id: targetUserId,
+          otherUser: { _id: targetUserId, name: location.state.userName || 'User' },
+          name: location.state.userName || 'User',
+          avatar: null,
+          email: null
+        };
+        handleChatSelect(tempChat);
+      }
+      
+      // Clear location state to prevent re-triggering
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, allUsers, chats, currentUser]);
 
   const handleSendMessage = (content) => {
     if (!selectedChat || !content.trim() || !socket || !currentUser) return;

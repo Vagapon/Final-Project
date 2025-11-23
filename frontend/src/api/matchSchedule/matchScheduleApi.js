@@ -1,6 +1,11 @@
 import axiosClient from '../axiosClient';
 
 const matchScheduleApi = {
+  // Lấy tất cả trận đấu (cho trang quản lý trận đấu)
+  getAllMatches: (params = {}) => {
+    return axiosClient.get(`/event/matches/all`, { params });
+  },
+
   // Lấy danh sách teams, fields và rounds cho UI
   getScheduleResources: (eventId) => {
     return axiosClient.get(`/event/${eventId}/schedule/resources`);

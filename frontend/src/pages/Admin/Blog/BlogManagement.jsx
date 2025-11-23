@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Edit, Trash2, FileText, Loader2, Search } from 'lucide-react';
 import { Modal, message } from 'antd';
 import { blogApi } from '../../../api';
+import { useAuth } from '../../Authen/AuthContext';
 
 const defaultFormState = {
   content: '',
@@ -10,9 +11,9 @@ const defaultFormState = {
 };
 
 const formatDate = (value) => {
-  if (!value) return 'Không xác định';
+  if (!value) return 'Not specified';
   try {
-    return new Date(value).toLocaleString('vi-VN', {
+    return new Date(value).toLocaleString('en-US', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -25,6 +26,7 @@ const formatDate = (value) => {
 };
 
 const BlogManagement = () => {
+  const { user } = useAuth();
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,13 +36,27 @@ const BlogManagement = () => {
   const [saving, setSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
 
+  // Check if current user can edit/delete this blog
+  const canEditBlog = (blog) => {
+    if (!user) return false;
+    if (user.role === 'ADMIN') return true; // Admin can edit everything
+    
+    if (user.role === 'STAFF') {
+      // Staff can only edit if they created it or if creator is not admin
+      if (blog.userIdRole === 'ADMIN') return false; // Staff cannot edit admin's blogs
+      return true; // Staff can edit their own or other staff's blogs
+    }
+    
+    return false;
+  };
+
   const fetchBlogs = async () => {
     setLoading(true);
     try {
       const response = await blogApi.getBlogs();
       setBlogs(response.data?.data || []);
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Không thể tải danh sách blog';
+      const errorMessage = error.response?.data?.message || 'Unable to load blog list';
       message.error(errorMessage);
       setBlogs([]);
     } finally {
@@ -90,7 +106,7 @@ const BlogManagement = () => {
 
   const handleSave = async () => {
     if (!formData.content.trim()) {
-      message.warning('Vui lòng nhập nội dung bài viết');
+      message.warning('Please enter post content');
       return;
     }
 
@@ -107,16 +123,16 @@ const BlogManagement = () => {
 
       if (selectedBlog) {
         await blogApi.updateBlog(selectedBlog._id, payload);
-        message.success('Cập nhật blog thành công');
+        message.success('Blog updated successfully');
       } else {
         await blogApi.createBlog(payload);
-        message.success('Tạo blog mới thành công');
+        message.success('New blog created successfully');
       }
 
       closeModal();
       fetchBlogs();
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại';
+      const errorMessage = error.response?.data?.message || 'An error occurred, please try again';
       message.error(errorMessage);
     } finally {
       setSaving(false);
@@ -125,22 +141,22 @@ const BlogManagement = () => {
 
   const handleDelete = (blog) => {
     Modal.confirm({
-      title: 'Xóa blog',
+      title: 'Delete Blog',
       content: (
         <span>
-          Bạn có chắc chắn muốn xóa <strong>{blog.content?.slice(0, 30) || 'blog này'}</strong>?
+          Are you sure you want to delete <strong>{blog.content?.slice(0, 30) || 'this blog'}</strong>?
         </span>
       ),
-      okText: 'Xóa',
+      okText: 'Delete',
       okType: 'danger',
-      cancelText: 'Hủy',
+      cancelText: 'Cancel',
       onOk: async () => {
         try {
           await blogApi.deleteBlog(blog._id);
-          message.success('Đã xóa blog');
+          message.success('Blog deleted');
           fetchBlogs();
         } catch (error) {
-          const errorMessage = error.response?.data?.message || 'Không thể xóa blog';
+          const errorMessage = error.response?.data?.message || 'Unable to delete blog';
           message.error(errorMessage);
         }
       }
@@ -156,9 +172,9 @@ const BlogManagement = () => {
               <FileText className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Quản lý Blog</h1>
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Blog Management</h1>
               <p className="text-gray-500 text-sm">
-                Tạo, chỉnh sửa và quản lý các bài viết chia sẻ đến cộng đồng
+                Create, edit and manage posts shared with the community
               </p>
             </div>
           </div>
@@ -173,7 +189,7 @@ const BlogManagement = () => {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Tìm kiếm theo nội dung, tác giả hoặc địa điểm..."
+                  placeholder="Search by content, author or location..."
                   className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -183,7 +199,7 @@ const BlogManagement = () => {
                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-sm transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                Thêm bài viết
+                Add Post
               </button>
             </div>
           </div>
@@ -193,16 +209,16 @@ const BlogManagement = () => {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 text-gray-500">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
-              Đang tải dữ liệu...
+              Loading data...
             </div>
           ) : filteredBlogs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-6">
               <FileText className="w-12 h-12 text-gray-300 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">Chưa có bài viết</h3>
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">No posts yet</h3>
               <p className="text-gray-500">
                 {blogs.length === 0
-                  ? 'Hãy bắt đầu chia sẻ thông tin bằng cách tạo bài viết mới.'
-                  : 'Không tìm thấy bài viết phù hợp với từ khóa.'}
+                  ? 'Start sharing information by creating a new post.'
+                  : 'No posts found matching the keywords.'}
               </p>
               {blogs.length === 0 && (
                 <button
@@ -210,7 +226,7 @@ const BlogManagement = () => {
                   className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
-                  Tạo bài viết đầu tiên
+                  Create First Post
                 </button>
               )}
             </div>
@@ -221,31 +237,35 @@ const BlogManagement = () => {
                   <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-start">
                     <div>
                       <p className="text-sm text-gray-500 mt-1 flex flex-wrap gap-2">
-                        <span>{blog.userId?.name || 'Không rõ tác giả'}</span>
-                        <span>• Tạo ngày {formatDate(blog.createdAt)}</span>
+                        <span>{blog.userId?.name || 'Unknown author'}</span>
+                        <span>• Created on {formatDate(blog.createdAt)}</span>
                         {blog.location && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
                             {blog.location}
                           </span>
                         )}
                       </p>
-                      <p className="text-xs text-gray-400 mt-0.5">Cập nhật {formatDate(blog.updatedAt)}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Updated {formatDate(blog.updatedAt)}</p>
                     </div>
                     <div className="flex gap-2">
-                      <button
-                        onClick={() => openModal(blog)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg"
-                      >
-                        <Edit className="w-4 h-4" />
-                        Sửa
-                      </button>
-                      <button
-                        onClick={() => handleDelete(blog)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Xóa
-                      </button>
+                      {canEditBlog(blog) && (
+                        <button
+                          onClick={() => openModal(blog)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg"
+                        >
+                          <Edit className="w-4 h-4" />
+                          Edit
+                        </button>
+                      )}
+                      {canEditBlog(blog) && (
+                        <button
+                          onClick={() => handleDelete(blog)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </div>
                   {blog.imageUrl && (
@@ -267,10 +287,10 @@ const BlogManagement = () => {
       </div>
 
       <Modal
-        title={selectedBlog ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới'}
+        title={selectedBlog ? 'Edit Post' : 'Create New Post'}
         open={modalOpen}
-        okText={selectedBlog ? 'Cập nhật' : 'Tạo mới'}
-        cancelText="Hủy"
+        okText={selectedBlog ? 'Update' : 'Create'}
+        cancelText="Cancel"
         confirmLoading={saving}
         onCancel={closeModal}
         onOk={handleSave}
@@ -280,28 +300,28 @@ const BlogManagement = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nội dung</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
             <textarea
               value={formData.content}
               onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
               rows={6}
-              placeholder="Chia sẻ nội dung bài viết..."
+              placeholder="Share post content..."
               className="w-full px-3 py-2 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Địa điểm</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
               <input
                 type="text"
                 value={formData.location}
                 onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
-                placeholder="Ví dụ: Sân Mỹ Đình"
+                placeholder="e.g., My Dinh Stadium"
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh (tùy chọn)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Image (optional)</label>
               <input
                 type="file"
                 accept="image/*"

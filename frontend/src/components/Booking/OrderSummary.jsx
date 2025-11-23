@@ -17,7 +17,7 @@ const OrderSummary = ({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3">
-      <h3 className="text-sm font-bold text-gray-900 mb-2">Tóm tắt đơn hàng</h3>
+      <h3 className="text-sm font-bold text-gray-900 mb-2">Order Summary</h3>
       
       {/* Field Info */}
       <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-100 mb-2">
@@ -48,21 +48,21 @@ const OrderSummary = ({
       {/* Price Breakdown */}
       <div className="space-y-1.5">
         <div className="flex justify-between items-center py-1">
-          <span className="text-xs text-gray-600">Giá cơ bản</span>
+          <span className="text-xs text-gray-600">Base Price</span>
           <span className="font-semibold text-xs">{formatPrice(basePrice)}</span>
         </div>
         {timeSlot && timeSlot.multiplier !== 1 && (
           <div className="flex justify-between items-center py-1">
             <div>
-              <span className="text-xs text-gray-600">Phí dịch vụ ({getTimeTypeText(timeSlot.timeType)})</span>
-              <div className="text-xs text-gray-500">Hệ số {timeSlot.multiplier}x</div>
+              <span className="text-xs text-gray-600">Service Fee ({getTimeTypeText(timeSlot.timeType)})</span>
+              <div className="text-xs text-gray-500">Multiplier {timeSlot.multiplier}x</div>
             </div>
             <span className="font-semibold text-blue-600 text-xs">+{formatPrice(multiplierFee)}</span>
           </div>
         )}
         <div className="border-t pt-1.5">
           <div className="flex justify-between items-center text-sm font-bold">
-            <span>Tổng cộng</span>
+            <span>Total</span>
             <span className="text-blue-600">{formatPrice(totalPrice)}</span>
           </div>
         </div>
@@ -70,11 +70,11 @@ const OrderSummary = ({
 
       {/* Contact Info */}
       <div className="bg-blue-50 rounded-lg p-2 mt-2">
-        <h4 className="font-semibold text-gray-900 mb-1 text-xs">Thông tin liên hệ</h4>
+        <h4 className="font-semibold text-gray-900 mb-1 text-xs">Contact Information</h4>
         <div className="space-y-0.5 text-xs text-gray-600">
-          <div>Người đặt: {user?.name || 'Chưa có thông tin'}</div>
-          <div>Email: {user?.email || 'Chưa có thông tin'}</div>
-          <div>SĐT: {user?.phone_number || 'Chưa có thông tin'}</div>
+          <div>Booker: {user?.name || 'No information'}</div>
+          <div>Email: {user?.email || 'No information'}</div>
+          <div>Phone: {user?.phone_number || 'No information'}</div>
         </div>
       </div>
 
@@ -87,9 +87,9 @@ const OrderSummary = ({
             </svg>
           </div>
           <div>
-            <h4 className="font-semibold text-green-800 text-xs">Bảo mật thanh toán</h4>
+            <h4 className="font-semibold text-green-800 text-xs">Payment Security</h4>
             <p className="text-xs text-green-700 mt-0.5">
-              Thông tin thanh toán được mã hóa và bảo mật tuyệt đối.
+              Payment information is encrypted and absolutely secure.
             </p>
           </div>
         </div>

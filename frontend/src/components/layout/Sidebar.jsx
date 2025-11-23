@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
   ChevronDown,
   BarChart3,
@@ -15,14 +15,34 @@ import {
 import { useAuth } from "../../pages/Authen/AuthContext";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
+  const location = useLocation();
   const [openMenus, setOpenMenus] = useState({
     dashboard: true,
     task: false,
     forms: false,
     setting: false,
     blog: false,
+    booking: false,
   });
   const { user } = useAuth();
+
+  // Auto-expand menu based on current path
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.startsWith('/admin/booking') || path.startsWith('/admin/stadium') || path.startsWith('/admin/invoid')) {
+      setOpenMenus(prev => ({ ...prev, booking: true }));
+    } else if (path.startsWith('/admin/events') || path.startsWith('/admin/matches') || path.startsWith('/admin/seasons')) {
+      setOpenMenus(prev => ({ ...prev, task: true }));
+    } else if (path.startsWith('/admin/blogs')) {
+      setOpenMenus(prev => ({ ...prev, blog: true }));
+    } else if (path.startsWith('/admin/users') || path.startsWith('/admin/create-staff')) {
+      setOpenMenus(prev => ({ ...prev, profile: true }));
+    } else if (path.startsWith('/admin/teams') || path.startsWith('/admin/ranks')) {
+      setOpenMenus(prev => ({ ...prev, teams: true }));
+    } else if (path.startsWith('/admin/profile') || path.startsWith('/admin/settings')) {
+      setOpenMenus(prev => ({ ...prev, setting: true }));
+    }
+  }, [location.pathname]);
 
   const toggleMenu = (menu) => {
     setOpenMenus((prev) => ({ ...prev, [menu]: !prev[menu] }));

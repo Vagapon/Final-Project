@@ -245,22 +245,26 @@ const FieldBooking = () => {
 
       {/* Search Section */}
       <div className="bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100">
-        <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-8 ">
+        <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-12">
           <div className="text-center">
-            <div className="max-w-2xl mx-auto">
-              <div className="relative">
+            <div className="max-w-3xl mx-auto">
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
+                  <Search className="w-5 h-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
+                </div>
                 <input
                   type="text"
-                  placeholder="sport booking"
+                  placeholder="Tìm kiếm sân bóng, địa điểm..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-6 py-4 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  className="w-full pl-14 pr-32 py-4 text-base border-2 border-gray-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-gray-400 hover:border-gray-300"
                 />
-                <button className="absolute right-2 top-2 bg-gray-900 text-white px-6 py-2 rounded text-sm font-medium hover:bg-gray-800">
-                  Search
+                <button className="absolute right-2 top-2 bottom-2 bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 active:bg-blue-800 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2 group/btn">
+                  <Search className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                  <span>Tìm kiếm</span>
                 </button>
               </div>
-              <p className="text-sm text-gray-600 mt-2">Sport Booking Website Templates</p>
+              <p className="text-sm text-gray-500 mt-4 font-medium">Find the perfect field for your needs</p>
             </div>
           </div>
         </div>
@@ -277,12 +281,12 @@ const FieldBooking = () => {
               {/* Category Filter */}
               <div className="mb-4 sm:mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xs sm:text-sm font-semibold text-gray-900">Loại sân</h3>
+                  <h3 className="text-xs sm:text-sm font-semibold text-gray-900">Field Type</h3>
                   <button
                     onClick={resetFilters}
                     className="text-xs text-blue-600 hover:underline"
                   >
-                    Đặt lại
+                    Reset
                   </button>
                 </div>
                 <div className="space-y-1">
@@ -290,11 +294,11 @@ const FieldBooking = () => {
                     onClick={() => setSelectedCategory('all')}
                     className={`w-full flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 text-left transition-colors rounded ${
                       selectedCategory === 'all'
-                        ? 'bg-gray-900 text-white'
+                        ? 'bg-blue-600 text-white'
                         : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    <span className="text-xs sm:text-sm font-medium">Tất cả</span>
+                    <span className="text-xs sm:text-sm font-medium">All</span>
                     <span className="text-xs text-gray-500">({fields.length})</span>
                   </button>
                   {categoryOptions.map((category) => (
@@ -303,7 +307,7 @@ const FieldBooking = () => {
                       onClick={() => setSelectedCategory(category.label)}
                       className={`w-full flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 text-left transition-colors rounded ${
                         selectedCategory === category.label
-                          ? 'bg-gray-900 text-white'
+                          ? 'bg-blue-600 text-white'
                           : 'text-gray-600 hover:bg-gray-50'
                       }`}
                     >
@@ -323,7 +327,7 @@ const FieldBooking = () => {
                     min="0"
                     value={priceFilter.min}
                     onChange={(e) => handlePriceChange('min', e.target.value)}
-                    className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded text-xs sm:text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                    className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded text-xs sm:text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                   />
                   <span className="text-gray-500 text-xs sm:text-sm">-</span>
                   <input
@@ -331,7 +335,7 @@ const FieldBooking = () => {
                     min="0"
                     value={priceFilter.max}
                     onChange={(e) => handlePriceChange('max', e.target.value)}
-                    className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded text-xs sm:text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                    className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded text-xs sm:text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                   />
                   <span className="text-xs text-gray-500">đ/khung</span>
                 </div>
@@ -339,17 +343,17 @@ const FieldBooking = () => {
 
               {/* Active Filter */}
               <div className="mb-4 sm:mb-6">
-                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">Tình trạng</h3>
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">Status</h3>
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
                     id="active-only"
                     checked={showActiveOnly}
                     onChange={(e) => setShowActiveOnly(e.target.checked)}
-                    className="w-3 h-3 sm:w-4 sm:h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
+                    className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-600"
                   />
                   <label htmlFor="active-only" className="text-xs sm:text-sm text-gray-600">
-                    Chỉ hiển thị sân đang hoạt động
+                    Show only active fields
                   </label>
                 </div>
               </div>
@@ -362,11 +366,11 @@ const FieldBooking = () => {
                     onClick={() => setSelectedLocation('all')}
                     className={`w-full flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 text-left transition-colors rounded ${
                       selectedLocation === 'all'
-                        ? 'bg-gray-900 text-white'
+                        ? 'bg-blue-600 text-white'
                         : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    <span className="text-xs sm:text-sm font-medium">Tất cả khu vực</span>
+                    <span className="text-xs sm:text-sm font-medium">All Areas</span>
                     <span className="text-xs text-gray-500">({fields.length})</span>
                   </button>
                   {locationOptions.map((area) => (
@@ -375,7 +379,7 @@ const FieldBooking = () => {
                       onClick={() => setSelectedLocation(area.label)}
                       className={`w-full flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 text-left transition-colors rounded ${
                         selectedLocation === area.label
-                          ? 'bg-gray-900 text-white'
+                          ? 'bg-blue-600 text-white'
                           : 'text-gray-600 hover:bg-gray-50'
                       }`}
                     >
@@ -391,7 +395,7 @@ const FieldBooking = () => {
                 <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">Features</h3>
                 <div className="space-y-2">
                   {featureOptions.length === 0 && (
-                    <p className="text-xs text-gray-500">Chưa có dữ liệu tiện ích</p>
+                    <p className="text-xs text-gray-500">No features data available</p>
                   )}
                   {featureOptions.map((feature) => (
                     <div key={feature.label} className="flex items-center justify-between">
@@ -401,7 +405,7 @@ const FieldBooking = () => {
                           id={feature.label}
                           checked={selectedFeatures.includes(feature.label)}
                           onChange={() => toggleFeature(feature.label)}
-                          className="w-3 h-3 sm:w-4 sm:h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
+                          className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-600"
                         />
                         <label htmlFor={feature.label} className="text-xs sm:text-sm text-gray-600">
                           {feature.label}
@@ -440,7 +444,7 @@ const FieldBooking = () => {
                       key={option}
                       className={`px-2 py-1 text-xs sm:text-sm rounded transition-colors ${
                         index === 0 
-                          ? 'bg-gray-900 text-white' 
+                          ? 'bg-blue-600 text-white' 
                           : 'text-gray-600 hover:bg-gray-100'
                       }`}
                     >
@@ -472,7 +476,7 @@ const FieldBooking = () => {
                   className="px-3 py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2"
                 >
                   <Calendar className="w-4 h-4" />
-                  Lịch sử đặt sân
+                  Booking History
                 </button>
               </div>
         </div>
@@ -502,7 +506,7 @@ const FieldBooking = () => {
                       )}
                       {/* Price Tag */}
                       <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-1 rounded text-xs sm:text-sm font-semibold">
-                        {formatPrice(field.pricePerHour)}/khung
+                        {formatPrice(field.pricePerHour)}/slot
                       </div>
                     </div>
 
@@ -546,7 +550,7 @@ const FieldBooking = () => {
                             disabled={field.status !== 'active'}
                             className={`px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded transition-colors ${
                               field.status === 'active'
-                                ? 'bg-gray-900 text-white hover:bg-gray-800'
+                                ? 'bg-blue-600 text-white hover:bg-blue-700'
                                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                             }`}
                           >
@@ -565,8 +569,8 @@ const FieldBooking = () => {
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Search className="w-8 h-8 text-gray-400" />
             </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy sân nào</h3>
-                <p className="text-gray-600">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No fields found</h3>
+                <p className="text-gray-600">Try changing filters or search keywords</p>
               </div>
             )}
           </div>

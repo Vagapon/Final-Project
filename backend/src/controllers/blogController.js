@@ -15,7 +15,19 @@ exports.getAllBlogs = async (req, res) => {
     const blogs = await Blog.find()
       .populate('userId', 'name email avatar')
       .sort({ createdAt: -1 });
-    return res.json({ success: true, data: blogs });
+    
+    // Populate userId role for permission checking
+    const blogsWithRole = await Promise.all(blogs.map(async (blog) => {
+      const blogObj = blog.toObject();
+      if (blogObj.userId) {
+        const creatorRole = await UserRole.findOne({ user_id: blogObj.userId._id || blogObj.userId }).populate('role_id');
+        const roleCode = creatorRole?.role_id?.code || null;
+        blogObj.userIdRole = roleCode;
+      }
+      return blogObj;
+    }));
+    
+    return res.json({ success: true, data: blogsWithRole });
   } catch (error) {
     console.error('Error fetching blogs:', error);
     return res.status(500).json({ success: false, message: 'Không thể tải danh sách blog' });
@@ -66,11 +78,32 @@ exports.updateBlog = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Blog không tồn tại' });
     }
 
-    const isOwner = blog.userId.toString() === req.user.id;
-    const canEdit = isOwner || (await hasPrivilegedRole(req.user.id));
-
+    // Kiểm tra quyền: Staff không thể chỉnh sửa blog được tạo bởi Admin
+    const UserRole = require('../models/UserModel/UserRole');
+    const isAdmin = async (userId) => {
+      try {
+        const userRole = await UserRole.findOne({ user_id: userId }).populate('role_id');
+        if (!userRole || !userRole.role_id) return false;
+        const roleCode = userRole.role_id.code?.toUpperCase();
+        return roleCode === 'ADMIN';
+      } catch (error) {
+        return false;
+      }
+    };
+    
+    const canStaffEdit = async (currentUserId, creatorId) => {
+      const currentUserIsAdmin = await isAdmin(currentUserId);
+      if (currentUserIsAdmin) return true;
+      
+      if (!creatorId) return true;
+      const creatorIsAdmin = await isAdmin(creatorId);
+      if (creatorIsAdmin) return false;
+      return creatorId?.toString() === currentUserId?.toString();
+    };
+    
+    const canEdit = await canStaffEdit(req.user.id, blog.userId);
     if (!canEdit) {
-      return res.status(403).json({ success: false, message: 'Bạn không có quyền chỉnh sửa blog này' });
+      return res.status(403).json({ success: false, message: 'Bạn không có quyền chỉnh sửa blog này. Chỉ có thể xem.' });
     }
 
     const { title, content, sport, location, imageUrl } = req.body;
@@ -97,11 +130,32 @@ exports.deleteBlog = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Blog không tồn tại' });
     }
 
-    const isOwner = blog.userId.toString() === req.user.id;
-    const canDelete = isOwner || (await hasPrivilegedRole(req.user.id));
-
+    // Check permission: Staff cannot delete blogs created by Admin
+    const UserRole = require('../models/UserModel/UserRole');
+    const isAdmin = async (userId) => {
+      try {
+        const userRole = await UserRole.findOne({ user_id: userId }).populate('role_id');
+        if (!userRole || !userRole.role_id) return false;
+        const roleCode = userRole.role_id.code?.toUpperCase();
+        return roleCode === 'ADMIN';
+      } catch (error) {
+        return false;
+      }
+    };
+    
+    const canStaffEdit = async (currentUserId, creatorId) => {
+      const currentUserIsAdmin = await isAdmin(currentUserId);
+      if (currentUserIsAdmin) return true;
+      
+      if (!creatorId) return true;
+      const creatorIsAdmin = await isAdmin(creatorId);
+      if (creatorIsAdmin) return false;
+      return creatorId?.toString() === currentUserId?.toString();
+    };
+    
+    const canDelete = await canStaffEdit(req.user.id, blog.userId);
     if (!canDelete) {
-      return res.status(403).json({ success: false, message: 'Bạn không có quyền xóa blog này' });
+      return res.status(403).json({ success: false, message: 'Bạn không có quyền xóa blog này. Chỉ có thể xem.' });
     }
 
     await blog.deleteOne();

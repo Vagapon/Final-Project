@@ -1,6 +1,34 @@
 const Field = require('../models/Field');
 const mongoose = require('mongoose');
 const { cloudinary } = require('../config/cloudinary');
+const UserRole = require('../models/UserModel/UserRole');
+
+// Hàm helper để kiểm tra user có phải ADMIN không
+const isAdmin = async (userId) => {
+  try {
+    const userRole = await UserRole.findOne({ user_id: userId }).populate('role_id');
+    if (!userRole || !userRole.role_id) return false;
+    const roleCode = userRole.role_id.code?.toUpperCase();
+    return roleCode === 'ADMIN';
+  } catch (error) {
+    console.error('Error checking if user is admin:', error);
+    return false;
+  }
+};
+
+// Hàm helper để kiểm tra staff có thể chỉnh sửa/xóa không (staff chỉ có thể chỉnh sửa dữ liệu của mình, không phải dữ liệu của admin)
+const canStaffEdit = async (currentUserId, creatorId) => {
+  const currentUserIsAdmin = await isAdmin(currentUserId);
+  if (currentUserIsAdmin) return true; // Admin có thể chỉnh sửa tất cả
+  
+  if (!creatorId) return true; // Nếu không có người tạo, cho phép chỉnh sửa (để tương thích ngược)
+  
+  const creatorIsAdmin = await isAdmin(creatorId);
+  if (creatorIsAdmin) return false; // Staff không thể chỉnh sửa dữ liệu của admin
+  
+  // Staff có thể chỉnh sửa dữ liệu của chính họ
+  return creatorId?.toString() === currentUserId?.toString();
+};
 
 const getAllFields = async (req, res) => {
   try {
@@ -49,9 +77,20 @@ const getAllFields = async (req, res) => {
     // Đếm tổng số fields
     const total = await Field.countDocuments(filter);
 
+    // Populate managedBy role để kiểm tra quyền
+    const fieldsWithRole = await Promise.all(fields.map(async (field) => {
+      const fieldObj = field.toObject();
+      if (fieldObj.managedBy) {
+        const managedByRole = await UserRole.findOne({ user_id: fieldObj.managedBy._id || fieldObj.managedBy }).populate('role_id');
+        const roleCode = managedByRole?.role_id?.code || null;
+        fieldObj.managedByRole = roleCode;
+      }
+      return fieldObj;
+    }));
+
     res.status(200).json({
       success: true,
-      data: fields,
+      data: fieldsWithRole,
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / parseInt(limit)),
@@ -252,6 +291,15 @@ const updateField = async (req, res) => {
       });
     }
 
+    // Kiểm tra quyền: Staff không thể chỉnh sửa/xóa sân được tạo bởi Admin
+    const canEdit = await canStaffEdit(req.user.id, existingField.managedBy);
+    if (!canEdit) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền chỉnh sửa sân này. Chỉ có thể xem.'
+      });
+    }
+
     // Validation cho purpose và pricePerHour
     if (updateData.purpose === 'rental') {
       const pricePerHour = parseFloat(updateData.pricePerHour);
@@ -371,6 +419,15 @@ const deleteField = async (req, res) => {
       });
     }
 
+    // Check permission: Staff cannot delete fields created by Admin
+    const canDelete = await canStaffEdit(req.user.id, field.managedBy);
+    if (!canDelete) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền xóa sân này. Chỉ có thể xem.'
+      });
+    }
+
     // Xóa ảnh khỏi Cloudinary trước khi xóa field
     if (field.images && field.images.length > 0) {
       for (const imageUrl of field.images) {
@@ -422,6 +479,24 @@ const updateFieldStatus = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Trạng thái không hợp lệ'
+      });
+    }
+
+    // Check if field exists and permission
+    const existingField = await Field.findById(id);
+    if (!existingField) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy sân'
+      });
+    }
+
+    // Check permission: Staff cannot update status of fields created by Admin
+    const canUpdate = await canStaffEdit(req.user.id, existingField.managedBy);
+    if (!canUpdate) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền cập nhật trạng thái sân này. Chỉ có thể xem.'
       });
     }
 

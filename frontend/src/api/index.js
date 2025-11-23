@@ -11,6 +11,8 @@ export * from './seasonManagement';
 export * from './paymentManagement';
 export * from './matchSchedule';
 export * from './blogManagement';
+export * from './commentManagement';
+export * from './rankingManagement';
 export { default as axiosClient } from './axiosClient';
 
 // Export base classes for custom implementations

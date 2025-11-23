@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Search, Plus, Calendar, Users, MapPin, Clock
 import { message, Modal, Spin } from 'antd';
 import { ExclamationCircleFilled } from '@ant-design/icons';
 import eventApi from '../../../api/eventManagement/eventApi';
+import { useAuth } from '../../Authen/AuthContext';
 
 // Import modals (in practice would import from separate file)
 import CreateEventModal from '../../ModalEvent/CreateEvent';
@@ -10,6 +11,7 @@ import EventDetailModal from '../../ModalEvent/DetailEvent';
 import EditEventModal from '../../ModalEvent/EditEvent';
 
 const Event = () => {
+  const { user } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -22,6 +24,23 @@ const Event = () => {
   
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Check if current user can edit/delete this event
+  const canEditEvent = (event) => {
+    if (!user || !event) return false;
+    if (user.role === 'ADMIN') return true; // Admin can edit everything
+    
+    if (user.role === 'STAFF') {
+      // Staff can only edit if they created it or if creator is not admin
+      // If createdByRole is 'ADMIN', staff cannot edit
+      if (event.createdByRole === 'ADMIN') return false; // Staff cannot edit admin's events
+      // If createdByRole is undefined/null, allow edit for backward compatibility
+      // If createdByRole is 'STAFF' or not 'ADMIN', allow edit
+      return true; // Staff can edit their own or other staff's events
+    }
+    
+    return false;
+  };
 
     // Real event data from API
   const [eventData, setEventData] = useState([]);
@@ -251,20 +270,22 @@ const Event = () => {
                     </div>
                     
                     {/* Simple Action buttons */}
-                    <div className="absolute top-3 right-3 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <button
-                        onClick={(e) => handleEditClick(e, event)}
-                        className="p-1.5 bg-white/90 hover:bg-white text-gray-700 rounded-md transition-colors shadow-sm"
-                      >
-                        <Edit className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={(e) => handleDeleteClick(e, event)}
-                        className="p-1.5 bg-white/90 hover:bg-white text-red-600 rounded-md transition-colors shadow-sm"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
+                    {canEditEvent(event) && (
+                      <div className="absolute top-3 right-3 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <button
+                          onClick={(e) => handleEditClick(e, event)}
+                          className="p-1.5 bg-white/90 hover:bg-white text-gray-700 rounded-md transition-colors shadow-sm"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteClick(e, event)}
+                          className="p-1.5 bg-white/90 hover:bg-white text-red-600 rounded-md transition-colors shadow-sm"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Clean Event Info */}

@@ -27,9 +27,11 @@ import EditFieldModal from '../../ModalBooking/EditFieldModal';
 import FieldDetailModal from '../../ModalBooking/FieldDetailModal';
 import TimeSlotModal from '../../ModalBooking/TimeSlotModal';
 import { fieldApi } from '../../../api';
+import { useAuth } from '../../Authen/AuthContext';
 import { message } from 'antd';
 
 const Stadium = () => {
+  const { user } = useAuth();
   const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
@@ -41,6 +43,21 @@ const Stadium = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [purposeFilter, setPurposeFilter] = useState('All');
   const [editLoading, setEditLoading] = useState(false);
+
+  // Check if current user can edit/delete this field
+  const canEditField = (field) => {
+    if (!user) return false;
+    if (user.role === 'ADMIN') return true; // Admin can edit everything
+    
+    if (user.role === 'STAFF') {
+      // Staff can only edit if they created it or if creator is not admin
+      if (field.managedByRole === 'ADMIN') return false; // Staff cannot edit admin's fields
+      // Staff can edit their own fields or fields created by other staff
+      return true;
+    }
+    
+    return false;
+  };
 
   useEffect(() => {
     fetchFields();
@@ -401,33 +418,39 @@ const Stadium = () => {
     >
       <Eye className="h-4 w-4" />
     </button>
-    <button
-      onClick={() => {
-        setSelectedField(field);
-        setTimeSlotModalVisible(true);
-      }}
-      className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200"
-      title="Quản lý khung giờ"
-    >
-      <ClockCircleOutlined className="h-4 w-4" />
-    </button>
-    <button
-      onClick={() => {
-        setSelectedField(field);
-        setEditModalVisible(true);
-      }}
-      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
-      title="Chỉnh sửa"
-    >
-      <Edit2 className="h-4 w-4" />
-    </button>
-    <button
-      onClick={() => confirmDeleteField(field)}
-      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
-      title="Xóa"
-    >
-      <Trash2 className="h-4 w-4" />
-    </button>
+    {canEditField(field) && (
+      <button
+        onClick={() => {
+          setSelectedField(field);
+          setTimeSlotModalVisible(true);
+        }}
+        className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200"
+        title="Quản lý khung giờ"
+      >
+        <ClockCircleOutlined className="h-4 w-4" />
+      </button>
+    )}
+    {canEditField(field) && (
+      <button
+        onClick={() => {
+          setSelectedField(field);
+          setEditModalVisible(true);
+        }}
+        className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
+        title="Chỉnh sửa"
+      >
+        <Edit2 className="h-4 w-4" />
+      </button>
+    )}
+    {canEditField(field) && (
+      <button
+        onClick={() => confirmDeleteField(field)}
+        className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
+        title="Xóa"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    )}
   </div>
 </div>
 

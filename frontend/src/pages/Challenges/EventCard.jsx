@@ -23,7 +23,7 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
       const token = localStorage.getItem("token");
       
       if (!token) {
-        message.error("Vui lòng đăng nhập để đăng ký sự kiện");
+        message.error("Please login to register for events");
         return;
       }
 
@@ -38,8 +38,8 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
           setMyTeamId(teamIdToUse);
         } catch (err) {
           const msg = err?.response?.status === 404
-            ? "Bạn chưa có đội hoặc không phải manager của đội. Vui lòng tạo/chọn đội trước."
-            : "Không thể lấy thông tin đội của bạn";
+            ? "You don't have a team yet or you're not the team manager. Please create/select a team first."
+            : "Unable to get your team information";
           message.error(msg);
           return;
         }
@@ -56,7 +56,7 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
       if (response.status === 201) {
         setIsAlreadyRegistered(true); // Cập nhật state ngay sau khi đăng ký thành công
         // Don't increment participants count here as team is only pending, not approved yet
-        message.success("Đăng ký thành công, vui lòng chờ phê duyệt");
+        message.success("Registration successful, please wait for approval");
 
         // Cache joined event locally for fallback on next reload
         try {
@@ -68,7 +68,7 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
         } catch (_) {}
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Đăng ký thất bại, vui lòng thử lại";
+      const errorMessage = error.response?.data?.message || "Registration failed, please try again";
       if (error.response?.status === 400 && errorMessage.includes('already registered')) {
         // Nếu backend báo trùng đăng ký, vẫn cập nhật UI để disable nút
         setIsAlreadyRegistered(true);
@@ -189,7 +189,7 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
               <div className="text-sm font-semibold text-gray-900">
                 {new Date(event.startDate).toLocaleDateString()}
               </div>
-              <div className="text-xs text-gray-500">Ngày bắt đầu</div>
+              <div className="text-xs text-gray-500">Start Date</div>
             </div>
           </div>
 
@@ -199,7 +199,7 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
               <div className="text-sm font-semibold text-gray-900">
                 {participantsCount}
               </div>
-              <div className="text-xs text-gray-500">Tham gia</div>
+              <div className="text-xs text-gray-500">Participants</div>
             </div>
           </div>
         </div>
@@ -217,18 +217,18 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
       onClick={isAlreadyRegistered ? undefined : handleRegister}
     >
       {(event.status || '').toLowerCase() === "completed" ? (
-        "Đã kết thúc"
+        "Completed"
       ) : isAlreadyRegistered ? (
         <span className="flex items-center justify-center gap-2">
           <Users className="w-5 h-5" />
-          Đã đăng ký tham gia
+          Already Registered
         </span>
       ) : isRegistering ? (
-        "Đang đăng ký..."
+        "Registering..."
       ) : (
         <span className="flex items-center justify-center gap-2">
           <PlayCircle className="w-5 h-5" />
-          Tham gia ngay
+          Join Now
         </span>
       )}
     </button>

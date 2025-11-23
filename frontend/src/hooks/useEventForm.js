@@ -87,7 +87,22 @@ export const useEventForm = () => {
       if (!formData.name.trim()) newErrors.name = "Tên sự kiện là bắt buộc";
       if (formData.name.trim().length < 3) newErrors.name = "Tên sự kiện phải có ít nhất 3 ký tự";
       if (!formData.sportTypeId) newErrors.sportTypeId = "Loại thể thao là bắt buộc";
-      if (!formData.seasonId) newErrors.seasonId = "Mùa giải là bắt buộc";
+      if (!formData.seasonId) {
+        newErrors.seasonId = "Mùa giải là bắt buộc";
+      } else {
+        // Kiểm tra nếu season đã kết thúc
+        const selectedSeason = seasons.find(s => s._id === formData.seasonId);
+        if (selectedSeason) {
+          const seasonEndDate = new Date(selectedSeason.endDate);
+          const currentDate = new Date();
+          // Reset time để so sánh chỉ ngày
+          seasonEndDate.setHours(0, 0, 0, 0);
+          currentDate.setHours(0, 0, 0, 0);
+          if (seasonEndDate < currentDate) {
+            newErrors.seasonId = "Không thể chọn mùa giải đã kết thúc";
+          }
+        }
+      }
     }
 
     if (step === 2) {

@@ -140,7 +140,7 @@ const Formation = ({ availablePlayers = [], onAddPlayer }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Sơ đồ</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Formation</label>
           <select
             value={selectedFormation}
             onChange={(e) => {

@@ -7,7 +7,58 @@ const { createNotification } = require('./notificationController');
 const UserRole = require('../models/UserModel/UserRole');
 const Role = require('../models/UserModel/Role');
 
-// Get all bookings with filters
+// Hàm helper để kiểm tra user có phải admin hoặc staff không
+const isAdminOrStaff = async (userId) => {
+  try {
+    const userRole = await UserRole.findOne({ user_id: userId }).populate('role_id');
+    if (!userRole || !userRole.role_id) return false;
+    
+    const roleCode = userRole.role_id.code?.toUpperCase();
+    return roleCode === 'ADMIN' || roleCode === 'STAFF';
+  } catch (error) {
+    console.error('Error checking user role:', error);
+    return false;
+  }
+};
+
+// Hàm helper để kiểm tra user có phải ADMIN không
+const isAdmin = async (userId) => {
+  try {
+    const userRole = await UserRole.findOne({ user_id: userId }).populate('role_id');
+    if (!userRole || !userRole.role_id) return false;
+    
+    const roleCode = userRole.role_id.code?.toUpperCase();
+    return roleCode === 'ADMIN';
+  } catch (error) {
+    console.error('Error checking if user is admin:', error);
+    return false;
+  }
+};
+
+// Hàm helper để kiểm tra người tạo có phải ADMIN không
+const isCreatorAdmin = async (creatorId) => {
+  if (!creatorId) return false;
+  return await isAdmin(creatorId);
+};
+
+// Hàm helper để kiểm tra staff có thể chỉnh sửa/xóa không (staff chỉ có thể chỉnh sửa dữ liệu của mình, không phải dữ liệu của admin)
+const canStaffEdit = async (currentUserId, creatorId) => {
+  const currentUserIsAdmin = await isAdmin(currentUserId);
+  if (currentUserIsAdmin) return true; // Admin có thể chỉnh sửa tất cả
+  
+  const currentUserIsStaff = await isAdminOrStaff(currentUserId);
+  if (!currentUserIsStaff) return false; // Không phải admin hoặc staff
+  
+  if (!creatorId) return true; // Nếu không có người tạo, cho phép chỉnh sửa (để tương thích ngược)
+  
+  const creatorIsAdmin = await isCreatorAdmin(creatorId);
+  if (creatorIsAdmin) return false; // Staff không thể chỉnh sửa dữ liệu của admin
+  
+  // Staff có thể chỉnh sửa dữ liệu của chính họ
+  return creatorId?.toString() === currentUserId?.toString();
+};
+
+// Lấy tất cả bookings với bộ lọc
 const getAllBookings = async (req, res) => {
   try {
     const { 
@@ -29,7 +80,7 @@ const getAllBookings = async (req, res) => {
     if (fieldId) filter.fieldId = fieldId;
     if (userId) filter.userId = userId;
     
-    // Filter by date range
+    // Lọc theo khoảng thời gian
     if (startDate || endDate) {
       filter.startTime = {};
       if (startDate) filter.startTime.$gte = new Date(startDate);
@@ -46,7 +97,15 @@ const getAllBookings = async (req, res) => {
     // Lấy bookings với populate
     const bookings = await Booking.find(filter)
       .populate('userId', 'name email phone_number')
-      .populate('fieldId', 'name fieldNumber purpose capacity price location')
+      .populate({
+        path: 'fieldId',
+        select: 'name fieldNumber purpose capacity price location managedBy',
+        populate: {
+          path: 'managedBy',
+          select: 'name email'
+        }
+      })
+      .populate('timeSlotId', 'startTime endTime timeType multiplier')
       .populate('teamId', 'name')
       .sort(sort)
       .skip(skip)
@@ -55,9 +114,20 @@ const getAllBookings = async (req, res) => {
     // Đếm tổng số bookings
     const total = await Booking.countDocuments(filter);
 
+    // Populate managedBy role để kiểm tra quyền
+    const bookingsWithRole = await Promise.all(bookings.map(async (booking) => {
+      const bookingObj = booking.toObject();
+      if (bookingObj.fieldId && bookingObj.fieldId.managedBy) {
+        const managedByRole = await UserRole.findOne({ user_id: bookingObj.fieldId.managedBy }).populate('role_id');
+        const roleCode = managedByRole?.role_id?.code || null;
+        bookingObj.fieldId.managedByRole = roleCode;
+      }
+      return bookingObj;
+    }));
+
     res.status(200).json({
       success: true,
-      data: bookings,
+      data: bookingsWithRole,
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / parseInt(limit)),
@@ -75,7 +145,7 @@ const getAllBookings = async (req, res) => {
   }
 };
 
-// Get booking by ID
+// Lấy booking theo ID
 const getBookingById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -89,9 +159,17 @@ const getBookingById = async (req, res) => {
 
     const booking = await Booking.findById(id)
       .populate('userId', 'name email phone_number')
-      .populate('fieldId', 'name fieldNumber purpose capacity price location address features images')
+      .populate({
+        path: 'fieldId',
+        select: 'name fieldNumber purpose capacity price location address features images managedBy',
+        populate: {
+          path: 'managedBy',
+          select: 'name email'
+        }
+      })
+      .populate('timeSlotId', 'startTime endTime timeType multiplier')
       .populate('teamId', 'name');
-
+    
     if (!booking) {
       return res.status(404).json({ 
         success: false, 
@@ -99,9 +177,17 @@ const getBookingById = async (req, res) => {
       });
     }
 
+    // Populate managedBy role để kiểm tra quyền
+    let bookingWithRole = booking.toObject();
+    if (bookingWithRole.fieldId && bookingWithRole.fieldId.managedBy) {
+      const managedByRole = await UserRole.findOne({ user_id: bookingWithRole.fieldId.managedBy }).populate('role_id');
+      const roleCode = managedByRole?.role_id?.code || null;
+      bookingWithRole.fieldId.managedByRole = roleCode;
+    }
+
     res.status(200).json({
       success: true,
-      data: booking
+      data: bookingWithRole || booking
     });
   } catch (error) {
     console.error('Get booking by ID error:', error);
@@ -113,13 +199,13 @@ const getBookingById = async (req, res) => {
   }
 };
 
-// Create new booking
+// Tạo booking mới
 const createBooking = async (req, res) => {
   try {
     const { fieldId, timeSlotId, date, notes, teamId, duration, totalPrice } = req.body;
     const userId = req.user.id;
 
-    // Validate required fields
+    // Kiểm tra các trường bắt buộc
     if (!fieldId || !timeSlotId || !date) {
       return res.status(400).json({ 
         success: false, 
@@ -127,7 +213,7 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // Validate ObjectId format
+    // Kiểm tra định dạng ObjectId
     const isValidObjectId = (id) => /^[0-9a-fA-F]{24}$/.test(id);
     
     if (!isValidObjectId(fieldId)) {
@@ -144,7 +230,7 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // Get field details
+    // Lấy thông tin sân
     const field = await Field.findById(fieldId);
     if (!field) {
       return res.status(404).json({ 
@@ -153,7 +239,7 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // Get time slot details
+    // Lấy thông tin khung giờ
     const timeSlot = await TimeSlot.findById(timeSlotId);
     if (!timeSlot) {
       return res.status(404).json({ 
@@ -162,7 +248,7 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // Check if time slot belongs to field
+    // Kiểm tra khung giờ có thuộc sân không
     if (timeSlot.fieldId.toString() !== fieldId) {
       return res.status(400).json({ 
         success: false, 
@@ -170,7 +256,7 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // Create start and end time
+    // Tạo thời gian bắt đầu và kết thúc
     const startTime = new Date(`${date}T${timeSlot.startTime}`);
     const endTime = new Date(`${date}T${timeSlot.endTime}`);
     const now = new Date();
@@ -182,7 +268,7 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // Check for conflicts
+    // Kiểm tra xung đột
     const existingBooking = await Booking.findOne({
       fieldId,
       startTime: { $lt: endTime },
@@ -197,11 +283,11 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // Calculate duration (chỉ để lưu, không dùng tính giá)
-    const calculatedDuration = (endTime - startTime) / (1000 * 60 * 60); // hours
+    // Tính thời lượng (chỉ để lưu, không dùng tính giá)
+    const calculatedDuration = (endTime - startTime) / (1000 * 60 * 60); // giờ
     const finalDuration = duration || calculatedDuration;
     
-    // Get multiplier from time slot
+    // Lấy hệ số từ khung giờ
     const timeSlotMultiplier = timeSlot.multiplier || 
       (timeSlot.timeType === 'ca_sang' ? 1.0 :
        timeSlot.timeType === 'ca_chieu' ? 1.2 :
@@ -210,7 +296,7 @@ const createBooking = async (req, res) => {
     // GIÁ CỐ ĐỊNH THEO CA: giá sân × hệ số ca (KHÔNG nhân duration)
     const finalTotalPrice = totalPrice || (field.pricePerHour * timeSlotMultiplier);
 
-    // Create booking
+    // Tạo booking
     const booking = new Booking({
       userId,
       fieldId,
@@ -264,7 +350,7 @@ const createBooking = async (req, res) => {
         // Không fail request nếu notification lỗi
     }
 
-    // Populate and return
+    // Populate và trả về
     const populatedBooking = await Booking.findById(booking._id)
       .populate('userId', 'name email phone_number')
       .populate('fieldId', 'name fieldNumber purpose capacity price location')
@@ -285,7 +371,7 @@ const createBooking = async (req, res) => {
   }
 };
 
-// Update booking
+// Cập nhật booking
 const updateBooking = async (req, res) => {
   try {
     const { id } = req.params;
@@ -307,16 +393,39 @@ const updateBooking = async (req, res) => {
       });
     }
 
-    // Check if user owns the booking or is admin
-    if (booking.userId.toString() !== userId && req.user.role !== 'ADMIN') {
+    // Kiểm tra user có sở hữu booking hoặc là admin/staff không
+    const hasPermission = booking.userId.toString() === userId || await isAdminOrStaff(userId);
+    if (!hasPermission) {
       return res.status(403).json({ 
         success: false, 
         message: 'Không có quyền cập nhật booking này' 
       });
     }
 
-    // Don't allow updating confirmed bookings
-    if (booking.status === 'confirmed' && updateData.status) {
+    // Đối với staff: Kiểm tra họ có thể chỉnh sửa booking này không
+    // Staff chỉ có thể chỉnh sửa booking mà họ tạo (nếu booking được tạo bởi staff qua admin panel)
+    // Lưu ý: Booking không có trường createdBy, nên chúng ta kiểm tra user hiện tại có phải staff không
+    // và booking có được tạo bởi admin không (chúng ta cần kiểm tra managedBy của sân)
+    const currentUserIsAdmin = await isAdmin(userId);
+    if (!currentUserIsAdmin) {
+      // Nếu là staff, kiểm tra sân có được tạo bởi admin không
+      const field = await Field.findById(booking.fieldId);
+      if (field && field.managedBy) {
+        const canEdit = await canStaffEdit(userId, field.managedBy);
+        if (!canEdit) {
+          return res.status(403).json({ 
+            success: false, 
+            message: 'Bạn không có quyền cập nhật booking này. Chỉ có thể xem.' 
+          });
+        }
+      }
+    }
+
+    // Kiểm tra user có phải admin/staff không để cho phép cập nhật booking đã xác nhận
+    const isAdminOrStaffUser = await isAdminOrStaff(userId);
+    
+    // Không cho phép cập nhật booking đã xác nhận (trừ admin/staff)
+    if (booking.status === 'confirmed' && updateData.status && !isAdminOrStaffUser) {
       return res.status(400).json({ 
         success: false, 
         message: 'Không thể cập nhật booking đã xác nhận' 
@@ -346,7 +455,7 @@ const updateBooking = async (req, res) => {
   }
 };
 
-// Cancel booking
+// Hủy booking
 const cancelBooking = async (req, res) => {
   try {
     const { id } = req.params;
@@ -367,15 +476,31 @@ const cancelBooking = async (req, res) => {
       });
     }
 
-    // Check if user owns the booking or is admin
-    if (booking.userId.toString() !== userId && req.user.role !== 'ADMIN') {
+    // Kiểm tra user có sở hữu booking hoặc là admin/staff không
+    const hasPermission = booking.userId.toString() === userId || await isAdminOrStaff(userId);
+    if (!hasPermission) {
       return res.status(403).json({ 
         success: false, 
         message: 'Không có quyền hủy booking này' 
       });
     }
 
-    // Don't allow cancelling completed bookings
+    // Đối với staff: Kiểm tra họ có thể hủy booking này không
+    const currentUserIsAdmin = await isAdmin(userId);
+    if (!currentUserIsAdmin) {
+      const field = await Field.findById(booking.fieldId);
+      if (field && field.managedBy) {
+        const canCancel = await canStaffEdit(userId, field.managedBy);
+        if (!canCancel) {
+          return res.status(403).json({ 
+            success: false, 
+            message: 'Bạn không có quyền hủy booking này. Chỉ có thể xem.' 
+          });
+        }
+      }
+    }
+
+    // Không cho phép hủy booking đã hoàn thành
     if (booking.status === 'completed') {
       return res.status(400).json({ 
         success: false, 
@@ -402,7 +527,7 @@ const cancelBooking = async (req, res) => {
   }
 };
 
-// Delete booking
+// Xóa booking
 const deleteBooking = async (req, res) => {
   try {
     const { id } = req.params;
@@ -423,12 +548,28 @@ const deleteBooking = async (req, res) => {
       });
     }
 
-    // Check if user owns the booking or is admin
-    if (booking.userId.toString() !== userId && req.user.role !== 'ADMIN') {
+    // Kiểm tra user có sở hữu booking hoặc là admin/staff không
+    const hasPermission = booking.userId.toString() === userId || await isAdminOrStaff(userId);
+    if (!hasPermission) {
       return res.status(403).json({ 
         success: false, 
         message: 'Không có quyền xóa booking này' 
       });
+    }
+
+    // Đối với staff: Kiểm tra họ có thể xóa booking này không
+    const currentUserIsAdmin = await isAdmin(userId);
+    if (!currentUserIsAdmin) {
+      const field = await Field.findById(booking.fieldId);
+      if (field && field.managedBy) {
+        const canDelete = await canStaffEdit(userId, field.managedBy);
+        if (!canDelete) {
+          return res.status(403).json({ 
+            success: false, 
+            message: 'Bạn không có quyền xóa booking này. Chỉ có thể xem.' 
+          });
+        }
+      }
     }
 
     await Booking.findByIdAndDelete(id);
@@ -447,7 +588,7 @@ const deleteBooking = async (req, res) => {
   }
 };
 
-// Check availability
+// Kiểm tra tính khả dụng
 const checkAvailability = async (req, res) => {
   try {
     const { fieldId, date, timeSlotId } = req.body;
@@ -480,7 +621,7 @@ const checkAvailability = async (req, res) => {
       });
     }
 
-    // Check for conflicts
+    // Kiểm tra xung đột
     const existingBooking = await Booking.findOne({
       fieldId,
       startTime: { $lt: endTime },

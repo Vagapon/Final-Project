@@ -30,6 +30,7 @@ import Unauthorized from "./pages/Authen/Unauthorized.jsx";
 import CreateStaff from "./pages/Admin/Users/CreateStaff.jsx"; 
 import Season from "./pages/Admin/Event/Season.jsx"; 
 import Stadium from "./pages/Admin/Booking/Stadium.jsx";
+import AllBooking from "./pages/Admin/Booking/AllBooking.jsx";
 import BlogManagement from "./pages/Admin/Blog/BlogManagement.jsx";
 
 const rootElement = document.getElementById("root");
@@ -54,20 +55,27 @@ createRoot(rootElement).render(
           </Route>
           {/* </Route> */}
 
-          {/* Layout admin */}
-          <Route element={<ProtectedRoute allowedRoles={["ADMIN" || "STAFF"]} />}>
+          {/* Layout admin - Pages accessible by both ADMIN and STAFF */}
+          <Route element={<ProtectedRoute allowedRoles={["ADMIN", "STAFF"]} />}>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Overview />} />
-              <Route path="users" element={<User />} />
-              <Route path="events" element={<Event />} />
               <Route path="profile" element={<Profile />} />
               <Route path="teams" element={<Team />} />
               <Route path="ranks" element={<Ranking />} />
+              <Route path="events" element={<Event />} />
               <Route path="matches" element={<Match />} />
-              <Route path="create-staff" element={<CreateStaff />} />
               <Route path="seasons" element={<Season />} />
               <Route path="stadium" element={<Stadium />} />
+              <Route path="booking" element={<AllBooking />} />
               <Route path="blogs" element={<BlogManagement />} />
+            </Route>
+          </Route>
+
+          {/* Layout admin - Pages only accessible by ADMIN (User Management) */}
+          <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route path="users" element={<User />} />
+              <Route path="create-staff" element={<CreateStaff />} />
             </Route>
           </Route>
 

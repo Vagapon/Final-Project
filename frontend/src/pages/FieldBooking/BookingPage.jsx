@@ -119,7 +119,7 @@ const BookingPage = () => {
       }
     } catch (error) {
       console.error('Error loading booking data:', error);
-      message.error('Không thể tải thông tin đặt sân');
+      message.error('Unable to load booking information');
       navigate('/book');
     } finally {
       setLoading(false);
@@ -128,11 +128,11 @@ const BookingPage = () => {
 
   const getTimeTypeText = (timeType) => {
     const timeTypeMap = {
-      'ca_sang': 'Sáng',
-      'ca_chieu': 'Chiều', 
-      'ca_toi': 'Tối'
+      'ca_sang': 'Morning',
+      'ca_chieu': 'Afternoon', 
+      'ca_toi': 'Evening'
     };
-    return timeTypeMap[timeType] || 'Sáng';
+    return timeTypeMap[timeType] || 'Morning';
   };
 
   const loadTimeSlotsForDate = async (fieldId, selectedDate) => {
@@ -181,17 +181,17 @@ const BookingPage = () => {
       });
       
       if (!selectedBookingDate) {
-        setValidationError('Vui lòng chọn ngày đặt sân');
+        setValidationError('Please select a booking date');
         message.warning({
-          content: 'Vui lòng chọn ngày đặt sân',
+          content: 'Please select a booking date',
           duration: 3
         });
         return;
       }
       if (!selectedTimeSlotId || !timeSlot) {
-        setValidationError('Vui lòng chọn khung giờ để tiếp tục');
+        setValidationError('Please select a time slot to continue');
         message.warning({
-          content: 'Vui lòng chọn khung giờ để tiếp tục',
+          content: 'Please select a time slot to continue',
           duration: 3
         });
         // Scroll to time slot section
@@ -204,7 +204,7 @@ const BookingPage = () => {
       if (!user) {
         setValidationError('');
         message.error({
-          content: 'Vui lòng đăng nhập để tiếp tục',
+          content: 'Please login to continue',
           duration: 3
         });
         return;
@@ -237,14 +237,14 @@ const BookingPage = () => {
             setQrData(qrResult);
             setCurrentStep(2);
           } else {
-            message.error('Không thể tạo mã QR thanh toán');
+            message.error('Unable to create payment QR code');
           }
         } else {
-          message.error(response.message || 'Có lỗi xảy ra khi tạo đơn đặt sân');
+          message.error(response.message || 'An error occurred while creating booking');
         }
       } catch (error) {
         console.error('Booking error:', error);
-        message.error('Có lỗi xảy ra khi tạo đơn đặt sân');
+        message.error('An error occurred while creating booking');
       } finally {
         setLoading(false);
       }
@@ -262,8 +262,8 @@ const BookingPage = () => {
       // Nếu đang ở step 2 (thanh toán), cần hủy booking trước khi quay lại
       if (currentStep === 2 && bookingId) {
         const confirmed = window.confirm(
-          'Bạn có chắc muốn quay lại?\n\n' +
-          'Mã QR thanh toán sẽ bị hủy và bạn cần chọn lại thời gian.'
+          'Are you sure you want to go back?\n\n' +
+          'The payment QR code will be cancelled and you need to select the time again.'
         );
         
         if (!confirmed) return;
@@ -286,10 +286,10 @@ const BookingPage = () => {
           sessionStorage.removeItem('bookingQrData');
           sessionStorage.removeItem('bookingPaymentStatus');
           
-          message.info('Đã hủy booking. Vui lòng chọn lại thời gian.');
+          message.info('Booking cancelled. Please select the time again.');
         } catch (error) {
           console.error('Error canceling booking:', error);
-          message.error('Không thể hủy booking. Vui lòng thử lại.');
+          message.error('Unable to cancel booking. Please try again.');
           return;
         }
       }
@@ -326,7 +326,7 @@ const BookingPage = () => {
             console.log('✅ Payment confirmed! Moving to step 3');
             setPaymentStatus('paid');
             clearInterval(pollInterval);
-            message.success('Thanh toán thành công!');
+            message.success('Payment successful!');
             
             // Chuyển sang step 3 ngay lập tức
             setTimeout(() => {
@@ -371,7 +371,7 @@ const BookingPage = () => {
         }
       }
       
-      message.warning('Hết thời gian thanh toán. Vui lòng đặt sân lại.');
+      message.warning('Payment timeout. Please book again.');
       
       // Clear sessionStorage
       sessionStorage.removeItem('bookingStep');
@@ -411,7 +411,7 @@ const BookingPage = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Đang tải thông tin đặt sân...</p>
+          <p className="text-gray-600">Loading booking information...</p>
         </div>
       </div>
     );
@@ -518,19 +518,19 @@ const BookingPage = () => {
                 className="flex items-center gap-2 px-6 py-2 text-gray-600 hover:bg-gray-50 rounded-lg text-sm font-medium transition-all border border-gray-300 hover:border-gray-400"
               >
                 <ArrowLeft className="w-4 h-4" />
-                {currentStep === 2 ? 'Chọn lại thời gian' : 'Quay lại'}
+                {currentStep === 2 ? 'Select Time Again' : 'Go Back'}
           </button>
             )}
             {currentStep !== 2 && currentStep !== 3 && (
               <button
                 onClick={() => {
-                  if (window.confirm('Bạn có chắc chắn muốn hủy đặt sân? Thông tin đã nhập sẽ bị mất.')) {
+                  if (window.confirm('Are you sure you want to cancel booking? All entered information will be lost.')) {
                     navigate('/book');
                   }
                 }}
                 className="px-6 py-2 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg text-sm font-medium transition-all border border-gray-300 hover:border-red-300"
               >
-                Hủy đặt sân
+                Cancel Booking
               </button>
             )}
           </div>
@@ -543,25 +543,25 @@ const BookingPage = () => {
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Đang xử lý...
+                    Processing...
                   </>
                 ) : (
                   <>
-                    Tiếp tục
+                    Continue
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             ) : currentStep === 2 ? (
               <div className="text-sm text-gray-600">
-                Vui lòng hoàn tất thanh toán để tiếp tục
+                Please complete payment to continue
               </div>
             ) : (
               <button
                 onClick={() => navigate('/book')}
               className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-all shadow-sm hover:shadow-md"
               >
-                Hoàn tất
+                Complete
                 <Check className="w-4 h-4" />
               </button>
             )}

@@ -93,11 +93,21 @@ const Step1 = ({ formData, errors, sportTypes, seasons, handleInputChange }) => 
           }`}
         >
           <option value="">Select season...</option>
-          {seasons.map((season) => (
-            <option key={season._id} value={season._id}>
-              {season.name} ({new Date(season.startDate).toLocaleDateString()} - {new Date(season.endDate).toLocaleDateString()})
-            </option>
-          ))}
+          {seasons
+            .filter((season) => {
+              // Chỉ hiển thị season chưa kết thúc (endDate >= current date)
+              const seasonEndDate = new Date(season.endDate);
+              const currentDate = new Date();
+              // Reset time để so sánh chỉ ngày
+              seasonEndDate.setHours(0, 0, 0, 0);
+              currentDate.setHours(0, 0, 0, 0);
+              return seasonEndDate >= currentDate;
+            })
+            .map((season) => (
+              <option key={season._id} value={season._id}>
+                {season.name} ({new Date(season.startDate).toLocaleDateString()} - {new Date(season.endDate).toLocaleDateString()})
+              </option>
+            ))}
         </select>
         {formData.seasonId && (
           <small className="text-gray-500 dark:text-gray-400 text-sm mt-1 block">
