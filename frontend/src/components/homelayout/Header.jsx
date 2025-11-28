@@ -34,20 +34,20 @@ const formatTimeAgo = (dateString) => {
   const diffInDays = Math.floor(diffInSeconds / 86400);
 
   if (diffInDays === 0) {
-    if (diffInSeconds < 60) return 'Vừa xong';
-    if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
-    return `${diffInHours} giờ trước`;
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
+    return `${diffInHours} hours ago`;
   }
 
-  if (diffInDays === 1) return 'Hôm qua';
-  if (diffInDays < 7) return `${diffInDays} ngày trước`;
+  if (diffInDays === 1) return 'Yesterday';
+  if (diffInDays < 7) return `${diffInDays} days ago`;
   if (diffInDays < 30) {
     const weeks = Math.floor(diffInDays / 7);
-    return `${weeks} tuần trước`;
+    return `${weeks} weeks ago`;
   }
 
   if (date.getFullYear() === now.getFullYear()) {
-    return date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'long' });
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long' });
   }
 
   return date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -160,10 +160,10 @@ const NotificationItem = ({ notification, index, onMarkAsRead }) => {
           </div>
           <p className="text-sm text-gray-600 mt-0.5">{notification.content}</p>
           {notification.teamId && (
-            <p className="text-xs text-blue-600 mt-1">Đội: {notification.teamId.name}</p>
+            <p className="text-xs text-blue-600 mt-1">Team: {notification.teamId.name}</p>
           )}
           {notification.eventId && (
-            <p className="text-xs text-purple-600 mt-1">Sự kiện: {notification.eventId.name}</p>
+            <p className="text-xs text-purple-600 mt-1">Event: {notification.eventId.name}</p>
           )}
           {timeString && (
             <p className="text-xs text-gray-400 mt-1">• {timeString}</p>
@@ -183,7 +183,7 @@ const NotificationDropdown = ({ isOpen, onClose, notifications, onMarkAsRead, on
           <div className="p-1.5 bg-blue-50 rounded-full">
             <Bell className="w-4 h-4 text-blue-500" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900">Thông báo</h3>
+          <h3 className="text-lg font-bold text-gray-900">Notifications</h3>
         </div>
         <div className="flex items-center space-x-2">
           {unreadCount > 0 && (
@@ -191,7 +191,7 @@ const NotificationDropdown = ({ isOpen, onClose, notifications, onMarkAsRead, on
               onClick={onMarkAllAsRead}
               className="text-xs text-blue-600 hover:text-blue-700 font-medium"
             >
-              Đánh dấu tất cả đã đọc
+              Mark all as read
             </button>
           )}
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
@@ -201,9 +201,9 @@ const NotificationDropdown = ({ isOpen, onClose, notifications, onMarkAsRead, on
       </div>
       <div className="max-h-96 overflow-y-auto">
         {loading ? (
-          <div className="p-4 text-center text-gray-500">Đang tải...</div>
+          <div className="p-4 text-center text-gray-500">Loading...</div>
         ) : !Array.isArray(notifications) || notifications.length === 0 ? (
-          <div className="p-4 text-center text-gray-500">Không có thông báo nào</div>
+          <div className="p-4 text-center text-gray-500">No notifications</div>
         ) : (
           notifications.map((notification, index) => (
             <NotificationItem 
@@ -218,7 +218,7 @@ const NotificationDropdown = ({ isOpen, onClose, notifications, onMarkAsRead, on
       {notifications.length > 0 && (
         <div className="p-4 bg-gray-50 rounded-b-2xl">
           <button onClick={onClose} className="w-full text-center text-blue-500 hover:text-blue-600 font-medium transition-colors">
-            Xem tất cả thông báo
+            View all notifications
           </button>
         </div>
       )}
@@ -235,7 +235,7 @@ const MobileNotificationPanel = ({ isOpen, onClose, notifications, onMarkAsRead,
           <div className="p-1.5 bg-blue-50 rounded-full">
             <Bell className="w-4 h-4 text-blue-500" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900">Thông báo</h3>
+          <h3 className="text-lg font-bold text-gray-900">Notifications</h3>
         </div>
         <div className="flex items-center space-x-2">
           {unreadCount > 0 && (
@@ -243,7 +243,7 @@ const MobileNotificationPanel = ({ isOpen, onClose, notifications, onMarkAsRead,
               onClick={onMarkAllAsRead}
               className="text-xs text-blue-600 hover:text-blue-700 font-medium mr-2"
             >
-              Đánh dấu tất cả
+              Mark all as read
             </button>
           )}
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -253,9 +253,9 @@ const MobileNotificationPanel = ({ isOpen, onClose, notifications, onMarkAsRead,
       </div>
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <div className="p-4 text-center text-gray-500">Đang tải...</div>
+          <div className="p-4 text-center text-gray-500">Loading...</div>
         ) : !Array.isArray(notifications) || notifications.length === 0 ? (
-          <div className="p-4 text-center text-gray-500">Không có thông báo nào</div>
+          <div className="p-4 text-center text-gray-500">No notifications</div>
         ) : (
           notifications.map((notification, index) => (
             <NotificationItem 
@@ -270,7 +270,7 @@ const MobileNotificationPanel = ({ isOpen, onClose, notifications, onMarkAsRead,
       {notifications.length > 0 && (
         <div className="p-4 bg-gray-50 border-t border-gray-100">
           <button onClick={onClose} className="w-full text-center text-blue-500 hover:text-blue-600 font-medium transition-colors py-2">
-            Xem tất cả thông báo
+            View all notifications
           </button>
         </div>
       )}
@@ -526,29 +526,29 @@ const Header = () => {
       
       setUnreadCount(prev => prev + 1);
 
-      // Hiển thị toast notification
+      // Display toast notification
       const getNotificationTitle = () => {
         switch (notification.type) {
           case 'event_registration':
-            return 'Đăng ký sự kiện';
+            return 'Event Registration';
           case 'booking':
-            return 'Đặt sân bóng';
+            return 'Booking';
           case 'event_approved':
-            return 'Sự kiện được duyệt';
+            return 'Event Approved';
           case 'booking_confirmed':
-            return 'Đặt sân được xác nhận';
+            return 'Booking Confirmed';
           case 'match_scheduled':
-            return 'Lịch thi đấu đã được sắp xếp';
+            return 'Match Schedule Arranged';
           default:
-            // Kiểm tra nếu là notification về reject
+            // Check if notification is about rejection
             if (notification.content && notification.content.includes('bị từ chối')) {
-              return 'Đăng ký bị từ chối';
+              return 'Registration Rejected';
             }
-            return 'Thông báo mới';
+            return 'New Notification';
         }
       };
 
-      // Xác định loại toast dựa trên notification type
+      // Determine toast type based on notification type
       const isRejected = notification.content && notification.content.includes('bị từ chối');
       const toastType = isRejected ? 'error' : 'success';
       
@@ -557,7 +557,7 @@ const Header = () => {
           description: notification.content,
           duration: 5000,
           action: {
-            label: 'Xem',
+            label: 'View',
             onClick: () => setNotificationOpen(true),
           },
         });
@@ -566,7 +566,7 @@ const Header = () => {
           description: notification.content,
           duration: 5000,
           action: {
-            label: 'Xem',
+            label: 'View',
             onClick: () => setNotificationOpen(true),
           },
         });

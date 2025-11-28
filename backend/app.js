@@ -35,8 +35,8 @@ dotenv.config();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // 🔍 Logging middleware để debug routing
 app.use((req, res, next) => {
@@ -92,5 +92,27 @@ console.log('✅ Payment routes registered:');
 console.log('   - /api/payments/*');
 console.log('   - /api/payment/*');
 console.log('   - /payment/* (for SePay webhook)');
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('❌ Global Error Handler:', {
+    message: err.message,
+    code: err.code,
+    stack: err.stack,
+    path: req.path,
+    method: req.method
+  });
+
+  // If headers already sent, delegate to default Express error handler
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  res.status(500).json({
+    success: false,
+    message: 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
 
 module.exports = app;

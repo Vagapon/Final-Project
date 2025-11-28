@@ -23,6 +23,7 @@ const Edit = ({ isOpen, onClose, event, onUpdateEvent }) => {
   const [seasons, setSeasons] = useState([]);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   // Fetch sport types and seasons
   useEffect(() => {
@@ -79,6 +80,25 @@ const Edit = ({ isOpen, onClose, event, onUpdateEvent }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // File size validation (50MB max)
+      const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+      if (file.size > MAX_FILE_SIZE) {
+        setErrors((prev) => ({
+          ...prev,
+          image: "Image size must be less than 50MB"
+        }));
+        return;
+      }
+
+      // File type validation
+      if (!file.type.startsWith('image/')) {
+        setErrors((prev) => ({
+          ...prev,
+          image: "Please upload a valid image file"
+        }));
+        return;
+      }
+
       setFormData(prev => ({
         ...prev,
         avatar: file
@@ -89,10 +109,22 @@ const Edit = ({ isOpen, onClose, event, onUpdateEvent }) => {
         setImagePreview(e.target.result);
       };
       reader.readAsDataURL(file);
+
+      // Clear error when file is valid
+      setErrors((prev) => ({
+        ...prev,
+        image: ""
+      }));
     }
   };
 
   const handleSubmit = async () => {
+    // Check for image validation errors
+    if (errors.image) {
+      message.error('Please fix image error before submitting');
+      return;
+    }
+
     // Validate required fields
     if (!formData.name || !formData.sportTypeId || !formData.seasonId) {
       message.error('Please fill in all required fields');
@@ -115,26 +147,30 @@ const Edit = ({ isOpen, onClose, event, onUpdateEvent }) => {
     try {
       const token = localStorage.getItem('token');
       
-      // Prepare the data object (not FormData for PUT requests)
-      const updateData = {
-        name: formData.name,
-        description: formData.description,
-        sportTypeId: formData.sportTypeId,
-        seasonId: formData.seasonId,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        address: formData.address,
-        location: formData.location,
-        status: formData.status,
-        maxTeams: formData.maxTeams ? parseInt(formData.maxTeams) : 0
-      };
+      // Prepare FormData to support file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('sportTypeId', formData.sportTypeId);
+      formDataToSend.append('seasonId', formData.seasonId);
+      formDataToSend.append('startDate', formData.startDate);
+      formDataToSend.append('endDate', formData.endDate);
+      formDataToSend.append('address', formData.address);
+      formDataToSend.append('location', formData.location);
+      formDataToSend.append('status', formData.status);
+      formDataToSend.append('maxTeams', formData.maxTeams ? parseInt(formData.maxTeams) : 0);
+      
+      // Only append avatar if a new one was selected
+      if (formData.avatar) {
+        formDataToSend.append('avatar', formData.avatar);
+      }
 
       const headers = {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'multipart/form-data'
       };
 
-      const response = await axios.put(`http://localhost:5000/api/event/${event._id}`, updateData, { headers });
+      const response = await axios.put(`http://localhost:5000/api/event/${event._id}`, formDataToSend, { headers });
       
       if (response.status === 200) {
         message.success('Event updated successfully!');
@@ -247,6 +283,9 @@ const Edit = ({ isOpen, onClose, event, onUpdateEvent }) => {
               </div>
             )}
           </div>
+          {errors.image && (
+            <p className="mt-2 text-sm text-red-600 font-medium">{errors.image}</p>
+          )}
         </div>
 
         {/* Event Details */}

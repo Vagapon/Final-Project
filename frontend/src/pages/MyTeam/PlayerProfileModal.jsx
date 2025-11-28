@@ -48,17 +48,17 @@ const PlayerProfileModal = ({ isOpen, onClose, player }) => {
             <div className="mt-6 flex items-center gap-4 text-sm text-gray-700">
               <span className="inline-flex items-center gap-2">
                 <Shield className="w-4 h-4 text-gray-500" />
-                Số áo: <span className="font-semibold">{number || "-"}</span>
+                Jersey #: <span className="font-semibold">{number || "-"}</span>
               </span>
               {position && (
                 <span className="inline-flex items-center gap-2">
                   <BadgeCheck className="w-4 h-4 text-gray-500" />
-                  Vị trí: <span className="font-semibold">{position}</span>
+                  Position: <span className="font-semibold">{position}</span>
                 </span>
               )}
               <span className="inline-flex items-center gap-2">
                 <Star className="w-4 h-4 text-yellow-500" />
-                Thành viên chủ chốt
+                Core Member
               </span>
             </div>
 

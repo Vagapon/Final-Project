@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Users, Star, Search, Filter, ChevronDown, Loader2, Eye } from 'lucide-react';
 import { fieldBookingService } from '../../api';
 import { message } from 'antd';
+import axios from 'axios';
 import { useAuth } from '../Authen/AuthContext';
 import ModernFieldDetailModal from '../ModalBooking/ModernFieldDetailModal';
 
@@ -24,14 +25,31 @@ const FieldBooking = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
+  const [selectedSportType, setSelectedSportType] = useState('all');
   const [selectedFeatures, setSelectedFeatures] = useState([]);
   const [showActiveOnly, setShowActiveOnly] = useState(false);
   const [priceFilter, setPriceFilter] = useState({ min: '', max: '' });
+  const [sportTypes, setSportTypes] = useState([]);
 
   // Load fields on component mount
   useEffect(() => {
     loadFields();
+    loadSportTypes();
   }, []);
+
+  const loadSportTypes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/season/sport-types', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data?.data) {
+        setSportTypes(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error loading sport types:', error);
+    }
+  };
 
   const loadFields = async () => {
     try {
@@ -183,6 +201,7 @@ const FieldBooking = () => {
   const resetFilters = () => {
     setSelectedCategory('all');
     setSelectedLocation('all');
+    setSelectedSportType('all');
     setSelectedFeatures([]);
     setShowActiveOnly(false);
     setPriceFilter({
@@ -204,13 +223,14 @@ const FieldBooking = () => {
       (maxPriceValue === null || priceValue <= maxPriceValue);
     const locationLabel = field.location?.trim() || 'Khác';
     const matchesLocation = selectedLocation === 'all' || locationLabel === selectedLocation;
+    const matchesSportType = selectedSportType === 'all' || field.sportTypeId?._id === selectedSportType;
     const matchesActive = !showActiveOnly || field.status === 'active';
     const fieldFeatures = Array.isArray(field.features) ? field.features : [];
     const matchesFeatures =
       selectedFeatures.length === 0 ||
       selectedFeatures.every((feature) => fieldFeatures.includes(feature));
 
-    return matchesSearch && matchesCategory && matchesPrice && matchesLocation && matchesActive && matchesFeatures;
+    return matchesSearch && matchesCategory && matchesPrice && matchesLocation && matchesSportType && matchesActive && matchesFeatures;
   });
 
   const formatPrice = (price) => {
@@ -278,7 +298,7 @@ const FieldBooking = () => {
             <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 sticky top-8">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Filter & Refine</h2>
               
-              {/* Category Filter */}
+              {/* Sport Type Filter - Field Type (5, 7, 11 person) */}
               <div className="mb-4 sm:mb-6">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xs sm:text-sm font-semibold text-gray-900">Field Type</h3>
@@ -291,9 +311,9 @@ const FieldBooking = () => {
                 </div>
                 <div className="space-y-1">
                   <button
-                    onClick={() => setSelectedCategory('all')}
+                    onClick={() => setSelectedSportType('all')}
                     className={`w-full flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 text-left transition-colors rounded ${
-                      selectedCategory === 'all'
+                      selectedSportType === 'all'
                         ? 'bg-blue-600 text-white'
                         : 'text-gray-600 hover:bg-gray-50'
                     }`}
@@ -301,20 +321,23 @@ const FieldBooking = () => {
                     <span className="text-xs sm:text-sm font-medium">All</span>
                     <span className="text-xs text-gray-500">({fields.length})</span>
                   </button>
-                  {categoryOptions.map((category) => (
-                    <button
-                      key={category.label}
-                      onClick={() => setSelectedCategory(category.label)}
-                      className={`w-full flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 text-left transition-colors rounded ${
-                        selectedCategory === category.label
-                          ? 'bg-blue-600 text-white'
-                          : 'text-gray-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      <span className="text-xs sm:text-sm font-medium">{category.label}</span>
-                      <span className="text-xs text-gray-500">({category.count})</span>
-                    </button>
-                  ))}
+                  {sportTypes.map((sportType) => {
+                    const count = fields.filter(f => f.sportTypeId?._id === sportType._id).length;
+                    return (
+                      <button
+                        key={sportType._id}
+                        onClick={() => setSelectedSportType(sportType._id)}
+                        className={`w-full flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 text-left transition-colors rounded ${
+                          selectedSportType === sportType._id
+                            ? 'bg-blue-600 text-white'
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className="text-xs sm:text-sm font-medium">{sportType.name}</span>
+                        <span className="text-xs text-gray-500">({count})</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

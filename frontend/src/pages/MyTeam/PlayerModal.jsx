@@ -32,13 +32,13 @@ const PlayerModal = ({ isOpen, onClose, onSubmit, teamId, mode = 'create', initi
         const response = await memberApi.importMembersFromSheet(teamId, sheetUrl);
         if (response.data.success) {
           onClose();
-          // Thông báo thành công và refresh danh sách
-          alert(`Import thành công: ${response.data.count} thành viên`);
+          // Success notification and refresh list
+          alert(`Import successful: ${response.data.count} members`);
         }
       } catch (error) {
         console.error('Error importing from sheet:', error);
         const msg = error.response?.data?.message || error.response?.data?.error || error.message;
-        alert(`Import thất bại: ${msg}`);
+        alert(`Import failed: ${msg}`);
       }
     }
   };
@@ -72,7 +72,7 @@ const PlayerModal = ({ isOpen, onClose, onSubmit, teamId, mode = 'create', initi
         
         <div className="relative bg-white w-full max-w-md rounded-lg shadow-lg">
           <div className="flex items-center justify-between p-4 border-b">
-            <h3 className="text-lg font-semibold text-gray-900">{mode === 'edit' ? 'Sửa thành viên' : 'Thêm thành viên mới'}</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{mode === 'edit' ? 'Edit Member' : 'Add New Member'}</h3>
             <button 
               onClick={onClose}
               className="text-gray-400 hover:text-gray-500"
@@ -91,7 +91,7 @@ const PlayerModal = ({ isOpen, onClose, onSubmit, teamId, mode = 'create', initi
               }`}
               onClick={() => setActiveTab('manual')}
             >
-              Nhập tay
+              Manually Enter
             </button>
             <button
               className={`flex-1 py-3 text-sm font-medium ${
@@ -109,7 +109,7 @@ const PlayerModal = ({ isOpen, onClose, onSubmit, teamId, mode = 'create', initi
             {activeTab === 'manual' ? (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Tên thành viên</label>
+                  <label className="block text-sm font-medium text-gray-700">Member Name</label>
                   <input
                     type="text"
                     value={formData.nameMember}
@@ -120,7 +120,7 @@ const PlayerModal = ({ isOpen, onClose, onSubmit, teamId, mode = 'create', initi
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Số áo (1-99)</label>
+                  <label className="block text-sm font-medium text-gray-700">Jersey Number (1-99)</label>
                   <input
                     type="number"
                     min="1"
@@ -135,13 +135,13 @@ const PlayerModal = ({ isOpen, onClose, onSubmit, teamId, mode = 'create', initi
                       }
                     }}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="Nhập số từ 1-99"
+                    placeholder="Enter number 1-99"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Ảnh đại diện</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Avatar</label>
                   <div className="flex items-center space-x-4">
                     {previewImage && (
                       <img 
@@ -152,7 +152,7 @@ const PlayerModal = ({ isOpen, onClose, onSubmit, teamId, mode = 'create', initi
                     )}
                     <label className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm cursor-pointer hover:bg-gray-50">
                       <Upload className="w-5 h-5 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-600">Upload ảnh</span>
+                      <span className="text-sm text-gray-600">Upload Image</span>
                       <input
                         type="file"
                         className="hidden"
@@ -173,7 +173,7 @@ const PlayerModal = ({ isOpen, onClose, onSubmit, teamId, mode = 'create', initi
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor="isCaptain" className="ml-2 block text-sm text-gray-900">
-                    Là đội trưởng
+                    Is Team Captain
                   </label>
                 </div>
               </>
@@ -196,7 +196,7 @@ const PlayerModal = ({ isOpen, onClose, onSubmit, teamId, mode = 'create', initi
                   </div>
                 </div>
                 <p className="mt-2 text-sm text-gray-500">
-                  Sheet cần có các cột: Tên thành viên, Số áo, Đội trưởng (true/false)
+                  Sheet must have columns: Member Name, Jersey Number, Captain (true/false)
                 </p>
               </div>
             )}
@@ -211,7 +211,7 @@ const PlayerModal = ({ isOpen, onClose, onSubmit, teamId, mode = 'create', initi
                     : 'bg-blue-600 hover:bg-blue-700'
                 }`}
               >
-                {uploading ? 'Đang tải lên...' : (mode === 'edit' ? 'Lưu thay đổi' : 'Thêm thành viên')}
+                {uploading ? 'Uploading...' : (mode === 'edit' ? 'Save Changes' : 'Add Member')}
               </button>
             </div>
           </form>

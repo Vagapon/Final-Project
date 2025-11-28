@@ -197,7 +197,7 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
             <Users className="w-5 h-5 text-green-500" />
             <div>
               <div className="text-sm font-semibold text-gray-900">
-                {participantsCount}
+                {participantsCount}/{event.maxTeams || 0}
               </div>
               <div className="text-xs text-gray-500">Participants</div>
             </div>

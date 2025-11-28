@@ -21,7 +21,7 @@ const validateDates = async (startDate, endDate, seasonId) => {
       throw new Error("Ngày bắt đầu phải trước hoặc bằng ngày kết thúc");
     }
 
-    const season = await Season.findById(seasonId).maxTimeMS(5000); // 5 second timeout
+    const season = await Season.findById(seasonId);
     if (!season) {
       throw new Error("Không tìm thấy mùa giải");
     }
@@ -46,29 +46,30 @@ const validateDates = async (startDate, endDate, seasonId) => {
 const eventController = {
   // TẠO MỚI
   create: async (req, res) => {
-    
-    const { name, description, sportTypeId, seasonId, startDate, endDate, location, status, address, maxTeams } = req.body;
-    
-    // Kiểm tra các trường bắt buộc
-    if (!name) {
-      return res.status(400).json({ message: "Event name is required" });
-    }
-    if (!sportTypeId) {
-      return res.status(400).json({ message: "Sport type is required" });
-    }
-    if (!seasonId) {
-      return res.status(400).json({ message: "Season is required" });
-    }
-    if (!startDate) {
-      return res.status(400).json({ message: "Start date is required" });
-    }
-    if (!endDate) {
-      return res.status(400).json({ message: "End date is required" });
-    }
-    if (maxTeams && (isNaN(parseInt(maxTeams)) || parseInt(maxTeams) < 1)) {
-      return res.status(400).json({ message: "Max teams must be a positive number" });
-    }
     try {
+      const { name, description, sportTypeId, seasonId, startDate, endDate, location, status, address, maxTeams } = req.body;
+      
+      console.log('📝 Event create request received:', { name, sportTypeId, seasonId, startDate, endDate, maxTeams, status });
+      
+      // Kiểm tra các trường bắt buộc
+      if (!name) {
+        return res.status(400).json({ message: "Event name is required" });
+      }
+      if (!sportTypeId) {
+        return res.status(400).json({ message: "Sport type is required" });
+      }
+      if (!seasonId) {
+        return res.status(400).json({ message: "Season is required" });
+      }
+      if (!startDate) {
+        return res.status(400).json({ message: "Start date is required" });
+      }
+      if (!endDate) {
+        return res.status(400).json({ message: "End date is required" });
+      }
+      if (maxTeams && (isNaN(parseInt(maxTeams)) || parseInt(maxTeams) < 1)) {
+        return res.status(400).json({ message: "Max teams must be a positive number" });
+      }
       const { start, end } = await validateDates(startDate, endDate, seasonId);
 
       const maxTeamsInt = maxTeams ? parseInt(maxTeams) : 0;

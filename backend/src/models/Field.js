@@ -1,4 +1,6 @@
 
+
+
 const mongoose = require('mongoose');
 
 const fieldSchema = new mongoose.Schema({
@@ -6,6 +8,9 @@ const fieldSchema = new mongoose.Schema({
   fieldNumber: { type: String, required: true }, // Số sân (VD: "Sân 1", "Sân 2")
   address: { type: String, required: true }, // Địa chỉ cụ thể
   location: { type: String }, // Khu vực (VD: "Quận 1", "Quận 7")
+  
+  // Loại bóng - liên kết với SportType (Football 5, 7, 11)
+  sportTypeId: { type: mongoose.Schema.Types.ObjectId, ref: 'SportType', required: true },
   
   // Mục đích sử dụng sân
   purpose: {
@@ -47,6 +52,7 @@ const fieldSchema = new mongoose.Schema({
 fieldSchema.index({ name: 'text', address: 'text', fieldNumber: 'text' });
 fieldSchema.index({ purpose: 1, status: 1 });
 fieldSchema.index({ managedBy: 1 });
+fieldSchema.index({ sportTypeId: 1 });
 
 // Middleware tự động cập nhật `updatedAt`
 fieldSchema.pre("save", function (next) {

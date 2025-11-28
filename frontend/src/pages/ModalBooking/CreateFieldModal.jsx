@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   Form,
@@ -12,6 +12,7 @@ import {
   message,
 } from 'antd';
 import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import axios from 'axios';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -21,6 +22,29 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [selectedPurpose, setSelectedPurpose] = useState('rental');
+  const [sportTypes, setSportTypes] = useState([]);
+
+  // Fetch sport types when modal opens
+  useEffect(() => {
+    if (visible) {
+      fetchSportTypes();
+    }
+  }, [visible]);
+
+  const fetchSportTypes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/season/sport-types', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data?.data) {
+        setSportTypes(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching sport types:', error);
+      message.error('Không thể tải loại bóng');
+    }
+  };
 
   const handleSubmit = async () => {
     try {
@@ -34,6 +58,7 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
       formData.append('fieldNumber', values.fieldNumber);
       formData.append('address', values.address);
       formData.append('location', values.location || '');
+      formData.append('sportTypeId', values.sportTypeId);
       formData.append('purpose', values.purpose);
       // Xử lý openingHours dưới dạng JSON string
       if (values.openingHours?.start && values.openingHours?.end) {
@@ -258,6 +283,26 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                 />
               </Form.Item>
 
+              <Form.Item
+                name="sportTypeId"
+                label="Loại bóng"
+                rules={[{ required: true, message: 'Vui lòng chọn loại bóng!' }]}
+                validateTrigger={['onChange', 'onBlur']}
+                hasFeedback
+              >
+                <Select 
+                  placeholder="Chọn loại bóng (5, 7, 11 người)"
+                  size="large"
+                  style={{ borderRadius: '8px' }}
+                >
+                  {sportTypes.map(sport => (
+                    <Option key={sport._id} value={sport._id}>
+                      {sport.name}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+
               {/* Mục đích sử dụng và giá thuê - 1 hàng */}
               <Row gutter={16}>
                 <Col span={12}>
@@ -367,32 +412,32 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
 
               <Form.Item
                 name="status"
-                label="Trạng thái"
-                rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}
+                label="Status"
+                rules={[{ required: true, message: 'Please select a status!' }]}
                 validateTrigger={['onChange', 'onBlur']}
                 hasFeedback
               >
                 <Select 
-                  placeholder="Chọn trạng thái sân"
+                  placeholder="Select field status"
                   size="large"
                   style={{ borderRadius: '8px' }}
                 >
                   <Option value="active">
                     <div className="flex items-center gap-2">
                       <span>✅</span>
-                      <span>Hoạt động</span>
+                      <span>Active</span>
                     </div>
                   </Option>
                   <Option value="maintenance">
                     <div className="flex items-center gap-2">
                       <span>🔧</span>
-                      <span>Bảo trì</span>
+                      <span>Maintenance</span>
                     </div>
                   </Option>
                   <Option value="inactive">
                     <div className="flex items-center gap-2">
                       <span>❌</span>
-                      <span>Ngừng hoạt động</span>
+                      <span>Inactive</span>
                     </div>
                   </Option>
                 </Select>

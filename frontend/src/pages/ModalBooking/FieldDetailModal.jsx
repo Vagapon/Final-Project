@@ -53,11 +53,11 @@ const FieldDetailModal = ({ visible, onCancel, field, onBookField }) => {
   const getStatusText = (status) => {
     switch (status) {
       case 'active':
-        return 'Hoạt động';
+        return 'Active';
       case 'maintenance':
-        return 'Bảo trì';
+        return 'Maintenance';
       case 'inactive':
-        return 'Ngừng hoạt động';
+        return 'Inactive';
       default:
         return status;
     }
@@ -213,6 +213,18 @@ const FieldDetailModal = ({ visible, onCancel, field, onBookField }) => {
 
                 <div className="flex items-start space-x-4">
                   <div className="w-6 h-6 text-gray-400 flex-shrink-0 mt-0.5">
+                    <TeamOutlined />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-500 mb-1">Loại sân</div>
+                    <div className="text-gray-900 font-medium">
+                      {field.sportTypeId?.name || 'Không xác định'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-4">
+                  <div className="w-6 h-6 text-gray-400 flex-shrink-0 mt-0.5">
                     <DollarOutlined />
                   </div>
                   <div className="flex-1">
@@ -228,7 +240,7 @@ const FieldDetailModal = ({ visible, onCancel, field, onBookField }) => {
                     <ClockCircleOutlined />
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-500 mb-1">Giờ hoạt động</div>
+                    <div className="text-sm font-medium text-gray-500 mb-1">Operating Hours</div>
                     <div className="text-gray-900">
                       {field.openingHours?.start} - {field.openingHours?.end}
                     </div>

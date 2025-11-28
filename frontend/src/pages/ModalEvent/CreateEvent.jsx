@@ -19,6 +19,7 @@ const CreateEvent = ({ isOpen, onClose, onCreateEvent }) => {
     setLoading,
     handleInputChange,
     handleImageUpload,
+    removeImage,
     validateStep,
     nextStep,
     prevStep,
@@ -129,6 +130,7 @@ const CreateEvent = ({ isOpen, onClose, onCreateEvent }) => {
             imagePreview={imagePreview}
             handleInputChange={handleInputChange}
             handleImageUpload={handleImageUpload}
+            onRemoveImage={removeImage}
           />
         );
       default:

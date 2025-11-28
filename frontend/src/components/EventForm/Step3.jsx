@@ -1,6 +1,6 @@
 import { Star, Upload, X } from "lucide-react";
 
-const Step3 = ({ formData, errors, imagePreview, handleInputChange, handleImageUpload }) => {
+const Step3 = ({ formData, errors, imagePreview, handleInputChange, handleImageUpload, onRemoveImage }) => {
   return (
     <div className="space-y-6 pt-6">
       <div className="text-center mb-6">
@@ -27,10 +27,7 @@ const Step3 = ({ formData, errors, imagePreview, handleInputChange, handleImageU
               />
               <button
                 type="button"
-                onClick={() => {
-                  setImagePreview(null);
-                  setFormData((prev) => ({ ...prev, avatar: null }));
-                }}
+                onClick={onRemoveImage}
                 className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors duration-200 shadow-lg"
               >
                 <X className="w-4 h-4" />
@@ -54,7 +51,7 @@ const Step3 = ({ formData, errors, imagePreview, handleInputChange, handleImageU
                   onChange={handleImageUpload}
                   className="hidden"
                 />
-                <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</p>
+                <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 50MB</p>
               </div>
             </div>
           )}

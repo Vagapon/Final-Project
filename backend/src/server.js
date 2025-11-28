@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 5000;
     // 🚀 Gắn Socket.IO với authentication
     const io = new Server(server, {
       cors: {
-        origin: "http://localhost:5173", // chỗ frontend React
+        origin: "http://localhost:5173", //port api react
         methods: ["GET", "POST"],
         credentials: true
       }

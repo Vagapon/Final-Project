@@ -54,11 +54,29 @@ const blogStorage = new CloudinaryStorage({
   },
 });
 
-const staffUpload = multer({ storage: staffStorage });
-const eventUpload = multer({ storage: eventStorage });
-const teamUpload = multer({ storage: teamStrorage });
-const userUpload = multer({ storage: userStorage });
-const fieldUpload = multer({ storage: fieldStorage });
-const blogUpload = multer({ storage: blogStorage });
+const staffUpload = multer({ 
+  storage: staffStorage,
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+});
+const eventUpload = multer({ 
+  storage: eventStorage,
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+});
+const teamUpload = multer({ 
+  storage: teamStrorage,
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+});
+const userUpload = multer({ 
+  storage: userStorage,
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+});
+const fieldUpload = multer({ 
+  storage: fieldStorage,
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+});
+const blogUpload = multer({ 
+  storage: blogStorage,
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+});
 
 module.exports = { cloudinary, staffUpload, eventUpload, teamUpload, userUpload, fieldUpload, blogUpload };

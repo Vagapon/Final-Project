@@ -57,10 +57,21 @@ export const useEventForm = () => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+      // File size validation (50MB max)
+      const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+      if (file.size > MAX_FILE_SIZE) {
         setErrors((prev) => ({
           ...prev,
-          image: "Kích thước hình ảnh phải nhỏ hơn 5MB",
+          image: "Image size must be less than 50MB",
+        }));
+        return;
+      }
+
+      // File type validation
+      if (!file.type.startsWith('image/')) {
+        setErrors((prev) => ({
+          ...prev,
+          image: "Please upload a valid image file",
         }));
         return;
       }
@@ -151,6 +162,15 @@ export const useEventForm = () => {
     setErrors({});
   };
 
+  const removeImage = () => {
+    setFormData((prev) => ({
+      ...prev,
+      avatar: null,
+    }));
+    setImagePreview(null);
+    setErrors((prev) => ({ ...prev, image: "" }));
+  };
+
   return {
     formData,
     setFormData,
@@ -165,6 +185,7 @@ export const useEventForm = () => {
     setLoading,
     handleInputChange,
     handleImageUpload,
+    removeImage,
     validateStep,
     nextStep,
     prevStep,

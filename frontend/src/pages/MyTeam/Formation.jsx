@@ -123,7 +123,7 @@ const Formation = ({ availablePlayers = [], onAddPlayer }) => {
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Loại sân</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Field Type</label>
           <select
             value={selectedPlayerCount}
             onChange={(e) => {
@@ -226,7 +226,7 @@ const Formation = ({ availablePlayers = [], onAddPlayer }) => {
           <div className="bg-gray-50 p-3 rounded-lg space-y-2 border">
             <input
               type="text"
-              placeholder="Tên cầu thủ"
+              placeholder="Player Name"
               value={newPlayer.name}
               onChange={(e) => setNewPlayer(prev => ({ ...prev, name: e.target.value }))}
               className="w-full px-2 py-2 border rounded text-sm"
@@ -255,13 +255,13 @@ const Formation = ({ availablePlayers = [], onAddPlayer }) => {
                 className="flex-1 bg-green-500 text-white px-2 py-2 rounded text-sm hover:bg-green-600"
               >
                 <Save size={12} className="inline mr-1" />
-                Lưu
+                Save
               </button>
               <button
                 onClick={() => setIsAddingPlayer(false)}
                 className="flex-1 bg-gray-500 text-white px-2 py-2 rounded text-sm hover:bg-gray-600"
               >
-                Hủy
+                Cancel
               </button>
             </div>
           </div>

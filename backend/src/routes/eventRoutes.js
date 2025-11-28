@@ -18,12 +18,35 @@ const {
 const {eventUpload} = require('../config/cloudinary'); // Import event upload middleware
 const { verifyToken, checkRole } = require('../middlewares/authMiddleware');
 
+// Multer error handler middleware
+const multerErrorHandler = (err, req, res, next) => {
+  if (err instanceof require('multer').MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ 
+        success: false,
+        message: 'File size exceeds 50MB limit. Please choose a smaller image.' 
+      });
+    }
+    if (err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Too many files uploaded. Only 1 file is allowed.' 
+      });
+    }
+    return res.status(400).json({ 
+      success: false,
+      message: `Upload error: ${err.message}` 
+    });
+  }
+  next(err);
+};
+
 // Create event (admin or staff)
-router.post('/', verifyToken, checkRole(['ADMIN','STAFF']), eventUpload.single('avatar'), eventController.create);
+router.post('/', verifyToken, checkRole(['ADMIN','STAFF']), eventUpload.single('avatar'), multerErrorHandler, eventController.create);
 router.get('/', eventController.getAll);
 router.get('/:id', eventController.getById);
 // Update event (admin or staff). Controller should verify ownership for STAFF
-router.put('/:eventId', verifyToken, checkRole(['ADMIN','STAFF']), eventUpload.single('avatar'), eventController.update);
+router.put('/:eventId', verifyToken, checkRole(['ADMIN','STAFF']), eventUpload.single('avatar'), multerErrorHandler, eventController.update);
 // Delete event (admin only)
 router.delete('/:eventId', verifyToken, checkRole(['ADMIN']), eventController.delete);
 

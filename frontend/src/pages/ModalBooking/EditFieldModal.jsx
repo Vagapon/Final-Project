@@ -11,6 +11,7 @@ import {
   Spin,
 } from 'antd';
 import { EditOutlined, UploadOutlined } from '@ant-design/icons';
+import axios from 'axios';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -20,6 +21,26 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [selectedPurpose, setSelectedPurpose] = useState('rental');
+  const [sportTypes, setSportTypes] = useState([]);
+
+  // Fetch sport types
+  useEffect(() => {
+    fetchSportTypes();
+  }, []);
+
+  const fetchSportTypes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/season/sport-types', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data?.data) {
+        setSportTypes(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching sport types:', error);
+    }
+  };
 
   useEffect(() => {
     if (visible && initialValues) {
@@ -29,6 +50,7 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
         fieldNumber: initialValues.fieldNumber,
         address: initialValues.address,
         location: initialValues.location,
+        sportTypeId: initialValues.sportTypeId?._id || initialValues.sportTypeId,
         purpose: initialValues.purpose,
         pricePerHour: initialValues.pricePerHour,
         openingHours: {
@@ -116,6 +138,7 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
         formData.append('fieldNumber', values.fieldNumber);
         formData.append('address', values.address);
         formData.append('location', values.location || '');
+        formData.append('sportTypeId', values.sportTypeId);
         formData.append('purpose', values.purpose);
         formData.append('openingHours', JSON.stringify(values.openingHours));
         formData.append('status', values.status);
@@ -233,18 +256,38 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
                 <Input placeholder="VD: Quận 1, TP.HCM..." />
               </Form.Item>
 
-              {/* Mục đích sử dụng và giá thuê - 1 hàng */}
+              <Form.Item
+                name="sportTypeId"
+                label="Loại bóng"
+                rules={[{ required: true, message: 'Vui lòng chọn loại bóng!' }]}
+                validateTrigger={['onChange', 'onBlur']}
+                hasFeedback
+              >
+                <Select 
+                  placeholder="Chọn loại bóng (5, 7, 11 người)"
+                  size="large"
+                  style={{ borderRadius: '8px' }}
+                >
+                  {sportTypes.map(sport => (
+                    <Option key={sport._id} value={sport._id}>
+                      {sport.name}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+
+              {/* Purpose and Rental Price - 1 row */}
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item
                     name="purpose"
-                    label="Mục đích sử dụng"
-                    rules={[{ required: true, message: 'Vui lòng chọn mục đích sử dụng!' }]}
+                    label="Purpose"
+                    rules={[{ required: true, message: 'Please select a purpose!' }]}
                     validateTrigger={['onChange', 'onBlur']}
                     hasFeedback
                   >
                     <Select 
-                      placeholder="Chọn mục đích sử dụng"
+                      placeholder="Select field purpose"
                       size="large"
                       style={{ borderRadius: '8px' }}
                       onChange={(value) => setSelectedPurpose(value)}
@@ -252,13 +295,13 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
                       <Option value="event">
                         <div className="flex items-center gap-2">
                           <span>🏆</span>
-                          <span>Sân giải đấu</span>
+                          <span>Tournament Field</span>
                         </div>
                       </Option>
                       <Option value="rental">
                         <div className="flex items-center gap-2">
                           <span>💰</span>
-                          <span>Sân thuê</span>
+                          <span>Rental Field</span>
                         </div>
                       </Option>
                     </Select>
@@ -268,18 +311,18 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
                   {selectedPurpose === 'rental' && (
                     <Form.Item
                       name="pricePerHour"
-                      label="Giá thuê (VNĐ/giờ)"
+                      label="Rental Price (VND/hour)"
                       rules={[
-                        { required: true, message: 'Vui lòng nhập giá thuê!' },
+                        { required: true, message: 'Please enter rental price!' },
                         { 
                           type: 'number', 
                           min: 1000, 
-                          message: 'Giá thuê tối thiểu 1,000 VNĐ!' 
+                          message: 'Minimum rental price is 1,000 VND!' 
                         },
                         { 
                           type: 'number', 
                           max: 1000000, 
-                          message: 'Giá thuê không được vượt quá 1,000,000 VNĐ!' 
+                          message: 'Maximum rental price is 1,000,000 VND!' 
                         }
                       ]}
                       validateTrigger={['onChange', 'onBlur']}
@@ -287,11 +330,11 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
                     >
                       <InputNumber
                         style={{ width: '100%' }}
-                        placeholder="Nhập giá thuê..."
+                        placeholder="Enter rental price..."
                         min={1000}
                         step={10000}
                         precision={0}
-                        addonAfter="VNĐ"
+                        addonAfter="VND"
                       />
                     </Form.Item>
                   )}
@@ -302,8 +345,8 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
                 <Col span={12}>
                   <Form.Item
                     name={['openingHours', 'start']}
-                    label="Giờ mở cửa"
-                    rules={[{ required: true, message: 'Vui lòng nhập giờ mở cửa!' }]}
+                    label="Opening Time"
+                    rules={[{ required: true, message: 'Please enter opening time!' }]}
                   >
                     <Input type="time" />
                   </Form.Item>
@@ -311,8 +354,8 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
                 <Col span={12}>
                   <Form.Item
                     name={['openingHours', 'end']}
-                    label="Giờ đóng cửa"
-                    rules={[{ required: true, message: 'Vui lòng nhập giờ đóng cửa!' }]}
+                    label="Closing Time"
+                    rules={[{ required: true, message: 'Please enter closing time!' }]}
                   >
                     <Input type="time" />
                   </Form.Item>
@@ -321,32 +364,32 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
 
               <Form.Item
                 name="status"
-                label="Trạng thái"
-                rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}
+                label="Status"
+                rules={[{ required: true, message: 'Please select a status!' }]}
                 validateTrigger={['onChange', 'onBlur']}
                 hasFeedback
               >
                 <Select 
-                  placeholder="Chọn trạng thái sân"
+                  placeholder="Select field status"
                   size="large"
                   style={{ borderRadius: '8px' }}
                 >
                   <Option value="active">
                     <div className="flex items-center gap-2">
                       <span>✅</span>
-                      <span>Hoạt động</span>
+                      <span>Active</span>
                     </div>
                   </Option>
                   <Option value="maintenance">
                     <div className="flex items-center gap-2">
                       <span>🔧</span>
-                      <span>Bảo trì</span>
+                      <span>Maintenance</span>
                     </div>
                   </Option>
                   <Option value="inactive">
                     <div className="flex items-center gap-2">
                       <span>❌</span>
-                      <span>Ngừng hoạt động</span>
+                      <span>Inactive</span>
                     </div>
                   </Option>
                 </Select>

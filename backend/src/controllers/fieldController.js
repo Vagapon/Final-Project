@@ -70,6 +70,7 @@ const getAllFields = async (req, res) => {
     // Lấy fields với populate thông tin managedBy
     const fields = await Field.find(filter)
       .populate('managedBy', 'name email')
+      .populate('sportTypeId', 'name code')
       .sort(sort)
       .skip(skip)
       .limit(parseInt(limit));
@@ -119,7 +120,9 @@ const getFieldById = async (req, res) => {
       });
     }
 
-    const field = await Field.findById(id).populate('managedBy', 'name email phone');
+    const field = await Field.findById(id)
+      .populate('managedBy', 'name email phone')
+      .populate('sportTypeId', 'name code');
 
     if (!field) {
       return res.status(404).json({
@@ -153,6 +156,7 @@ const createField = async (req, res) => {
       fieldNumber,
       address,
       location,
+      sportTypeId,
       purpose,
       pricePerHour,
       status = 'active',
@@ -171,10 +175,18 @@ const createField = async (req, res) => {
     }
 
     // Validation cơ bản
-    if (!name || !fieldNumber || !address || !purpose || !openingHours?.start || !openingHours?.end) {
+    if (!name || !fieldNumber || !address || !purpose || !sportTypeId || !openingHours?.start || !openingHours?.end) {
       return res.status(400).json({
         success: false,
         message: 'Vui lòng điền đầy đủ thông tin bắt buộc'
+      });
+    }
+
+    // Kiểm tra sportTypeId hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(sportTypeId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sport Type ID không hợp lệ'
       });
     }
 
@@ -226,6 +238,7 @@ const createField = async (req, res) => {
       fieldNumber,
       address,
       location,
+      sportTypeId,
       purpose,
       pricePerHour: purpose === 'rental' ? pricePerHour : undefined,
       openingHours,
@@ -237,6 +250,7 @@ const createField = async (req, res) => {
 
     const savedField = await newField.save();
     await savedField.populate('managedBy', 'name email');
+    await savedField.populate('sportTypeId', 'name code');
 
     res.status(201).json({
       success: true,
@@ -279,6 +293,14 @@ const updateField = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'ID sân không hợp lệ'
+      });
+    }
+
+    // Kiểm tra sportTypeId nếu có
+    if (updateData.sportTypeId && !mongoose.Types.ObjectId.isValid(updateData.sportTypeId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sport Type ID không hợp lệ'
       });
     }
 
@@ -379,7 +401,8 @@ const updateField = async (req, res) => {
       id,
       updateData,
       { new: true, runValidators: true }
-    ).populate('managedBy', 'name email');
+    ).populate('managedBy', 'name email')
+     .populate('sportTypeId', 'name code');
 
     res.status(200).json({
       success: true,

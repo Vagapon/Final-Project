@@ -36,7 +36,7 @@ export default function Register() {
       messageApi.success("Đăng ký thành công! Vui lòng đăng nhập.");
       navigate("/login");
     } catch (error) {
-      const errorMessage = error.message || error.response?.data?.message || "Đăng ký thất bại!";
+      const errorMessage = error.message || error.response?.data?.message || "Register failfail!";
       messageApi.error(errorMessage);
     }
   };

@@ -87,19 +87,19 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
       // Tăng unread count
       setUnreadCount(prev => prev + 1);
 
-      // Hiển thị toast notification với Sonner
+      // Display toast notification with Sonner
       const getNotificationTitle = () => {
         switch (notification.type) {
           case 'event_registration':
-            return 'Đăng ký sự kiện';
+            return 'Event Registration';
           case 'booking':
-            return 'Đặt sân bóng';
+            return 'Booking';
           case 'event_approved':
-            return 'Sự kiện được duyệt';
+            return 'Event Approved';
           case 'booking_confirmed':
-            return 'Đặt sân được xác nhận';
+            return 'Booking Confirmed';
           default:
-            return 'Thông báo mới';
+            return 'New Notification';
         }
       };
 
@@ -107,7 +107,7 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
         description: notification.content,
         duration: 5000,
         action: {
-          label: 'Xem',
+          label: 'View',
           onClick: () => setShowNotifications(true),
         },
       });
@@ -154,35 +154,35 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
     const diffInHours = Math.floor(diffInSeconds / 3600);
     const diffInDays = Math.floor(diffInSeconds / 86400);
 
-    // Nếu là hôm nay
+    // If today
     if (diffInDays === 0) {
-      if (diffInSeconds < 60) return 'Vừa xong';
+      if (diffInSeconds < 60) return 'Just now';
       if (diffInMinutes < 60) {
-        return `${diffInMinutes} phút trước`;
+        return `${diffInMinutes} minutes ago`;
       }
-      return `${diffInHours} giờ trước`;
+      return `${diffInHours} hours ago`;
     }
 
-    // Nếu là hôm qua
+    // If yesterday
     if (diffInDays === 1) {
-      return 'Hôm qua';
+      return 'Yesterday';
     }
 
-    // Nếu trong tuần này
+    // If within this week
     if (diffInDays < 7) {
-      return `${diffInDays} ngày trước`;
+      return `${diffInDays} days ago`;
     }
 
-    // Nếu trong tháng này
+    // If within this month
     if (diffInDays < 30) {
       const weeks = Math.floor(diffInDays / 7);
-      return `${weeks} tuần trước`;
+      return `${weeks} weeks ago`;
     }
 
-    // Nếu trong năm này
+    // If within this year
     if (date.getFullYear() === now.getFullYear()) {
-      return date.toLocaleDateString('vi-VN', { 
-        day: 'numeric', 
+      return date.toLocaleDateString('en-US', { 
+        day: 'numeric',
         month: 'long' 
       });
     }
@@ -299,25 +299,25 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
               <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700 z-50">
                 <div className="p-4 border-b dark:border-gray-700 flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Thông báo
+                    Notifications
                   </h3>
                   {unreadCount > 0 && (
                     <button
                       onClick={handleMarkAllAsRead}
                       className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      Đánh dấu tất cả đã đọc
+                      Mark all as read
                     </button>
                   )}
                 </div>
                 <div className="max-h-80 overflow-y-auto">
                   {loading ? (
                     <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                      Đang tải...
+                      Loading...
                     </div>
                   ) : !Array.isArray(notifications) || notifications.length === 0 ? (
                     <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                      Không có thông báo nào
+                      No notifications
                     </div>
                   ) : (
                     notifications.map((notification) => (
@@ -354,12 +354,12 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
                                 </p>
                                 {notification.teamId && (
                                   <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                                    Đội: {notification.teamId.name}
+                                    Team: {notification.teamId.name}
                                   </p>
                                 )}
                                 {notification.eventId && (
                                   <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
-                                    Sự kiện: {notification.eventId.name}
+                                    Event: {notification.eventId.name}
                                   </p>
                                 )}
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -393,7 +393,7 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
                       }}
                       className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline"
                     >
-                      Xem tất cả thông báo
+                      View all notifications
                     </button>
                   </div>
                 )}

@@ -154,22 +154,22 @@ const Step2Content = ({ field, timeSlot, selectedBookingDate, basePrice, totalPr
                         {/* Bank Details */}
                         <div className="space-y-1.5 mb-2 pb-2 border-b border-slate-200">
                           <div className="flex justify-between items-center">
-                            <span className="text-xs text-slate-600">Ngân hàng:</span>
+                            <span className="text-xs text-slate-600">Bank:</span>
                             <span className="text-xs font-semibold text-slate-800">MB Bank</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-xs text-slate-600">Số tài khoản:</span>
+                            <span className="text-xs text-slate-600">Account Number:</span>
                             <span className="text-xs font-mono font-bold text-slate-800">VQRQAETEP9929</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-xs text-slate-600">Chủ TK:</span>
+                            <span className="text-xs text-slate-600">Account Holder:</span>
                             <span className="text-xs font-semibold text-slate-800">TRAN TIEN VAN</span>
                           </div>
                         </div>
                         
                         {/* Transfer Description */}
                         <div className="mb-2">
-                          <div className="text-xs text-slate-600 mb-1">Nội dung:</div>
+                          <div className="text-xs text-slate-600 mb-1">Description:</div>
                           <div className="text-sm font-mono font-bold text-slate-800 break-all">
                             {qrData.description}
                           </div>
@@ -187,10 +187,10 @@ const Step2Content = ({ field, timeSlot, selectedBookingDate, basePrice, totalPr
                       <div className="bg-slate-50 rounded-md p-3">
                         <div className="flex items-center justify-center gap-2 mb-1">
                           <Loader2 className="w-4 h-4 animate-spin text-slate-600" />
-                          <span className="text-slate-800 font-semibold text-sm">Đang chờ thanh toán...</span>
+                          <span className="text-slate-800 font-semibold text-sm">Waiting for payment...</span>
                         </div>
                         <p className="text-xs text-slate-600 text-center">
-                          Hệ thống sẽ tự động xác nhận khi nhận được tiền
+                          System will automatically confirm when payment is received
                         </p>
                       </div>
                     </div>
@@ -198,7 +198,7 @@ const Step2Content = ({ field, timeSlot, selectedBookingDate, basePrice, totalPr
                 ) : (
                   <div className="bg-slate-50 rounded-lg p-6 flex flex-col items-center justify-center">
                     <Loader2 className="w-6 h-6 animate-spin text-slate-600 mb-2" />
-                    <span className="text-slate-600 text-xs font-medium">Đang tạo mã QR...</span>
+                    <span className="text-slate-600 text-xs font-medium">Creating QR code...</span>
                   </div>
                 )}
 
@@ -206,14 +206,14 @@ const Step2Content = ({ field, timeSlot, selectedBookingDate, basePrice, totalPr
                 <div className="bg-slate-50 rounded-md p-3">
                   <h4 className="font-semibold text-slate-800 mb-2 flex items-center gap-1.5 text-sm">
                     <QrCode className="w-4 h-4" />
-                    Hướng dẫn thanh toán
+                    Payment Instructions
                   </h4>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { step: 1, text: "Mở app ngân hàng và quét mã QR" },
-                      { step: 2, text: "Kiểm tra số tiền và nội dung chuyển khoản" },
-                      { step: 3, text: "Xác nhận thanh toán" },
-                      { step: 4, text: "Chờ hệ thống xác nhận tự động (3-5 giây)" }
+                      { step: 1, text: "Open your bank app and scan the QR code" },
+                      { step: 2, text: "Check amount and transfer content" },
+                      { step: 3, text: "Confirm the payment" },
+                      { step: 4, text: "Wait for system confirmation (3-5 seconds)" }
                     ].map((item) => (
                       <div key={item.step} className="flex items-start gap-2">
                         <div className="w-5 h-5 bg-blue-600 text-white rounded-sm flex items-center justify-center text-xs font-bold flex-shrink-0">

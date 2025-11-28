@@ -11,7 +11,7 @@ import { message } from "antd";
 import authService from "../../api/auth/authService";
 
 export default function ForgotPassword() {
-  const [step, setStep] = useState(1); // 1: Nhập email, 2: Xác thực OTP, 3: Đặt lại mật khẩu
+  const [step, setStep] = useState(1); // 1: Enter email, 2: Verify OTP, 3: Reset password
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -40,13 +40,13 @@ export default function ForgotPassword() {
   const handleSendOTP = async () => {
     const normalizedEmail = normalizeEmail();
     if (!normalizedEmail) {
-      messageApi.error("Vui lòng nhập email hợp lệ");
+      messageApi.error("Please enter a valid email");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(normalizedEmail)) {
-      messageApi.error("Định dạng email không đúng");
+      messageApi.error("Invalid email format");
       return;
     }
 
@@ -57,10 +57,10 @@ export default function ForgotPassword() {
       setStep(2);
       setOtp('');
       setCountdown(60);
-      messageApi.success("OTP đã được gửi đến email của bạn");
+      messageApi.success("OTP has been sent to your email");
     } catch (error) {
       console.error("Send OTP error:", error);
-      messageApi.error(error?.message || error?.error || "Gửi OTP thất bại!");
+      messageApi.error(error?.message || error?.error || "Failed to send OTP!");
     } finally {
       setIsSendingOTP(false);
     }
@@ -68,7 +68,7 @@ export default function ForgotPassword() {
 
   const handleVerifyOTP = async () => {
     if (otp.length !== 6) {
-      messageApi.error("Vui lòng nhập đủ 6 số OTP");
+      messageApi.error("Please enter all 6 digits of OTP");
       return;
     }
 
@@ -76,10 +76,10 @@ export default function ForgotPassword() {
     try {
       await authService.verifyResetOtp(normalizeEmail(), otp);
       setStep(3);
-      messageApi.success("OTP xác thực thành công!");
+      messageApi.success("OTP verified successfully!");
     } catch (error) {
       console.error("Verify OTP error:", error);
-      messageApi.error(error?.message || error?.error || "Xác thực OTP thất bại!");
+      messageApi.error(error?.message || error?.error || "OTP verification failed!");
     } finally {
       setIsVerifyingOTP(false);
     }
@@ -87,15 +87,15 @@ export default function ForgotPassword() {
 
   const handleResetPassword = async () => {
     if (otp.length !== 6) {
-      messageApi.error("Mã OTP không hợp lệ");
+      messageApi.error("Invalid OTP code");
       return;
     }
     if (newPassword !== confirmPassword) {
-      messageApi.error("Mật khẩu xác nhận không khớp!");
+      messageApi.error("Password confirmation does not match!");
       return;
     }
     if (newPassword.length < 6) {
-      messageApi.error("Mật khẩu phải có ít nhất 6 ký tự!");
+      messageApi.error("Password must be at least 6 characters!");
       return;
     }
 
@@ -107,11 +107,11 @@ export default function ForgotPassword() {
         newPassword,
         confirmPassword,
       });
-      messageApi.success("Đặt lại mật khẩu thành công!");
+      messageApi.success("Password reset successfully!");
       setTimeout(() => navigate("/login"), 1500);
     } catch (error) {
       console.error("Reset password error:", error);
-      messageApi.error(error?.message || error?.error || "Đặt lại mật khẩu thất bại!");
+      messageApi.error(error?.message || error?.error || "Password reset failed!");
     } finally {
       setIsResettingPassword(false);
     }
@@ -159,8 +159,8 @@ export default function ForgotPassword() {
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
-        Nhập email đã đăng ký để nhận mã OTP gồm 6 số. Mã có hiệu lực trong
-        <strong> 10 phút</strong>.
+        Enter your registered email to receive a 6-digit OTP code. The code is valid for
+        <strong> 10 minutes</strong>.
       </div>
 
       <button
@@ -168,7 +168,7 @@ export default function ForgotPassword() {
         disabled={isSendingOTP || !email}
         className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isSendingOTP ? "Đang gửi..." : "Gửi OTP qua email"}
+        {isSendingOTP ? "Sending..." : "Send OTP via Email"}
       </button>
     </div>
   );
@@ -180,16 +180,16 @@ export default function ForgotPassword() {
           <Mail className="w-8 h-8 text-blue-600" />
         </div>
         <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          Nhập mã OTP
+          Enter OTP Code
         </h3>
         <p className="text-gray-600">
-          Chúng tôi đã gửi mã xác thực đến <strong>{email}</strong>
+          We sent a verification code to <strong>{email}</strong>
         </p>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Mã OTP <span className="text-red-500">*</span>
+          OTP Code <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -206,20 +206,20 @@ export default function ForgotPassword() {
         disabled={isVerifyingOTP || otp.length !== 6}
         className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isVerifyingOTP ? "Đang xác thực..." : "Xác thực OTP"}
+        {isVerifyingOTP ? "Verifying..." : "Verify OTP"}
       </button>
 
       <div className="text-center">
         {countdown > 0 ? (
           <p className="text-sm text-gray-500">
-            Gửi lại email trong {countdown}s
+            Resend OTP in {countdown}s
           </p>
         ) : (
           <button
             onClick={handleResendOTP}
             className="text-blue-600 hover:text-blue-500 text-sm font-medium"
           >
-            Gửi lại mã OTP
+            Resend OTP
           </button>
         )}
       </div>
@@ -233,23 +233,23 @@ export default function ForgotPassword() {
           <CheckCircle className="w-8 h-8 text-green-600" />
         </div>
         <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          Đặt lại mật khẩu
+          Reset Password
         </h3>
         <p className="text-gray-600">
-          Vui lòng nhập mật khẩu mới của bạn
+          Please enter your new password
         </p>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Mật khẩu mới <span className="text-red-500">*</span>
+          New Password <span className="text-red-500">*</span>
         </label>
         <div className="relative">
           <input
             type={showPassword ? "text" : "password"}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="Nhập mật khẩu mới"
+            placeholder="Enter new password"
             className="w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           />
@@ -269,14 +269,14 @@ export default function ForgotPassword() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Xác nhận mật khẩu <span className="text-red-500">*</span>
+          Confirm Password <span className="text-red-500">*</span>
         </label>
         <div className="relative">
           <input
             type={showConfirmPassword ? "text" : "password"}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Nhập lại mật khẩu mới"
+            placeholder="Re-enter new password"
             className="w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           />
@@ -304,26 +304,26 @@ export default function ForgotPassword() {
         }
         className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isResettingPassword ? "Đang đặt lại..." : "Đặt lại mật khẩu"}
+        {isResettingPassword ? "Resetting..." : "Reset Password"}
       </button>
     </div>
   );
 
   const getStepTitle = () => {
     switch (step) {
-      case 1: return "Quên mật khẩu";
-      case 2: return "Xác thực OTP";
-      case 3: return "Đặt lại mật khẩu";
-      default: return "Quên mật khẩu";
+      case 1: return "Forgot Password";
+      case 2: return "Verify OTP";
+      case 3: return "Reset Password";
+      default: return "Forgot Password";
     }
   };
 
   const getStepDescription = () => {
     switch (step) {
-      case 1: return "Nhập email đã đăng ký để nhận mã OTP";
-      case 2: return "Nhập mã OTP được gửi qua email";
-      case 3: return "Tạo mật khẩu mới cho tài khoản của bạn";
-      default: return "Nhập email đã đăng ký để nhận mã OTP";
+      case 1: return "Enter your registered email to receive an OTP code";
+      case 2: return "Enter the OTP code sent to your email";
+      case 3: return "Create a new password for your account";
+      default: return "Enter your registered email to receive an OTP code";
     }
   };
 
@@ -348,7 +348,7 @@ export default function ForgotPassword() {
               className="flex items-center text-gray-600 hover:text-gray-800 mb-8 transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              <span className="text-sm">Quay lại đăng nhập</span>
+              <span className="text-sm">Back to Login</span>
             </button>
 
             {/* Header */}
@@ -401,19 +401,19 @@ export default function ForgotPassword() {
                   onClick={handleGoBack}
                   className="text-blue-600 hover:text-blue-500 font-medium text-sm"
                 >
-                  ← Quay lại bước trước
+                  ← Go to Previous Step
                 </button>
               </div>
             )}
 
             {/* Sign up link */}
             <p className="mt-8 text-center text-sm text-gray-600">
-              Chưa có tài khoản?{" "}
+              Don't have an account?{" "}
               <Link
                 to="/signup"
                 className="text-blue-600 hover:text-blue-500 font-medium"
               >
-                Đăng ký ngay
+                Sign up now
               </Link>
             </p>
           </div>
