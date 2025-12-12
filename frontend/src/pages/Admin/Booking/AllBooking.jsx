@@ -327,60 +327,7 @@ const AllBooking = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Total Bookings
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {totalItems}
-              </p>
-            </div>
-            <Calendar className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Pending
-              </p>
-              <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                {stats.pending}
-              </p>
-            </div>
-            <AlertCircle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Confirmed
-              </p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {stats.confirmed}
-              </p>
-            </div>
-            <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Revenue
-              </p>
-              <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                {formatCurrency(stats.totalRevenue)}
-              </p>
-            </div>
-            <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-          </div>
-        </div>
-      </div>
+ 
 
       {/* Filters and Search */}
       <div className="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">

@@ -17,56 +17,9 @@ const MatchOverview = () => {
   const [editFormData, setEditFormData] = useState({});
   const [currentSlide, setCurrentSlide] = useState(0);
   const [matches, setMatches] = useState([]);
+  const [ongoingMatches, setOngoingMatches] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Sample match data for slides
-  const featuredMatches = [
-    {
-      id: 1,
-      homeTeam: "Real Madrid",
-      awayTeam: "Manchester United",
-      homeImg: "https://upload.wikimedia.org/wikipedia/vi/thumb/c/c7/Logo_Real_Madrid.svg/1200px-Logo_Real_Madrid.svg.png",
-      awayImg: "https://upload.wikimedia.org/wikipedia/vi/thumb/a/a1/Man_Utd_FC_.svg/1200px-Man_Utd_FC_.svg.png",
-      homeScore: 2,
-      awayScore: 1,
-      status: "live",
-      minute: "30'",
-      tournament: "FIFA Club World Cup",
-      stage: "Group stage • Group G • Matchday 2 of 3",
-      homeScorers: ["Abdelmounaim Boutouil 6' (OG)", "Kenan Yıldız 16'"],
-      awayScorers: ["Thembinkosi Lorch 25'"]
-    },
-    {
-      id: 2,
-      homeTeam: "Barcelona",
-      awayTeam: "Liverpool",
-      homeImg: "https://upload.wikimedia.org/wikipedia/en/thumb/4/47/FC_Barcelona_%28crest%29.svg/230px-FC_Barcelona_%28crest%29.svg.png",
-      awayImg: "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg",
-      homeScore: 1,
-      awayScore: 3,
-      status: "finished",
-      minute: "FT",
-      tournament: "Champions League",
-      stage: "Quarter Finals • Leg 1 of 2",
-      homeScorers: ["Pedri 23'"],
-      awayScorers: ["Salah 15'", "Mané 34'", "Firmino 67'"]
-    },
-    {
-      id: 3,
-      homeTeam: "Chelsea",
-      awayTeam: "Arsenal",
-      homeImg: "https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg",
-      awayImg: "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg",
-      homeScore: 0,
-      awayScore: 0,
-      status: "scheduled",
-      minute: "18:30",
-      tournament: "Premier League",
-      stage: "Matchday 15 of 38",
-      homeScorers: [],
-      awayScorers: []
-    }
-  ];
+  const [elapsedTimes, setElapsedTimes] = useState({}); // Store elapsed time for each match
 
   // Format date to English format
   const formatDate = (dateString) => {
@@ -83,10 +36,155 @@ const MatchOverview = () => {
     }
   };
 
+  // Calculate elapsed time for ongoing matches
+  const calculateElapsedTime = (match) => {
+    if (!match.matchDate || !match.matchTime) return null;
+    
+    try {
+      const matchDate = new Date(match.matchDate);
+      const [hours, minutes] = match.matchTime.split(':').map(Number);
+      matchDate.setHours(hours || 0, minutes || 0, 0, 0);
+      
+      const now = new Date();
+      const elapsed = Math.floor((now - matchDate) / 1000 / 60); // minutes
+      
+      if (elapsed < 0) return null; // Match hasn't started yet
+      
+      return elapsed;
+    } catch {
+      return null;
+    }
+  };
+
+  // Format elapsed time to display format (e.g., "45'")
+  const formatElapsedTime = (minutes) => {
+    if (minutes === null || minutes === undefined) return "0'";
+    if (minutes >= 90) return "90+'";
+    return `${minutes}'`;
+  };
+
+  // Fetch ongoing matches from API
+  useEffect(() => {
+    const fetchOngoingMatches = async () => {
+      setLoading(true);
+      try {
+        const response = await matchScheduleApi.getAllMatches({ status: 'ongoing' });
+        const matchesData = response.data?.data?.allMatches || [];
+        
+        // Also check matches that should be ongoing based on time
+        const allMatchesResponse = await matchScheduleApi.getAllMatches({});
+        const allMatches = allMatchesResponse.data?.data?.allMatches || [];
+        
+        // Filter matches that are actually ongoing (status ongoing or time-based)
+        const ongoing = allMatches.filter(match => {
+          const status = match.status || 'upcoming';
+          if (status === 'ongoing') return true;
+          
+          // Check if match should be ongoing based on time
+          if (match.matchDate && match.matchTime) {
+            try {
+              const matchDate = new Date(match.matchDate);
+              const [hours, minutes] = match.matchTime.split(':').map(Number);
+              matchDate.setHours(hours || 0, minutes || 0, 0, 0);
+              
+              const duration = match.duration || 90;
+              const matchEndTime = new Date(matchDate.getTime() + duration * 60 * 1000);
+              const now = new Date();
+              
+              return now >= matchDate && now < matchEndTime && status !== 'completed' && status !== 'cancelled';
+            } catch {
+              return false;
+            }
+          }
+          return false;
+        });
+        
+        // Transform API data to match UI format
+        const transformedMatches = ongoing.map((match, index) => {
+          const team1Name = match.team1Id?.name || match.team1Id?.shortName || 'N/A';
+          const team2Name = match.team2Id?.name || match.team2Id?.shortName || 'N/A';
+          const team1Avatar = match.team1Id?.avatar || match.team1Id?.logo;
+          const team2Avatar = match.team2Id?.avatar || match.team2Id?.logo;
+          const eventName = match.eventId?.name || 'Tournament';
+          const round = match.round || '';
+          
+          const elapsed = calculateElapsedTime(match);
+          
+          return {
+            id: match._id || index + 1,
+            homeTeam: team1Name,
+            homeTeamShort: match.team1Id?.shortName || team1Name.substring(0, 3).toUpperCase(),
+            awayTeam: team2Name,
+            awayTeamShort: match.team2Id?.shortName || team2Name.substring(0, 3).toUpperCase(),
+            homeImg: team1Avatar,
+            awayImg: team2Avatar,
+            homeScore: match.score?.team1 || 0,
+            awayScore: match.score?.team2 || 0,
+            tournament: eventName,
+            stage: round ? `${round}` : 'Match',
+            homeScorers: [], // Can be populated from match data if available
+            awayScorers: [], // Can be populated from match data if available
+            status: 'live',
+            minute: formatElapsedTime(elapsed),
+            elapsedMinutes: elapsed,
+            matchData: match // Keep original match data for reference
+          };
+        });
+        
+        setOngoingMatches(transformedMatches);
+        
+        // Initialize elapsed times
+        const times = {};
+        transformedMatches.forEach(match => {
+          if (match.elapsedMinutes !== null && match.elapsedMinutes !== undefined) {
+            times[match.id] = match.elapsedMinutes;
+          }
+        });
+        setElapsedTimes(times);
+      } catch (error) {
+        console.error('Error fetching ongoing matches:', error);
+        message.error('Unable to load ongoing matches');
+        setOngoingMatches([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOngoingMatches();
+    
+    // Refresh every minute to update elapsed time
+    const interval = setInterval(() => {
+      fetchOngoingMatches();
+    }, 60000); // Refresh every minute
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Update elapsed time every second for real-time display
+  useEffect(() => {
+    if (ongoingMatches.length === 0) return;
+    
+    const interval = setInterval(() => {
+      setElapsedTimes(prev => {
+        const updated = { ...prev };
+        ongoingMatches.forEach(match => {
+          if (match.matchData) {
+            const elapsed = calculateElapsedTime(match.matchData);
+            if (elapsed !== null) {
+              updated[match.id] = elapsed;
+            }
+          }
+        });
+        return updated;
+      });
+    }, 1000); // Update every second
+    
+    return () => clearInterval(interval);
+  }, [ongoingMatches]);
+
   // Fetch upcoming matches from API
   useEffect(() => {
     const fetchUpcomingMatches = async () => {
-      setLoading(true);
       try {
         const response = await matchScheduleApi.getAllMatches({ status: 'upcoming' });
         const matchesData = response.data?.data?.allMatches || [];
@@ -117,11 +215,8 @@ const MatchOverview = () => {
         
         setMatches(transformedMatches);
       } catch (error) {
-        console.error('Error fetching matches:', error);
-        message.error('Unable to load matches');
+        console.error('Error fetching upcoming matches:', error);
         setMatches([]);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -157,11 +252,11 @@ const MatchOverview = () => {
   };
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % featuredMatches.length);
+    setCurrentSlide((prev) => (prev + 1) % Math.max(ongoingMatches.length, 1));
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + featuredMatches.length) % featuredMatches.length);
+    setCurrentSlide((prev) => (prev - 1 + Math.max(ongoingMatches.length, 1)) % Math.max(ongoingMatches.length, 1));
   };
 
   const goToSlide = (index) => {
@@ -170,13 +265,18 @@ const MatchOverview = () => {
 
 return (
   <div className="p-3 sm:p-4 md:p-6 bg-gray-50 dark:bg-gray-900 min-h-screen max-w-7xl mx-auto transition-colors">
-    {/* Featured Matches Slider */}
-    <div className="relative mb-6 sm:mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-xl overflow-hidden">
-      <div 
-        className="flex transition-transform duration-500 ease-in-out" 
-        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-      >
-        {featuredMatches.map((match, index) => (
+    {/* Featured Matches Slider - Ongoing Matches */}
+    {ongoingMatches.length > 0 ? (
+      <div className="relative mb-6 sm:mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-xl overflow-hidden">
+        <div 
+          className="flex transition-transform duration-500 ease-in-out" 
+          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        >
+          {ongoingMatches.map((match, index) => {
+            const currentElapsed = elapsedTimes[match.id] !== undefined ? elapsedTimes[match.id] : match.elapsedMinutes;
+            const displayMinute = formatElapsedTime(currentElapsed);
+            
+            return (
           <div key={match.id} className="w-full flex-shrink-0 ">
             <div className="max-w-3xl mx-auto p-3 sm:p-4 md:p-6 text-center ">
               {/* Header */}
@@ -193,30 +293,61 @@ return (
               <div className="flex items-center justify-between text-center py-4 sm:py-6 border-b border-gray-200 dark:border-gray-700">
                 {/* Team 1 */}
                 <div className="flex flex-col items-center gap-1 sm:gap-2 w-1/3">
-                  <img
-                    src={match.homeImg}
-                    alt={match.homeTeam}
-                    className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
-                  />
+                  {match.homeImg ? (
+                    <img
+                      src={match.homeImg}
+                      alt={match.homeTeam}
+                      className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        const fallback = e.target.nextElementSibling;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg ${match.homeImg ? 'hidden' : ''}`}
+                  >
+                    {(match.homeTeam || 'T').charAt(0).toUpperCase()}
+                  </div>
                   <span className="font-medium text-xs sm:text-sm md:text-base text-gray-800 dark:text-gray-200 text-center">
                     {match.homeTeam}
                   </span>
                 </div>
 
                 {/* Score */}
-                <div className="flex items-center gap-2 sm:gap-3 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                  <span>{match.homeScore}</span>
-                  <span>-</span>
-                  <span>{match.awayScore}</span>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="flex items-center gap-2 sm:gap-3 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                    <span>{match.homeScore}</span>
+                    <span>-</span>
+                    <span>{match.awayScore}</span>
+                  </div>
+                  {/* Live indicator */}
+                  <div className="flex items-center gap-1 text-xs sm:text-sm">
+                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    <span className="text-red-600 dark:text-red-400 font-semibold">LIVE</span>
+                  </div>
                 </div>
 
                 {/* Team 2 */}
                 <div className="flex flex-col items-center gap-1 sm:gap-2 w-1/3">
-                  <img
-                    src={match.awayImg}
-                    alt={match.awayTeam}
-                    className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
-                  />
+                  {match.awayImg ? (
+                    <img
+                      src={match.awayImg}
+                      alt={match.awayTeam}
+                      className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        const fallback = e.target.nextElementSibling;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg ${match.awayImg ? 'hidden' : ''}`}
+                  >
+                    {(match.awayTeam || 'T').charAt(0).toUpperCase()}
+                  </div>
                   <span className="font-medium text-xs sm:text-sm md:text-base text-gray-800 dark:text-gray-200 text-center">
                     {match.awayTeam}
                   </span>
@@ -232,24 +363,32 @@ return (
               <div className="flex justify-between text-xs sm:text-sm text-gray-800 dark:text-gray-200 border-t border-gray-200 dark:border-gray-700 pt-3 sm:pt-4">
                 {/* Left scorers */}
                 <div className="text-left flex-1">
-                  {match.homeScorers.map((scorer, i) => (
-                    <p key={i} className="mb-1">{scorer}</p>
-                  ))}
+                  {match.homeScorers && match.homeScorers.length > 0 ? (
+                    match.homeScorers.map((scorer, i) => (
+                      <p key={i} className="mb-1">{scorer}</p>
+                    ))
+                  ) : (
+                    <p className="text-gray-400 text-xs">No goals yet</p>
+                  )}
                 </div>
 
-                {/* Match minute */}
+                {/* Match minute - Real-time */}
                 <div className="flex items-center justify-center text-green-600 dark:text-green-400 text-xs sm:text-sm px-2">
-                  <span className="font-bold">{match.minute}</span>
+                  <span className="font-bold animate-pulse">{displayMinute}</span>
                 </div>
 
                 {/* Right scorers */}
                 <div className="text-right flex-1">
-                  {match.awayScorers.map((scorer, i) => (
-                    <p key={i} className="flex items-center justify-end gap-1 mb-1">
-                      <span className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-current"></span> 
-                      {scorer}
-                    </p>
-                  ))}
+                  {match.awayScorers && match.awayScorers.length > 0 ? (
+                    match.awayScorers.map((scorer, i) => (
+                      <p key={i} className="flex items-center justify-end gap-1 mb-1">
+                        <span className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-current"></span> 
+                        {scorer}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="text-gray-400 text-xs">No goals yet</p>
+                  )}
                 </div>
               </div>
 
@@ -261,36 +400,48 @@ return (
               </div>
             </div>
           </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
 
-      {/* Navigation Buttons */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 rounded-full p-1.5 sm:p-2 shadow-md transition-all"
-      >
-        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-300" />
-      </button>
-      <button
-        onClick={nextSlide}
-        className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 rounded-full p-1.5 sm:p-2 shadow-md transition-all"
-      >
-        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-300" />
-      </button>
+        {/* Navigation Buttons */}
+        {ongoingMatches.length > 1 && (
+          <>
+            <button
+              onClick={prevSlide}
+              className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 rounded-full p-1.5 sm:p-2 shadow-md transition-all z-10"
+            >
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-300" />
+            </button>
+            <button
+              onClick={nextSlide}
+              className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 rounded-full p-1.5 sm:p-2 shadow-md transition-all z-10"
+            >
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-300" />
+            </button>
 
-      {/* Dots indicator */}
-      <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex gap-1.5 sm:gap-2">
-        {featuredMatches.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`w-2 h-2 rounded-full transition-all ${
-              index === currentSlide ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
-            }`}
-          />
-        ))}
+            {/* Dots indicator */}
+            <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex gap-1.5 sm:gap-2">
+              {ongoingMatches.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    index === currentSlide ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
-    </div>
+    ) : (
+      <div className="relative mb-6 sm:mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-xl overflow-hidden p-6 sm:p-8 text-center">
+        <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">
+          {loading ? 'Loading ongoing matches...' : 'No ongoing matches at the moment'}
+        </p>
+      </div>
+    )}
 
     {/* Header */}
     <div className="mb-2 px-3 sm:px-6">

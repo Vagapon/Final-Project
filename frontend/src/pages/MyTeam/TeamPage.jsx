@@ -32,12 +32,16 @@ const TeamPage = () => {
       const raw = response.data?.data || response.data || [];
       const normalized = raw.map((p) => ({
         ...p,
+        id: p._id || p.id, // Ensure id field exists
         name: p.name ?? p.nameMember ?? '',
+        number: p.number ?? p.jerseyNumber ?? 0,
+        position: p.position ?? p.preferredPosition ?? 'CF', // Default position
         avatar: p.avatar ?? '',
       }));
       setAvailablePlayers(normalized);
     } catch (error) {
       console.error("Error fetching players:", error.response?.data || error.message);
+      setAvailablePlayers([]); // Set empty array on error
     }
   };
 
@@ -252,7 +256,7 @@ const TeamPage = () => {
               )}
 
               {activeTab === 'formation' && (
-                <Formation players={availablePlayers} />
+                <Formation availablePlayers={availablePlayers} team={team} />
               )}
               </>
             )}
@@ -272,6 +276,7 @@ const TeamPage = () => {
             setTeam(teamData);
             console.log('✅ Team updated in state:', teamData.name);
             setActiveTab('info');
+            // Fetch players after team is set (use useEffect will handle this)
           } else {
             // Nếu không có teamData, gọi fetchMyTeam để lấy data mới
             setTimeout(async () => {

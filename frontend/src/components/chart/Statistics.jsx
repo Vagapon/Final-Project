@@ -1,46 +1,86 @@
-import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
-import { TrendingUp, TrendingDown, Activity, Users, Calendar, Trophy } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { Activity, Users, Calendar, Trophy } from 'lucide-react';
+import { eventApi } from '../../api/eventManagement';
 
 const Statistics = () => {
-  // Dữ liệu cho biểu đồ pie - phân loại sport
-  const sportsData = [
-    { name: 'Football', value: 35, color: '#3B82F6' },
-    { name: 'Basketball', value: 28, color: '#10B981' },
-    { name: 'Tennis', value: 20, color: '#F59E0B' },
-    { name: 'Swimming', value: 12, color: '#8B5CF6' },
-    { name: 'Others', value: 5, color: '#EF4444' }
-  ];
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Dữ liệu cho mini bar chart - top venues
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await eventApi.getAllEvents({ page: 1, limit: 500 });
+        const list = res?.data?.data || res?.data || [];
+        setEvents(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.error('Statistics events error:', err);
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
-  // Key metrics data
-  const metrics = [
-    {
-      label: 'Completion Rate',
-      value: '94.2%',
-      change: '+2.1%',
-      trend: 'up',
-      icon: Activity,
-      color: 'text-green-600'
-    },
-    {
-      label: 'Avg Event Size',
-      value: '156',
-      change: '+12',
-      trend: 'up',
-      icon: Users,
-      color: 'text-blue-600'
-    },
-    {
-      label: 'Cancellation Rate',
-      value: '2.3%',
-      change: '-0.5%',
-      trend: 'down',
-      icon: Calendar,
-      color: 'text-red-600'
+  const metrics = useMemo(() => {
+    if (!events.length) {
+      return [
+        { label: 'Completion Rate', value: '0%', icon: Activity, color: 'text-green-600' },
+        { label: 'Avg Event Size', value: '0', icon: Users, color: 'text-blue-600' },
+        { label: 'Cancellation Rate', value: '0%', icon: Calendar, color: 'text-red-600' },
+      ];
     }
-  ];
+
+    const total = events.length;
+    const completed = events.filter((e) => e.status === 'completed' || e.status === 'done').length;
+    const cancelled = events.filter((e) => e.status === 'cancelled' || e.status === 'canceled').length;
+    const participants = events.map((e) =>
+      (e.participants && e.participants.length) ||
+      (e.registeredUsers && e.registeredUsers.length) ||
+      e.participantsCount ||
+      0
+    );
+    const avgSize = participants.reduce((s, v) => s + v, 0) / total || 0;
+
+    return [
+      {
+        label: 'Completion Rate',
+        value: `${((completed / total) * 100 || 0).toFixed(1)}%`,
+        icon: Activity,
+        color: 'text-green-600'
+      },
+      {
+        label: 'Avg Event Size',
+        value: `${Math.round(avgSize)}`,
+        icon: Users,
+        color: 'text-blue-600'
+      },
+      {
+        label: 'Cancellation Rate',
+        value: `${((cancelled / total) * 100 || 0).toFixed(1)}%`,
+        icon: Calendar,
+        color: 'text-red-600'
+      }
+    ];
+  }, [events]);
+
+  const sportsData = useMemo(() => {
+    if (!events.length) return [];
+    const counts = {};
+    events.forEach((e) => {
+      const name = e.sportTypeId?.name || 'Other';
+      counts[name] = (counts[name] || 0) + 1;
+    });
+    const total = Object.values(counts).reduce((s, v) => s + v, 0) || 1;
+    const palette = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#14B8A6', '#6366F1'];
+    return Object.entries(counts).map(([name, value], idx) => ({
+      name,
+      value: Math.round((value / total) * 100),
+      color: palette[idx % palette.length],
+    }));
+  }, [events]);
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
@@ -61,8 +101,6 @@ const Statistics = () => {
       <div className="space-y-2">
         {metrics.map((metric, index) => {
           const Icon = metric.icon;
-          const TrendIcon = metric.trend === 'up' ? TrendingUp : TrendingDown;
-          
           return (
             <div key={index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div className="flex items-center space-x-2">
@@ -73,12 +111,6 @@ const Statistics = () => {
                   <p className="text-xs text-gray-500 dark:text-gray-400">{metric.label}</p>
                   <p className="text-sm font-bold text-gray-900 dark:text-white">{metric.value}</p>
                 </div>
-              </div>
-              <div className={`flex items-center space-x-1 ${
-                metric.trend === 'up' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                <TrendIcon className="w-3 h-3" />
-                <span className="text-xs font-medium">{metric.change}</span>
               </div>
             </div>
           );

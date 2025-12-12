@@ -69,7 +69,7 @@ const Stadium = () => {
       const response = await fieldApi.getAllFields();
       setFields(response.data.data || response.data);
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Không thể tải danh sách sân bóng';
+      const errorMessage = error.response?.data?.message || 'Unable to load field list';
       message.error(errorMessage);
       console.error('Error fetching fields:', error);
     }
@@ -85,23 +85,23 @@ const Stadium = () => {
       // Kiểm tra response structure
       if (response && response.data) {
         if (response.data.success || response.data.data) {
-          message.success('Tạo sân bóng thành công!');
+          message.success('Field created successfully!');
           setCreateModalVisible(false);
-          await fetchFields(); // Refresh danh sách
+          await fetchFields(); // Refresh list
           return { success: true };
         } else {
-          message.error(response.data.message || 'Tạo sân bóng thất bại');
+          message.error(response.data.message || 'Failed to create field');
           return { success: false, message: response.data.message };
         }
       } else {
-        message.success('Tạo sân bóng thành công!');
+        message.success('Field created successfully!');
         setCreateModalVisible(false);
-        await fetchFields(); // Refresh danh sách
+        await fetchFields(); // Refresh list
         return { success: true };
       }
     } catch (error) {
       console.error('Error creating field:', error);
-      const errorMessage = error.response?.data?.message || 'Không thể tạo sân bóng';
+      const errorMessage = error.response?.data?.message || 'Unable to create field';
       message.error(errorMessage);
       return { success: false, message: errorMessage };
     }
@@ -111,12 +111,12 @@ const Stadium = () => {
     setEditLoading(true);
     try {
       const response = await fieldApi.updateField(selectedField._id, formData);
-      message.success('Cập nhật sân bóng thành công!');
+      message.success('Field updated successfully!');
       setEditModalVisible(false);
       setSelectedField(null);
-      await fetchFields(); // Refresh danh sách
+      await fetchFields(); // Refresh list
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Không thể cập nhật sân bóng';
+      const errorMessage = error.response?.data?.message || 'Unable to update field';
       message.error(errorMessage);
       console.error('Error updating field:', error);
     }
@@ -126,10 +126,10 @@ const Stadium = () => {
   const handleDelete = async (id) => {
     try {
       const response = await fieldApi.deleteField(id);
-      message.success('Xóa sân bóng thành công!');
-      fetchFields(); // Refresh danh sách
+      message.success('Field deleted successfully!');
+      fetchFields(); // Refresh list
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Không thể xóa sân bóng';
+      const errorMessage = error.response?.data?.message || 'Unable to delete field';
       message.error(errorMessage);
       console.error('Error deleting field:', error);
     }
@@ -137,7 +137,7 @@ const Stadium = () => {
 
   const confirmDeleteField = (field) => {
     Modal.confirm({
-      title: 'Xóa sân bóng?',
+      title: 'Delete Field?',
       icon: <ExclamationCircleFilled />,
       content: (
         <div>
@@ -148,7 +148,7 @@ const Stadium = () => {
       ),
       okText: 'Delete',
       okType: 'danger',
-      cancelText: 'Cancle',
+      cancelText: 'Cancel',
       onOk: () => handleDelete(field._id)
     });
   };
@@ -182,9 +182,9 @@ const Stadium = () => {
   const getPurposeText = (purpose) => {
     switch (purpose) {
       case 'event':
-        return 'Sân giải đấu';
+        return 'Event Field';
       case 'rental':
-        return 'Sân thuê';
+        return 'Rental Field';
       default:
         return purpose;
     }
@@ -350,7 +350,7 @@ const Stadium = () => {
               {field.name}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
-              {field.description || 'Không có mô tả'}
+              {field.description || 'No description'}
             </p>
           </div>
 
@@ -369,9 +369,11 @@ const Stadium = () => {
 
           {/* Price */}
           <div className="flex items-center gap-3">
-            <DollarSign className="h-4 w-4 text-gray-400" />
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
-              {field.pricePerHour ? `${field.pricePerHour.toLocaleString('vi-VN')} VNĐ/giờ` : 'Miễn phí'}
+            <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-700 font-semibold text-xs">
+                ₫
+              </span>
+              {field.pricePerHour ? `${field.pricePerHour.toLocaleString('vi-VN')} VND/hour` : 'Free'}
             </span>
           </div>
 
@@ -398,15 +400,7 @@ const Stadium = () => {
 
         {/* Actions */}
         <div className="flex items-center pt-3 border-t border-gray-100 dark:border-gray-700">
-  {/* Rating nếu có */}
-  {field.rating && (
-    <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-      <Star className="h-4 w-4 text-gray-400" />
-      <span className="text-sm">{field.rating.toFixed(1)}</span>
-    </div>
-  )}
-
-  {/* Action buttons luôn ở bên phải */}
+          {/* Action buttons luôn ở bên phải */}
   <div className="flex gap-1 ml-auto">
     <button
       onClick={() => {
@@ -414,7 +408,7 @@ const Stadium = () => {
         setDetailModalVisible(true);
       }}
       className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
-      title="Xem chi tiết"
+      title="View Details"
     >
       <Eye className="h-4 w-4" />
     </button>
@@ -425,7 +419,7 @@ const Stadium = () => {
           setTimeSlotModalVisible(true);
         }}
         className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200"
-        title="Quản lý khung giờ"
+        title="Manage Time Slots"
       >
         <ClockCircleOutlined className="h-4 w-4" />
       </button>
@@ -437,7 +431,7 @@ const Stadium = () => {
           setEditModalVisible(true);
         }}
         className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
-        title="Chỉnh sửa"
+        title="Edit"
       >
         <Edit2 className="h-4 w-4" />
       </button>
@@ -446,7 +440,7 @@ const Stadium = () => {
       <button
         onClick={() => confirmDeleteField(field)}
         className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
-        title="Xóa"
+        title="Delete"
       >
         <Trash2 className="h-4 w-4" />
       </button>
@@ -471,60 +465,7 @@ const Stadium = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Tổng số sân
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {fields.length}
-              </p>
-            </div>
-            <MapPin className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Event Stadium
-              </p>
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {fields.filter((f) => f.purpose === "event").length}
-              </p>
-            </div>
-            <Activity className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Rental Stadium
-              </p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {fields.filter((f) => f.purpose === "rental").length}
-              </p>
-            </div>
-            <Users className="h-8 w-8 text-green-600 dark:text-green-400" />
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Sân hoạt động
-              </p>
-              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                {fields.filter((f) => f.status === "active").length}
-              </p>
-            </div>
-            <Activity className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-          </div>
-        </div>
-      </div>
+     
 
       {/* Controls */}
       <div className="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
@@ -603,17 +544,17 @@ const Stadium = () => {
           <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              Không có sân bóng nào
+              No fields found
             </h3>
             <p className="text-gray-500 dark:text-gray-400 mb-6">
-              Hãy thêm sân bóng đầu tiên của bạn
+              Add your first field
             </p>
             <button
               onClick={() => setCreateModalVisible(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="h-4 w-4" />
-              Thêm sân bóng
+              Add Field
             </button>
           </div>
         )}

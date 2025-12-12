@@ -12,14 +12,12 @@ const SearchFilter = ({
     { key: "five", label: "5-a-side", icon: Activity },
     { key: "seven", label: "7-a-side", icon: Bike },
     { key: "eleven", label: "11-a-side", icon: Waves },
-    { key: "joined", label: "Joined", icon: Heart },
-    { key: "ongoing", label: "Ongoing", icon: Clock },
   ];
 
   return (
-    <div className="w-full mb-10">
+    <div className="w-full mb-10 space-y-4">
       {/* Search Bar */}
-      <div className="flex items-center bg-white rounded-full shadow-lg border border-gray-200 px-4 py-3 transition-all duration-300 focus-within:shadow-xl">
+      <div className="flex items-center bg-white rounded-full shadow-lg border border-gray-200 px-4 py-3 transition-all duration-300 focus-within:shadow-xl max-w-4xl mx-auto">
         <Search className="w-5 h-5 text-gray-400" />
         <input
           type="text"
@@ -36,7 +34,7 @@ const SearchFilter = ({
       </div>
 
       {/* Filter Pills */}
-      <div className="mt-5 flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 justify-center">
         {filters.map((filter) => {
           const Icon = filter.icon;
           const isActive = selectedFilter === filter.key;

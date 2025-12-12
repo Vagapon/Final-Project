@@ -103,15 +103,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         { label: "Invoid Manager", path: "/admin/invoid" },
       ],
     },
-    {
-      id: "setting",
-      icon: Table,
-      label: "Setting",
-      submenu: [
-        { label: "Profile", path: "/admin/profile" },
-        { label: "Security", path: "/admin/settings/security" },
-      ],
-    },
   ];
 
   return (

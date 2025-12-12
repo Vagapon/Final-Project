@@ -61,7 +61,7 @@ const CreateMatchModal = ({ isOpen, onClose, onSubmit, eventId, resources }) => 
       newErrors.team2Id = 'Vui lòng chọn đội 2';
     }
     if (formData.team1Id === formData.team2Id) {
-      newErrors.team2Id = 'Hai đội không được giống nhau';
+      newErrors.team2Id = 'Two teams cannot be the same';
     }
     if (!formData.matchDate) {
       newErrors.matchDate = 'Vui lòng chọn ngày thi đấu';
@@ -98,7 +98,7 @@ const CreateMatchModal = ({ isOpen, onClose, onSubmit, eventId, resources }) => 
         <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Calendar className="w-6 h-6" />
-            Tạo trận đấu mới
+            Create New Match
           </h2>
           <button
             onClick={onClose}
@@ -237,7 +237,7 @@ const CreateMatchModal = ({ isOpen, onClose, onSubmit, eventId, resources }) => 
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Số thứ tự trận đấu
+                Match Number
               </label>
               <input
                 type="number"
@@ -254,7 +254,7 @@ const CreateMatchModal = ({ isOpen, onClose, onSubmit, eventId, resources }) => 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               <MapPin className="w-4 h-4 inline mr-2" />
-              Sân thi đấu
+              Match Field
             </label>
             <select
               name="fieldId"
@@ -262,7 +262,7 @@ const CreateMatchModal = ({ isOpen, onClose, onSubmit, eventId, resources }) => 
               onChange={handleChange}
               className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
-              <option value="">-- Chọn sân (tùy chọn) --</option>
+              <option value="">-- Select field (optional) --</option>
               {resources.fields?.map(field => (
                 <option key={field._id} value={field._id}>
                   {field.name} - {field.address}
@@ -327,14 +327,14 @@ const CreateMatchModal = ({ isOpen, onClose, onSubmit, eventId, resources }) => 
               onClick={onClose}
               className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
               className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-300 flex items-center gap-2"
             >
               <Save className="w-4 h-4" />
-              Tạo trận đấu
+              Create Match
             </button>
           </div>
         </form>

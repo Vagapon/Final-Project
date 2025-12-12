@@ -66,9 +66,9 @@ const FieldDetailModal = ({ visible, onCancel, field, onBookField }) => {
   const getPurposeText = (purpose) => {
     switch (purpose) {
       case 'event':
-        return 'Sân giải đấu';
+        return 'Event field';
       case 'rental':
-        return 'Sân thuê';
+        return 'Rental field';
       default:
         return purpose;
     }
@@ -96,7 +96,7 @@ const FieldDetailModal = ({ visible, onCancel, field, onBookField }) => {
 
   return (
     <Modal
-      title="Chi tiết sân bóng"
+      title="Field Details"
       open={visible}
       onCancel={onCancel}
       footer={null}
@@ -199,14 +199,14 @@ const FieldDetailModal = ({ visible, onCancel, field, onBookField }) => {
         {/* Field Information */}
         <Row gutter={24}>
           <Col span={12}>
-            <Card title="Thông tin cơ bản" className="h-full">
+            <Card title="Basic Information" className="h-full">
               <div className="space-y-6">
                 <div className="flex items-start space-x-4">
                   <div className="w-6 h-6 text-gray-400 flex-shrink-0 mt-0.5">
                     <EnvironmentOutlined />
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-500 mb-1">Địa chỉ</div>
+                    <div className="text-sm font-medium text-gray-500 mb-1">Address</div>
                     <div className="text-gray-900">{field.address}</div>
                   </div>
                 </div>
@@ -216,9 +216,9 @@ const FieldDetailModal = ({ visible, onCancel, field, onBookField }) => {
                     <TeamOutlined />
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-500 mb-1">Loại sân</div>
+                    <div className="text-sm font-medium text-gray-500 mb-1">Field type</div>
                     <div className="text-gray-900 font-medium">
-                      {field.sportTypeId?.name || 'Không xác định'}
+                      {field.sportTypeId?.name || 'Unknown'}
                     </div>
                   </div>
                 </div>
@@ -228,9 +228,9 @@ const FieldDetailModal = ({ visible, onCancel, field, onBookField }) => {
                     <DollarOutlined />
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-500 mb-1">Giá thuê</div>
+                    <div className="text-sm font-medium text-gray-500 mb-1">Rental price</div>
                     <div className="text-gray-900 font-medium">
-                      {field.pricePerHour ? `${field.pricePerHour.toLocaleString('vi-VN')} VNĐ/giờ` : 'Miễn phí'}
+                      {field.pricePerHour ? `${field.pricePerHour.toLocaleString('vi-VN')} VND/hour` : 'Free'}
                     </div>
                   </div>
                 </div>
@@ -253,7 +253,7 @@ const FieldDetailModal = ({ visible, onCancel, field, onBookField }) => {
                       <EyeOutlined />
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-500 mb-1">Mô tả</div>
+                    <div className="text-sm font-medium text-gray-500 mb-1">Description</div>
                       <div className="text-gray-900">{field.description}</div>
                     </div>
                   </div>
@@ -263,14 +263,14 @@ const FieldDetailModal = ({ visible, onCancel, field, onBookField }) => {
           </Col>
 
           <Col span={12}>
-            <Card title="Thông tin quản lý" className="h-full">
+            <Card title="Management Information" className="h-full">
               <div className="space-y-6">
                 <div className="flex items-start space-x-4">
                   <div className="w-6 h-6 text-gray-400 flex-shrink-0 mt-0.5">
                     <CalendarOutlined />
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-500 mb-1">Ngày tạo</div>
+                    <div className="text-sm font-medium text-gray-500 mb-1">Created at</div>
                     <div className="text-gray-900">{formatDate(field.createdAt)}</div>
                   </div>
                 </div>
@@ -280,7 +280,7 @@ const FieldDetailModal = ({ visible, onCancel, field, onBookField }) => {
                     <CalendarOutlined />
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-500 mb-1">Cập nhật lần cuối</div>
+                    <div className="text-sm font-medium text-gray-500 mb-1">Last updated</div>
                     <div className="text-gray-900">{formatDate(field.updatedAt)}</div>
                   </div>
                 </div>
@@ -301,7 +301,7 @@ const FieldDetailModal = ({ visible, onCancel, field, onBookField }) => {
                       <TeamOutlined />
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-500 mb-1">Quản lý bởi</div>
+                      <div className="text-sm font-medium text-gray-500 mb-1">Managed by</div>
                       <div className="text-gray-900">{field.managedBy.name}</div>
                     </div>
                   </div>
@@ -321,7 +321,7 @@ const FieldDetailModal = ({ visible, onCancel, field, onBookField }) => {
           onClick={onCancel}
           className="px-6 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
         >
-          Đóng
+          Close
         </button>
         {onBookField && (
           <button
@@ -333,7 +333,7 @@ const FieldDetailModal = ({ visible, onCancel, field, onBookField }) => {
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            Đặt sân ngay
+            Book now
           </button>
         )}
       </div>

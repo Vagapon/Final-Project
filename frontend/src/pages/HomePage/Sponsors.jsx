@@ -1,88 +1,118 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, MapPin, Trophy, Users } from "lucide-react";
+import { Calendar, MapPin, Trophy, Users, Loader2 } from "lucide-react";
+import { eventApi } from "../../api";
+import { message } from "antd";
 
 const Sponsors = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const tournaments = [
-    {
-      id: 1,
-      title: "FIFA World Cup 2026",
-      sport: "Football",
-      date: "June 11 - July 19, 2026",
-      location: "USA, Canada, Mexico",
-      participants: "32 Teams",
-      prize: "$440M",
-      image:
-        "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800&h=600&fit=crop",
-      status: "upcoming",
-      description:
-        "The biggest football tournament in the world, bringing together nations from across the globe to compete for the ultimate prize in international football.",
-    },
-    {
-      id: 2,
-      title: "Tennis Masters Cup",
-      sport: "Tennis",
-      date: "November 10-17, 2024",
-      location: "Turin, Italy",
-      participants: "8 Players",
-      prize: "$15M",
-      image:
-        "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&h=600&fit=crop",
-      status: "live",
-      description:
-        "Elite tennis championship featuring the world's top 8 players competing in the season-ending tournament with round-robin format.",
-    },
-    {
-      id: 3,
-      title: "NBA Finals 2024",
-      sport: "Basketball",
-      date: "June 6-23, 2024",
-      location: "Various Cities, USA",
-      participants: "2 Teams",
-      prize: "$25M",
-      image:
-        "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&h=600&fit=crop",
-      status: "completed",
-      description:
-        "Championship series of the National Basketball Association, determining the league champion through a best-of-seven playoff series.",
-    },
-    {
-      id: 4,
-      title: "Champions League Final",
-      sport: "Football",
-      date: "June 1, 2024",
-      location: "Wembley Stadium, London",
-      participants: "2 Teams",
-      prize: "$20M",
-      image:
-        "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&h=600&fit=crop",
-      status: "completed",
-      description:
-        "Europe's premier club football competition final, showcasing the continent's best teams in the most prestigious club tournament.",
-    },
-    {
-      id: 5,
-      title: "Olympic Games 2024",
-      sport: "Multi-Sport",
-      date: "July 26 - Aug 11, 2024",
-      location: "Paris, France",
-      participants: "10,000+ Athletes",
-      prize: "Glory & Medals",
-      image:
-        "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&h=600&fit=crop",
-      status: "completed",
-      description:
-        "The world's greatest sporting celebration, uniting athletes from around the globe in the spirit of competition and excellence.",
-    },
-  ];
+  // Fetch events from API
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoading(true);
+      try {
+        const response = await eventApi.getAllEvents();
+        const eventsData = response.data?.data || [];
+        
+        // Transform API data to match UI format
+        const transformedEvents = eventsData.map((event) => {
+          const startDate = event.startDate ? new Date(event.startDate) : null;
+          const endDate = event.endDate ? new Date(event.endDate) : null;
+          
+          let dateStr = '';
+          if (startDate && endDate) {
+            dateStr = `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+          } else if (startDate) {
+            dateStr = startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          }
+          
+          // Determine status based on dates
+          const now = new Date();
+          let status = 'upcoming';
+          if (startDate && endDate) {
+            if (now < startDate) {
+              status = 'upcoming';
+            } else if (now >= startDate && now <= endDate) {
+              status = 'live';
+            } else {
+              status = 'completed';
+            }
+          } else if (startDate) {
+            status = now < startDate ? 'upcoming' : 'completed';
+          }
+          
+          const sportType = event.sportTypeId?.name || 'Football';
+          const location = event.location || event.address || 'TBD';
+          const participants = event.maxTeams || event.maxParticipants || 'Multiple Teams';
+          const prize = event.prizePool || event.prize || 'TBD';
+          
+          // Get image from avatar field (Cloudinary URL)
+          // CloudinaryStorage returns full URL in req.file.path format: "https://res.cloudinary.com/..."
+          let eventImage = event.avatar || event.image || event.banner || '';
+          
+          // Clean up the image URL - remove any whitespace
+          if (eventImage) {
+            eventImage = eventImage.trim();
+          }
+          
+          // Check if it's a valid URL (starts with http:// or https://)
+          // If not a valid URL or empty, use default
+          if (!eventImage || 
+              (!eventImage.startsWith('http://') && !eventImage.startsWith('https://') && !eventImage.startsWith('//'))) {
+            eventImage = 'https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800&h=600&fit=crop';
+          }
+          
+          return {
+            id: event._id,
+            title: event.name || event.title || 'Tournament',
+            sport: sportType,
+            date: dateStr || 'TBD',
+            location: location,
+            participants: `${participants} ${typeof participants === 'number' ? 'Teams' : ''}`,
+            prize: prize,
+            image: eventImage,
+            status: status,
+            description: event.description || event.details || 'A competitive tournament bringing together top teams.',
+            eventData: event // Keep original data
+          };
+        });
+        
+        // Sort by start date (upcoming first, then live, then completed)
+        transformedEvents.sort((a, b) => {
+          const statusOrder = { 'live': 0, 'upcoming': 1, 'completed': 2 };
+          const aOrder = statusOrder[a.status] || 3;
+          const bOrder = statusOrder[b.status] || 3;
+          if (aOrder !== bOrder) return aOrder - bOrder;
+          
+          // Within same status, sort by date
+          const aDate = a.eventData?.startDate ? new Date(a.eventData.startDate) : new Date(0);
+          const bDate = b.eventData?.startDate ? new Date(b.eventData.startDate) : new Date(0);
+          return bDate - aDate; // Newest first
+        });
+        
+        setEvents(transformedEvents);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        message.error('Unable to load events');
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   useEffect(() => {
+    if (events.length === 0) return;
+    
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % tournaments.length);
+      setCurrentSlide((prev) => (prev + 1) % events.length);
     }, 4000);
     return () => clearInterval(interval);
-  }, [tournaments.length]);
+  }, [events.length]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -114,11 +144,24 @@ const Sponsors = () => {
     <div className="relative w-full bg-gray-50 from-gray-50 via-slate-50 to-gray-100 overflow-hidden">
       {/* Main Slider Container */}
       <div className="relative h-[500px] overflow-hidden">
-        <div
-          className="flex transition-transform duration-700 ease-in-out h-full"
-          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-        >
-          {tournaments.map((tournament, index) => (
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+            <span className="ml-3 text-gray-600">Loading events...</span>
+          </div>
+        ) : events.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <Trophy className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">No events available</p>
+            </div>
+          </div>
+        ) : (
+          <div
+            className="flex transition-transform duration-700 ease-in-out h-full"
+            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          >
+            {events.map((tournament, index) => (
             <div key={tournament.id} className="w-full flex-shrink-0 relative ">
               <div className="flex h-full">
                 {/* Left Content Section */}
@@ -219,6 +262,10 @@ const Sponsors = () => {
                     src={tournament.image}
                     alt={tournament.title}
                     className="w-full h-full object-cover object-center transform scale-95 group-hover:scale-100 transition-transform duration-700"
+                    onError={(e) => {
+                      // Fallback to default image if event image fails to load
+                      e.target.src = 'https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800&h=600&fit=crop';
+                    }}
                   />
 
                   {/* Hover overlay + button */}
@@ -237,24 +284,28 @@ const Sponsors = () => {
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Simple Dots Indicator (Optional - can be removed completely if not needed) */}
-  {/* Indicators (Dots) dưới slider */} 
-<div className="flex justify-center mt-2 mb-2">
-  <div className="flex space-x-1.5">
-    {tournaments.map((_, index) => (
-      <div
-        key={index}
-        className={`w-2 h-2 rounded-full transition-all duration-300 ${
-          index === currentSlide ? "bg-blue-600 scale-125" : "bg-gray-300"
-        }`}
-      />
-    ))}
-  </div>
-</div>
+      {/* Indicators (Dots) dưới slider */} 
+      {events.length > 0 && (
+        <div className="flex justify-center mt-2 mb-2">
+          <div className="flex space-x-1.5">
+            {events.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  index === currentSlide ? "bg-blue-600 scale-125" : "bg-gray-300"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
     </div>
   );

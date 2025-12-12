@@ -86,7 +86,7 @@ const Event = () => {
     
     console.log('Adding new event to state:', newEvent);
     setEventData(prev => [...prev, newEvent]);
-    message.success('Tạo event thành công!');
+    message.success('Event created successfully!');
     
     // Refresh the event list to ensure data consistency
     setTimeout(() => {
@@ -101,10 +101,10 @@ const Event = () => {
         setEventData(prev => prev.map(event => 
           event._id === updatedEvent._id ? response.data.data : event
         ));
-        message.success('Cập nhật event thành công!');
+        message.success('Event updated successfully!');
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật event';
+      const errorMessage = error.response?.data?.message || 'An error occurred while updating event';
       message.error(errorMessage);
     }
   };
@@ -114,10 +114,10 @@ const Event = () => {
       const response = await eventApi.deleteEvent(eventId);
       if (response.data.success) {
         setEventData(prev => prev.filter(event => event._id !== eventId));
-        message.success('Xóa event thành công!');
+        message.success('Event deleted successfully!');
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi xóa event';
+      const errorMessage = error.response?.data?.message || 'An error occurred while deleting event';
       message.error(errorMessage);
     }
   };

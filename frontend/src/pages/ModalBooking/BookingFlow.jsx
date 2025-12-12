@@ -38,7 +38,7 @@ const BookingFlow = ({
       setFieldDetails(details);
     } catch (error) {
       console.error('Error loading field details:', error);
-      message.error('Không thể tải thông tin sân');
+      message.error('Unable to load field information');
     } finally {
       setLoading(false);
     }
@@ -75,19 +75,19 @@ const BookingFlow = ({
     if (currentStep === 1) {
       // Validate personal info before proceeding to payment
       if (!personalInfo.name.trim() || !personalInfo.email.trim() || !personalInfo.phone.trim()) {
-        message.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+        message.error('Please fill in all required information');
         return;
       }
       // Basic email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(personalInfo.email)) {
-        message.error('Vui lòng nhập email hợp lệ');
+        message.error('Please enter a valid email');
         return;
       }
       // Basic phone validation
       const phoneRegex = /^[0-9]{10,11}$/;
       if (!phoneRegex.test(personalInfo.phone.replace(/\s/g, ''))) {
-        message.error('Vui lòng nhập số điện thoại hợp lệ (10-11 số)');
+        message.error('Please enter a valid phone number (10-11 digits)');
         return;
       }
     }

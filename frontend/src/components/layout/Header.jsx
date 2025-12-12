@@ -104,7 +104,7 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
       };
 
       toast.success(getNotificationTitle(), {
-        description: notification.content,
+        description: translateNotificationContent(notification.content),
         duration: 5000,
         action: {
           label: 'View',
@@ -187,12 +187,32 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
       });
     }
 
-    // Nếu khác năm
-    return date.toLocaleDateString('vi-VN', { 
+    // Different year - display in English locale
+    return date.toLocaleDateString('en-US', { 
       day: 'numeric', 
       month: 'long',
       year: 'numeric'
     });
+  };
+
+  // Basic translation for common Vietnamese notification phrases to English
+  const translateNotificationContent = (content = '') => {
+    const replacements = [
+      { vi: 'đã được phê duyệt', en: 'has been approved' },
+      { vi: 'đã bị từ chối', en: 'was rejected' },
+      { vi: 'trong sự kiện', en: 'in event' },
+      { vi: 'sự kiện', en: 'event' },
+      { vi: 'trận đấu', en: 'match' },
+      { vi: 'đã được sắp xếp vào', en: 'has been scheduled on' },
+      { vi: 'lúc', en: 'at' },
+      { vi: 'đội', en: 'team' },
+      { vi: 'Đội', en: 'Team' },
+    ];
+    let translated = content;
+    replacements.forEach(({ vi, en }) => {
+      translated = translated.replaceAll(vi, en);
+    });
+    return translated;
   };
 
   // Get notification icon
@@ -350,7 +370,7 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <p className="text-sm text-gray-900 dark:text-white">
-                                  {notification.content}
+                                  {translateNotificationContent(notification.content)}
                                 </p>
                                 {notification.teamId && (
                                   <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
@@ -366,7 +386,7 @@ const Header = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
                                   {formatTimeAgo(notification.createdAt)}
                                   {notification.createdAt && (
                                     <span className="ml-2 text-gray-400">
-                                      • {new Date(notification.createdAt).toLocaleTimeString('vi-VN', { 
+                                      • {new Date(notification.createdAt).toLocaleTimeString('en-US', { 
                                         hour: '2-digit', 
                                         minute: '2-digit' 
                                       })}

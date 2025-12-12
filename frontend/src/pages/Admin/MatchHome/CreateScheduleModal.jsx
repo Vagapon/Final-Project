@@ -47,7 +47,7 @@ const CreateScheduleModal = ({ isOpen, onClose, onSuccess, eventId: initialEvent
       const eventList = response.data?.data || [];
       setEvents(eventList);
     } catch (error) {
-      message.error('Không thể tải danh sách event');
+      message.error('Unable to load event list');
     }
   };
 
@@ -65,10 +65,10 @@ const CreateScheduleModal = ({ isOpen, onClose, onSuccess, eventId: initialEvent
       setTeams(eventTeams);
       
       if (eventTeams.length === 0) {
-        message.warning('Chưa có đội nào được approve cho event này. Vui lòng approve các đội đăng ký trước khi tạo lịch thi đấu.');
+        message.warning('No teams have been approved for this event yet. Please approve registered teams before creating a match schedule.');
       }
     } catch (error) {
-      message.error('Không thể tải danh sách đội đã được approve');
+      message.error('Unable to load approved teams list');
       console.error('Error fetching approved teams:', error);
       setTeams([]);
     } finally {
@@ -144,7 +144,7 @@ const CreateScheduleModal = ({ isOpen, onClose, onSuccess, eventId: initialEvent
       newErrors.eventId = 'Vui lòng chọn event';
     }
     if (selectedTeams.length < 2) {
-      newErrors.teams = 'Cần ít nhất 2 đội để tạo lịch thi đấu';
+      newErrors.teams = 'At least 2 teams are required to create a match schedule';
     }
     if (!formData.startTime) {
       newErrors.startTime = 'Vui lòng chọn giờ bắt đầu';
@@ -182,13 +182,13 @@ const CreateScheduleModal = ({ isOpen, onClose, onSuccess, eventId: initialEvent
 
       const response = await matchScheduleApi.createRoundRobinSchedule(selectedEventId, scheduleData);
       
-      message.success('Tạo lịch thi đấu thành công!');
+      message.success('Match schedule created successfully!');
       if (onSuccess) {
         onSuccess(response.data);
       }
       onClose();
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Không thể tạo lịch thi đấu';
+      const errorMessage = error.response?.data?.message || 'Unable to create match schedule';
       message.error(errorMessage);
     } finally {
       setLoading(false);
@@ -206,7 +206,7 @@ const CreateScheduleModal = ({ isOpen, onClose, onSuccess, eventId: initialEvent
         <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Calendar className="w-6 h-6" />
-            Tạo lịch thi đấu tự động
+            Create Automatic Match Schedule
           </h2>
           <button
             onClick={onClose}
@@ -310,23 +310,23 @@ const CreateScheduleModal = ({ isOpen, onClose, onSuccess, eventId: initialEvent
             <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-purple-400" />
-                Xem trước lịch thi đấu
+                Match Schedule Preview
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <div className="text-sm text-gray-400">Số đội</div>
+                  <div className="text-sm text-gray-400">Number of Teams</div>
                   <div className="text-xl font-bold text-white">{preview.totalTeams}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-400">Tổng trận đấu</div>
+                  <div className="text-sm text-gray-400">Total Matches</div>
                   <div className="text-xl font-bold text-white">{preview.totalMatches}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-400">Số vòng</div>
+                  <div className="text-sm text-gray-400">Number of Rounds</div>
                   <div className="text-xl font-bold text-white">{preview.totalRounds}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-400">Số ngày ước tính</div>
+                  <div className="text-sm text-gray-400">Estimated Days</div>
                   <div className="text-xl font-bold text-white">{preview.daysNeeded}</div>
                 </div>
               </div>
@@ -454,12 +454,12 @@ const CreateScheduleModal = ({ isOpen, onClose, onSuccess, eventId: initialEvent
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Đang tạo...
+                  Creating...
                 </>
               ) : (
                 <>
                   <Calendar className="w-4 h-4" />
-                  Tạo lịch thi đấu
+                  Create Match Schedule
                 </>
               )}
             </button>

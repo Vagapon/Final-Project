@@ -10,19 +10,19 @@ const Match = () => {
   const tabs = [
     {
       id: "overview",
-      label: "Tổng quan",
+      label: "Overview",
       icon: Trophy,
       component: MatchOverview,
     },
     {
       id: "create",
-      label: "Tạo trận đấu",
+      label: "Create Match",
       icon: Plus,
       component: CreateMatch,
     },
     {
       id: "schedule",
-      label: "Quản lý trận đấu",
+      label: "Manage Matches",
       icon: Calendar,
       component: MatchSchedule,
     },
@@ -36,7 +36,7 @@ const Match = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-xl md:text-2xl font-bold text-gray-700 dark:text-gray-200 mb-2 transition-colors duration-300">
-            Quản lý trận đấu
+            Match Management
           </h1>
         </div>
 

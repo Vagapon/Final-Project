@@ -268,18 +268,20 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // Kiểm tra xung đột
+    // Kiểm tra xung đột - CHỈ kiểm tra với booking đã thanh toán thành công (confirmed)
+    // Booking với status 'pending' không chặn timeslot vì chưa thanh toán
     const existingBooking = await Booking.findOne({
       fieldId,
       startTime: { $lt: endTime },
       endTime: { $gt: startTime },
-      status: { $in: ['pending', 'confirmed'] }
+      status: 'confirmed', // Chỉ kiểm tra booking đã thanh toán
+      paymentStatus: 'paid' // Đảm bảo đã thanh toán
     });
 
     if (existingBooking) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Khung giờ này đã được đặt' 
+        message: 'Khung giờ này đã được đặt và thanh toán' 
       });
     }
 
@@ -508,6 +510,18 @@ const cancelBooking = async (req, res) => {
       });
     }
 
+    // Nếu booking chưa thanh toán (unpaid), xóa luôn để giải phóng timeslot ngay lập tức
+    // Nếu đã thanh toán, chỉ đánh dấu là cancelled
+    if (booking.paymentStatus === 'unpaid' || !booking.paymentStatus) {
+      await Booking.findByIdAndDelete(id);
+      return res.status(200).json({
+        success: true,
+        message: 'Booking đã được hủy và xóa thành công',
+        data: null
+      });
+    }
+
+    // Nếu đã thanh toán, chỉ đánh dấu là cancelled (không xóa để giữ lịch sử)
     booking.status = 'cancelled';
     booking.updatedAt = new Date();
     await booking.save();
@@ -626,7 +640,8 @@ const checkAvailability = async (req, res) => {
       fieldId,
       startTime: { $lt: endTime },
       endTime: { $gt: startTime },
-      status: { $in: ['pending', 'confirmed'] }
+      status: 'confirmed', // Chỉ kiểm tra booking đã thanh toán
+      paymentStatus: 'paid' // Đảm bảo đã thanh toán
     });
 
     const isAvailable = !existingBooking;

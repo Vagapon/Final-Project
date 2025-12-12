@@ -1,11 +1,93 @@
 // src/pages/Admin/Overview.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import VenueMap from '../../../components/chart/VenueMap';
 import Chart from '../../../components/chart/Charts';
 import Statistics from '../../../components/chart/Statistics';
 import { Users, Calendar, Trophy, TrendingUp } from 'lucide-react';
+import { userApi } from '../../../api';
+import { eventApi } from '../../../api/eventManagement';
+import bookingService from '../../../api/bookingManagement/bookingService';
+import axiosClient from '../../../api/axiosClient';
 
 const Overview = () => {
+  const [metrics, setMetrics] = useState({
+    users: 0,
+    events: 0,
+    stadiums: 0,
+    revenue: 0,
+  });
+
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      setLoading(true);
+      try {
+        const [usersRes, eventsRes, fieldStatsRes, bookingsRes] = await Promise.allSettled([
+          userApi.getAllUsers({ page: 1, limit: 1 }),
+          eventApi.getAllEvents({ page: 1, limit: 1 }),
+          axiosClient.get('/fields/stats'),
+          bookingService.getAllBookings({ page: 1, limit: 500 }),
+        ]);
+
+        const usersTotal =
+          usersRes.status === 'fulfilled'
+            ? usersRes.value?.data?.pagination?.total ||
+              usersRes.value?.data?.total ||
+              (usersRes.value?.data?.data?.length ?? 0)
+            : 0;
+
+        const eventsTotal =
+          eventsRes.status === 'fulfilled'
+            ? eventsRes.value?.data?.pagination?.total ||
+              eventsRes.value?.data?.total ||
+              (eventsRes.value?.data?.data?.length ?? 0)
+            : 0;
+
+        const fieldsTotal =
+          fieldStatsRes.status === 'fulfilled'
+            ? fieldStatsRes.value?.data?.data?.totalFields ?? fieldStatsRes.value?.data?.totalFields ?? 0
+            : 0;
+
+        const bookings =
+          bookingsRes.status === 'fulfilled'
+            ? bookingsRes.value?.data?.data || bookingsRes.value?.data || []
+            : [];
+
+        const revenue = Array.isArray(bookings)
+          ? bookings.reduce((sum, b) => {
+              const isPaid = b.paymentStatus === 'paid';
+              const amount = Number(b.totalPrice) || 0;
+              return isPaid ? sum + amount : sum;
+            }, 0)
+          : 0;
+
+        setMetrics({
+          users: usersTotal,
+          events: eventsTotal,
+          stadiums: fieldsTotal,
+          revenue,
+        });
+      } catch (err) {
+        console.error('Dashboard metrics error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMetrics();
+  }, []);
+
+  const formatNumber = (value) => {
+    if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
+    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+    if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+    return value.toString();
+  };
+
+  const formatCurrency = (value) =>
+    value.toLocaleString('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
+
   return (
     <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       {/* Header */}
@@ -25,18 +107,14 @@ const Overview = () => {
                 <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Participants</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">3,782</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total users</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {loading ? '...' : formatNumber(metrics.users)}
+                </p>
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center space-x-1">
-              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-l-transparent border-r-transparent border-b-green-500"></div>
-              <span className="text-sm font-medium text-green-600">11.01%</span>
-            </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400">vs last month</span>
-          </div>
+          <div className="h-3" />
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl transition-shadow duration-300">
@@ -47,17 +125,13 @@ const Overview = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Events</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">5,359</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {loading ? '...' : formatNumber(metrics.events)}
+                </p>
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center space-x-1">
-              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-red-500"></div>
-              <span className="text-sm font-medium text-red-600">9.05%</span>
-            </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400">vs last month</span>
-          </div>
+          <div className="h-3" />
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl transition-shadow duration-300">
@@ -67,35 +141,27 @@ const Overview = () => {
                 <Trophy className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Competitions</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">1,247</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Stadiums</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {loading ? '...' : formatNumber(metrics.stadiums)}
+                </p>
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center space-x-1">
-              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-l-transparent border-r-transparent border-b-green-500"></div>
-              <span className="text-sm font-medium text-green-600">15.3%</span>
-            </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400">vs last month</span>
-          </div>
+          <div className="h-3" />
         </div>
 
         <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white hover:shadow-xl transition-shadow duration-300">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Revenue last month</p>
-              <p className="text-3xl font-bold">$45.2K</p>
+              <p className="text-blue-100 text-sm font-medium">Revenue (paid bookings)</p>
+              <p className="text-3xl font-bold">{loading ? '...' : formatCurrency(metrics.revenue)}</p>
             </div>
             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
               <TrendingUp className="w-8 h-8 text-white" />
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-l-transparent border-r-transparent border-b-green-300"></div>
-            <span className="text-sm font-medium text-green-300">+12.5%</span>
-            <span className="text-xs text-blue-100">growth</span>
-          </div>
+          <div className="h-3" />
         </div>
       </div>
 

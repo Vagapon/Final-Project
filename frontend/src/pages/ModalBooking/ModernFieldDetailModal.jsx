@@ -167,7 +167,7 @@ const ModernFieldDetailModal = ({
 
   const handleLike = () => {
     setIsLiked(!isLiked);
-    message.success(isLiked ? 'Đã bỏ yêu thích' : 'Đã thêm vào yêu thích');
+    message.success(isLiked ? 'Removed from favorites' : 'Added to favorites');
   };
 
   const handleShare = () => {
@@ -179,7 +179,7 @@ const ModernFieldDetailModal = ({
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      message.success('Đã sao chép link');
+      message.success('Link copied');
     }
   };
 
@@ -244,12 +244,6 @@ const ModernFieldDetailModal = ({
               </div>
               
               <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-1">
-                  <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                  <span className="text-sm font-medium text-gray-700">4/5</span>
-                  <span className="text-sm text-gray-500">(1 Đánh giá)</span>
-                </div>
-                
                 <div className="flex space-x-2">
                   <button
                     onClick={handleShare}

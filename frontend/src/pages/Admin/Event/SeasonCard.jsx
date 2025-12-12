@@ -45,21 +45,21 @@ const SeasonCard = ({ season, onEdit, onView, onDelete }) => {
         <button
           onClick={() => onView(season)}
           className="p-1 text-blue-600 hover:bg-blue-100 rounded transition-colors"
-          title="Xem chi tiết"
+          title="View Details"
         >
           <Eye size={14} />
         </button>
         <button
           onClick={() => onEdit(season)}
           className="p-1 text-green-600 hover:bg-green-100 rounded transition-colors"
-          title="Chỉnh sửa"
+          title="Edit"
         >
           <Edit size={14} />
         </button>
         <button
           onClick={() => onDelete(season)}
           className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
-          title="Xóa"
+          title="Delete"
         >
           <Trash2 size={14} />
         </button>

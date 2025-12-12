@@ -71,7 +71,7 @@ const handleSave = async () => {
     }
   } catch (error) {
     console.error('Error updating profile:', error);
-    alert('Không thể cập nhật thông tin. Vui lòng thử lại!');
+    alert('Unable to update information. Please try again!');
   }
 };
   useEffect (() => {
@@ -148,7 +148,7 @@ const handleSave = async () => {
                 className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors duration-200"
               >
                 <Edit3 className="w-4 h-4" />
-                <span>Chỉnh sửa</span>
+                <span>Edit</span>
               </button>
             )}
             
@@ -202,7 +202,7 @@ const handleSave = async () => {
               
               {isEditing && (
                 <p className="text-sm text-gray-500 text-center">
-                  Click vào ảnh để thay đổi avatar
+                  Click on image to change avatar
                 </p>
               )}
             </div>
@@ -227,11 +227,11 @@ const handleSave = async () => {
                         onChange={handleInputChange}
                         required={field.required}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
-                        placeholder={`Nhập ${field.label.toLowerCase()}`}
+                        placeholder={`Enter ${field.label.toLowerCase()}`}
                       />
                     ) : (
                       <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
-                        {formData[field.key] || <span className="text-gray-400 italic">Chưa cập nhật</span>}
+                        {formData[field.key] || <span className="text-gray-400 italic">Not updated</span>}
                       </div>
                     )}
                   </div>
@@ -245,7 +245,7 @@ const handleSave = async () => {
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 space-y-2">
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <Calendar className="w-4 h-4" />
-                <span>Tham gia: {user?.joinDate || 'Không rõ'}</span>
+                <span>Joined: {user?.joinDate || 'Unknown'}</span>
               </div>
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <User className="w-4 h-4" />

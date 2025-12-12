@@ -31,7 +31,7 @@ const StadiumManagement = () => {
       const data = await response.json();
       if (data.success) setFields(data.data);
     } catch (error) {
-      message.error('Lỗi khi tải danh sách sân');
+      message.error('Error loading field list');
     }
   };
 
@@ -42,7 +42,7 @@ const StadiumManagement = () => {
       const data = await response.json();
       if (data.success) setTimeSlots(data.data);
     } catch (error) {
-      message.error('Lỗi khi tải khung giờ');
+      message.error('Error loading time slots');
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ const StadiumManagement = () => {
         loadTimeSlots(selectedField);
       }
     } catch (error) {
-      message.error('Lỗi khi tạo khung giờ mặc định');
+      message.error('Error creating default time slots');
     }
   };
 
@@ -80,14 +80,14 @@ const StadiumManagement = () => {
 
       const data = await response.json();
       if (data.success) {
-        message.success(editingSlot ? 'Cập nhật thành công' : 'Tạo thành công');
+        message.success(editingSlot ? 'Updated successfully' : 'Created successfully');
         setModalVisible(false);
         form.resetFields();
         setEditingSlot(null);
         loadTimeSlots(selectedField);
       }
     } catch (error) {
-      message.error('Có lỗi xảy ra');
+      message.error('An error occurred');
     }
   };
 
@@ -105,20 +105,20 @@ const StadiumManagement = () => {
       });
       const data = await response.json();
       if (data.success) {
-        message.success('Xóa thành công');
+        message.success('Deleted successfully');
         loadTimeSlots(selectedField);
       }
     } catch (error) {
-      message.error('Có lỗi xảy ra');
+      message.error('An error occurred');
     }
   };
 
   const fieldColumns = [
-    { title: 'Tên sân', dataIndex: 'name', key: 'name' },
-    { title: 'Số sân', dataIndex: 'fieldNumber', key: 'fieldNumber' },
-    { title: 'Địa chỉ', dataIndex: 'address', key: 'address' },
+    { title: 'Field Name', dataIndex: 'name', key: 'name' },
+    { title: 'Field Number', dataIndex: 'fieldNumber', key: 'fieldNumber' },
+    { title: 'Address', dataIndex: 'address', key: 'address' },
     { 
-      title: 'Mục đích', 
+      title: 'Purpose', 
       dataIndex: 'purpose', 
       key: 'purpose',
       render: (purpose) => (
@@ -127,19 +127,19 @@ const StadiumManagement = () => {
         </Tag>
       )
     },
-    { title: 'Giá/giờ', dataIndex: 'pricePerHour', key: 'pricePerHour', render: (price) => price ? `${price.toLocaleString()}đ` : 'Miễn phí' },
+    { title: 'Price/Hour', dataIndex: 'pricePerHour', key: 'pricePerHour', render: (price) => price ? `${price.toLocaleString()} VND` : 'Free' },
     { 
-      title: 'Trạng thái', 
+      title: 'Status', 
       dataIndex: 'status', 
       key: 'status',
       render: (status) => (
         <Tag color={status === 'active' ? 'green' : 'red'}>
-          {status === 'active' ? 'Hoạt động' : 'Tạm dừng'}
+          {status === 'active' ? 'Active' : 'Inactive'}
         </Tag>
       )
     },
     {
-      title: 'Thao tác',
+      title: 'Actions',
       key: 'actions',
       render: (_, record) => (
         <Button 
@@ -150,42 +150,42 @@ const StadiumManagement = () => {
             setActiveTab('timeslots');
           }}
         >
-          Quản lý khung giờ
+          Manage Time Slots
         </Button>
       )
     }
   ];
 
   const timeSlotColumns = [
-    { title: 'Giờ', key: 'time', render: (_, record) => `${record.startTime} - ${record.endTime}` },
+    { title: 'Time', key: 'time', render: (_, record) => `${record.startTime} - ${record.endTime}` },
     { 
-      title: 'Loại ca', 
+      title: 'Shift Type', 
       dataIndex: 'timeType', 
       key: 'timeType',
       render: (type) => {
         const typeMap = {
-          'ca_sang': { text: 'Ca sáng', color: 'blue' },
-          'ca_chieu': { text: 'Ca chiều', color: 'orange' },
-          'ca_toi': { text: 'Ca tối', color: 'purple' }
+          'ca_sang': { text: 'Morning', color: 'blue' },
+          'ca_chieu': { text: 'Afternoon', color: 'orange' },
+          'ca_toi': { text: 'Evening', color: 'purple' }
         };
-        const config = typeMap[type] || { text: 'Không xác định', color: 'gray' };
+        const config = typeMap[type] || { text: 'Unknown', color: 'gray' };
         return <Tag color={config.color}>{config.text}</Tag>;
       }
     },
-    { title: 'Hệ số', dataIndex: 'multiplier', key: 'multiplier', render: (mult) => `${mult}x` },
-    { title: 'Mô tả', dataIndex: 'description', key: 'description' },
+    { title: 'Multiplier', dataIndex: 'multiplier', key: 'multiplier', render: (mult) => `${mult}x` },
+    { title: 'Description', dataIndex: 'description', key: 'description' },
     { 
-      title: 'Trạng thái', 
+      title: 'Status', 
       dataIndex: 'status', 
       key: 'status',
       render: (status) => (
         <Tag color={status === 'available' ? 'green' : status === 'booked' ? 'red' : 'orange'}>
-          {status === 'available' ? 'Trống' : status === 'booked' ? 'Đã đặt' : 'Bảo trì'}
+          {status === 'available' ? 'Available' : status === 'booked' ? 'Booked' : 'Maintenance'}
         </Tag>
       )
     },
     {
-      title: 'Thao tác',
+      title: 'Actions',
       key: 'actions',
       render: (_, record) => (
         <Space>
@@ -198,9 +198,9 @@ const StadiumManagement = () => {
 
   return (
     <div className="p-6">
-      <Card title="Quản lý sân bóng & khung giờ">
+      <Card title="Field & Time Slot Management">
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
-          <TabPane tab="Danh sách sân" key="stadiums">
+          <TabPane tab="Field List" key="stadiums">
             <Table 
               columns={fieldColumns} 
               dataSource={fields} 
@@ -209,10 +209,10 @@ const StadiumManagement = () => {
             />
           </TabPane>
           
-          <TabPane tab="Quản lý khung giờ" key="timeslots">
+          <TabPane tab="Time Slot Management" key="timeslots">
             <div className="mb-4">
               <Select
-                placeholder="Chọn sân để quản lý khung giờ"
+                placeholder="Select field to manage time slots"
                 style={{ width: 300, marginRight: 16 }}
                 value={selectedField}
                 onChange={setSelectedField}
@@ -227,10 +227,10 @@ const StadiumManagement = () => {
               {selectedField && (
                 <Space>
                   <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
-                    Thêm khung giờ
+                    Add Time Slot
                   </Button>
                   <Button onClick={handleCreateDefault}>
-                    Tạo mặc định
+                    Create Default
                   </Button>
                 </Space>
               )}
@@ -250,7 +250,7 @@ const StadiumManagement = () => {
       </Card>
 
       <Modal
-        title={editingSlot ? 'Chỉnh sửa khung giờ' : 'Thêm khung giờ mới'}
+        title={editingSlot ? 'Edit Time Slot' : 'Add New Time Slot'}
         open={modalVisible}
         onCancel={() => {
           setModalVisible(false);
@@ -260,28 +260,28 @@ const StadiumManagement = () => {
         onOk={() => form.submit()}
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Form.Item name="startTime" label="Giờ bắt đầu" rules={[{ required: true }]}>
+          <Form.Item name="startTime" label="Start Time" rules={[{ required: true }]}>
             <Input type="time" />
           </Form.Item>
           
-          <Form.Item name="endTime" label="Giờ kết thúc" rules={[{ required: true }]}>
+          <Form.Item name="endTime" label="End Time" rules={[{ required: true }]}>
             <Input type="time" />
           </Form.Item>
           
-          <Form.Item name="timeType" label="Loại ca" rules={[{ required: true }]}>
+          <Form.Item name="timeType" label="Shift Type" rules={[{ required: true }]}>
             <Select>
-              <Option value="ca_sang">Ca sáng</Option>
-              <Option value="ca_chieu">Ca chiều</Option>
-              <Option value="ca_toi">Ca tối</Option>
+              <Option value="ca_sang">Morning</Option>
+              <Option value="ca_chieu">Afternoon</Option>
+              <Option value="ca_toi">Evening</Option>
             </Select>
           </Form.Item>
           
-          <Form.Item name="multiplier" label="Hệ số nhân" rules={[{ required: true }]}>
+          <Form.Item name="multiplier" label="Multiplier" rules={[{ required: true }]}>
             <InputNumber min={0.1} max={3.0} step={0.1} style={{ width: '100%' }} />
           </Form.Item>
           
-          <Form.Item name="description" label="Mô tả">
-            <Input placeholder="VD: Ca sáng, Ca chiều..." />
+          <Form.Item name="description" label="Description">
+            <Input placeholder="e.g., Morning shift, Afternoon shift..." />
           </Form.Item>
         </Form>
       </Modal>

@@ -37,15 +37,15 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
 
-    const hide = messageApi.loading({ content: "Đang xác thực thông tin...", duration: 0 });
+    const hide = messageApi.loading({ content: "Verifying your information...", duration: 0 });
 
     try {
       const { token, user: userData } = await authService.login(email, password);
       login(userData, token);
 
       hide();
-      messageApi.success(`Chào mừng ${userData.name || "bạn"} trở lại! 🎉`, 3);
-      setTimeout(() => messageApi.info("✨ Chúc bạn có một ngày tuyệt vời!", 2), 2000);
+      messageApi.success(`Welcome back ${userData.name || "there"}! 🎉`, 3);
+      setTimeout(() => messageApi.info("Have a wonderful day! ✨", 2), 2000);
 
       setTimeout(() => {
         if (userData.role === "ADMIN" || userData.role === "STAFF") {
@@ -60,13 +60,13 @@ export default function Login() {
       setTimeout(() => {
         const errorMessage = error.response?.data?.message;
         if (error.response?.status === 404) {
-          messageApi.error("Email không tồn tại! Vui lòng kiểm tra lại.", 5);
+          messageApi.error("Email not found. Please check again.", 5);
         } else if (error.response?.status === 401) {
-          messageApi.error("Mật khẩu không chính xác! Vui lòng thử lại.", 5);
+          messageApi.error("Incorrect password. Please try again.", 5);
         } else if (error.response?.status === 403) {
-          messageApi.warning("Tài khoản bị khóa! Liên hệ admin để được hỗ trợ.", 6);
+          messageApi.warning("Account is locked. Please contact admin for support.", 6);
         } else {
-          messageApi.error(errorMessage || "Đăng nhập thất bại. Vui lòng thử lại.", 4);
+          messageApi.error(errorMessage || "Login failed. Please try again.", 4);
         }
       }, 100);
     } finally {
@@ -88,7 +88,7 @@ export default function Login() {
         if (result) {
           const user = result.user;
           
-          const hideGoogle = messageApi.loading({ content: "Đang xử lý thông tin...", duration: 0 });
+          const hideGoogle = messageApi.loading({ content: "Processing your information...", duration: 0 });
           
           // Get token without forcing refresh
           const idToken = await user.getIdToken(false);
@@ -105,7 +105,7 @@ export default function Login() {
           
           login(userData, token);
           hideGoogle();
-          messageApi.success(`Chào mừng ${userData.fullName || userData.name || 'bạn'}! 🎉`, 1.5);
+          messageApi.success(`Welcome ${userData.fullName || userData.name || 'there'}! 🎉`, 1.5);
           
           if (userData.role === "ADMIN" || userData.role === "STAFF") {
             navigate("/admin");
@@ -115,7 +115,7 @@ export default function Login() {
         }
       } catch (error) {
         console.error("Redirect result error:", error);
-        messageApi.error("Đăng nhập thất bại. Vui lòng thử lại", 3);
+        messageApi.error("Login failed. Please try again", 3);
       }
     };
 
@@ -135,7 +135,7 @@ export default function Login() {
     
     try {
       setIsGoogleLoading(true);
-      messageApi.info("Đang mở cửa sổ đăng nhập Google...", 1);
+      messageApi.info("Opening Google sign-in window...", 1);
       
       // Check if Firebase is properly initialized
       if (!auth || !googleProvider) {
@@ -159,7 +159,7 @@ export default function Login() {
       const user = result.user;
       
       // Show immediate feedback
-      const hideGoogle = messageApi.loading({ content: "Đang xử lý thông tin...", duration: 0 });
+      const hideGoogle = messageApi.loading({ content: "Processing your information...", duration: 0 });
       
       // Get token without forcing refresh (faster)
       const idToken = await user.getIdToken(false);
@@ -178,7 +178,7 @@ export default function Login() {
       login(userData, token);
 
       hideGoogle();
-      messageApi.success(`Chào mừng ${userData.fullName || userData.name || 'bạn'}! 🎉`, 1.5);
+      messageApi.success(`Welcome ${userData.fullName || userData.name || 'there'}! 🎉`, 1.5);
 
       // Navigate immediately without delay
       if (userData.role === "ADMIN" || userData.role === "STAFF") {
@@ -195,27 +195,27 @@ export default function Login() {
       if (error.code) {
         switch(error.code) {
           case 'auth/popup-blocked':
-            messageApi.warning("Trình duyệt đã chặn popup. Vui lòng cho phép popup và thử lại", 4);
+            messageApi.warning("Popup was blocked. Please allow popups and try again", 4);
             break;
           case 'auth/cancelled-popup-request':
           case 'auth/popup-closed-by-user':
-            messageApi.info("Đăng nhập đã bị hủy. Vui lòng thử lại", 3);
+            messageApi.info("Login was cancelled. Please try again", 3);
             break;
           case 'auth/internal-error':
-            messageApi.error("Lỗi cấu hình Firebase. Vui lòng thử lại sau", 4);
+            messageApi.error("Firebase configuration error. Please try again later", 4);
             break;
           case 'auth/network-request-failed':
-            messageApi.error("Lỗi kết nối mạng. Vui lòng kiểm tra internet", 4);
+            messageApi.error("Network error. Please check your internet connection", 4);
             break;
           case 'auth/too-many-requests':
-            messageApi.warning("Quá nhiều yêu cầu. Vui lòng thử lại sau", 4);
+            messageApi.warning("Too many requests. Please try again later", 4);
             break;
           default:
-            messageApi.error(`Lỗi đăng nhập: ${error.message}`, 4);
+            messageApi.error(`Login error: ${error.message}`, 4);
         }
       } else {
         // Handle API errors
-        const errorMessage = error.message || error.response?.data?.message || "Đăng nhập thất bại";
+        const errorMessage = error.message || error.response?.data?.message || "Login failed";
         messageApi.error(errorMessage, 4);
       }
     } finally {

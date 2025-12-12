@@ -462,7 +462,7 @@ const FieldBooking = () => {
               <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                 {/* Sort Options */}
                 <div className="flex flex-wrap items-center gap-1">
-                  {['Best match', 'Best sellers', 'Newest', 'Best rated', 'Trending'].map((option, index) => (
+                  {['Best match'].map((option, index) => (
                     <button
                       key={option}
                       className={`px-2 py-1 text-xs sm:text-sm rounded transition-colors ${
@@ -474,10 +474,10 @@ const FieldBooking = () => {
                       {option}
                     </button>
                   ))}
-                  <button className="px-2 py-1 text-xs sm:text-sm text-gray-600 hover:bg-gray-100 rounded flex items-center space-x-1">
+                  {/* <button className="px-2 py-1 text-xs sm:text-sm text-gray-600 hover:bg-gray-100 rounded flex items-center space-x-1">
                     Price
                     <ChevronDown className="w-3 h-3" />
-                  </button>
+                  </button> */}
                 </div>
 
                 {/* View Toggle */}
@@ -521,12 +521,6 @@ const FieldBooking = () => {
                         alt={field.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                      {/* Sale Badge */}
-                      {Math.random() > 0.7 && (
-                        <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-semibold">
-                          SALE
-                        </div>
-                      )}
                       {/* Price Tag */}
                       <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-1 rounded text-xs sm:text-sm font-semibold">
                         {formatPrice(field.pricePerHour)}/slot
@@ -537,10 +531,6 @@ const FieldBooking = () => {
                     <div className="p-3 sm:p-4">
                       <div className="flex items-start justify-between mb-2">
                         <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 line-clamp-2 flex-1">{field.name}</h3>
-                        <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
-                          <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-current" />
-                          <span className="text-xs sm:text-sm text-gray-600">{field.rating || 4}</span>
-                        </div>
                       </div>
 
                       <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
@@ -556,10 +546,7 @@ const FieldBooking = () => {
                         <span className="hidden sm:inline">Updated {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs sm:text-sm text-gray-600">
-                          <span className="font-medium">{Math.floor(Math.random() * 500) + 50} Sales</span>
-                        </div>
+                      <div className="flex items-center justify-end">
                         <div className="flex items-center space-x-1 sm:space-x-2">
                           <button
                             onClick={() => handleViewDetail(field)}

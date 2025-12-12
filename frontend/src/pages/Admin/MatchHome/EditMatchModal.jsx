@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Users, MapPin, Save } from 'lucide-react';
+import { X, Calendar, Clock, Users, MapPin, Save, Trophy, Settings, Globe } from 'lucide-react';
+import { eventApi } from '../../../api';
 
 const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
   const [formData, setFormData] = useState({
+    matchName: '',
+    eventId: '',
     team1Id: '',
     team2Id: '',
     fieldId: '',
@@ -13,10 +16,32 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
     duration: 90,
     address: '',
     location: '',
-    status: 'upcoming'
+    description: '',
+    streamUrl: '',
+    isPublic: true,
+    status: 'upcoming',
+    score: { team1: 0, team2: 0 }
   });
 
   const [errors, setErrors] = useState({});
+  const [events, setEvents] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
+  // Fetch events
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await eventApi.getAllEvents();
+        const eventList = response.data?.data || [];
+        setEvents(eventList);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      }
+    };
+    if (isOpen) {
+      fetchEvents();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && match) {
@@ -25,7 +50,12 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
         ? new Date(match.matchDate).toISOString().split('T')[0]
         : '';
       
+      const eventId = match.eventId?._id || match.eventId || '';
+      const event = events.find(e => e._id === eventId);
+      
       setFormData({
+        matchName: match.matchName || '',
+        eventId: eventId,
         team1Id: match.team1Id?._id || match.team1Id || '',
         team2Id: match.team2Id?._id || match.team2Id || '',
         fieldId: match.fieldId?._id || match.fieldId || '',
@@ -36,11 +66,17 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
         duration: match.duration || 90,
         address: match.address || '',
         location: match.location || '',
-        status: match.status || 'upcoming'
+        description: match.description || '',
+        streamUrl: match.streamUrl || '',
+        isPublic: match.isPublic !== undefined ? match.isPublic : true,
+        status: match.status || 'upcoming',
+        score: match.score || { team1: 0, team2: 0 }
       });
+      
+      setSelectedEvent(event || null);
       setErrors({});
     }
-  }, [isOpen, match]);
+  }, [isOpen, match, events]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -60,6 +96,9 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
   const validate = () => {
     const newErrors = {};
     
+    if (!formData.eventId) {
+      newErrors.eventId = 'Please select a tournament';
+    }
     if (!formData.team1Id) {
       newErrors.team1Id = 'Please select team 1';
     }
@@ -116,6 +155,67 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Match Name and Event */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Settings className="w-4 h-4 inline mr-2" />
+                Match Name
+              </label>
+              <input
+                type="text"
+                name="matchName"
+                value={formData.matchName}
+                onChange={handleChange}
+                placeholder="e.g., V.League 2024 Final"
+                className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tournament <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="eventId"
+                value={formData.eventId}
+                onChange={(e) => {
+                  handleChange(e);
+                  const eventId = e.target.value;
+                  const event = events.find(ev => ev._id === eventId);
+                  setSelectedEvent(event || null);
+                }}
+                className={`w-full px-4 py-2 bg-white border rounded-lg text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                  errors.eventId ? 'border-red-500' : 'border-gray-300'
+                }`}
+              >
+                <option value="">-- Select Tournament --</option>
+                {events.map(event => (
+                  <option key={event._id} value={event._id}>
+                    {event.name || event.title}
+                  </option>
+                ))}
+              </select>
+              {errors.eventId && (
+                <p className="mt-1 text-sm text-red-400">{errors.eventId}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Field Type Info */}
+          {selectedEvent && selectedEvent.sportTypeId && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-blue-800">Field Type:</span>
+                <span className="text-sm text-blue-700">
+                  {typeof selectedEvent.sportTypeId === 'object' 
+                    ? selectedEvent.sportTypeId.name 
+                    : 'No information'}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Teams */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -143,8 +243,8 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Team 2 <span className="text-red-400">*</span>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Team 2 <span className="text-red-500">*</span>
               </label>
               <select
                 name="team2Id"
@@ -310,6 +410,108 @@ const EditMatchModal = ({ isOpen, onClose, onSubmit, match, resources }) => {
               step="15"
               className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
+          </div>
+
+          {/* Score - Only show if status is completed or being set to completed */}
+          {(formData.status === 'completed' || match?.status === 'completed') && (
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-gray-200">
+              <label className="block text-sm font-medium text-gray-700 mb-4">
+                <Trophy className="w-4 h-4 inline mr-2 text-yellow-500" />
+                Match Score
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-2">
+                    {match?.team1Id?.name || match?.team1Id?.shortName || 'Team 1'}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.score?.team1 || 0}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 0;
+                      setFormData(prev => ({
+                        ...prev,
+                        score: { ...prev.score, team1: value }
+                      }));
+                    }}
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-center text-2xl font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-2">
+                    {match?.team2Id?.name || match?.team2Id?.shortName || 'Team 2'}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.score?.team2 || 0}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 0;
+                      setFormData(prev => ({
+                        ...prev,
+                        score: { ...prev.score, team2: value }
+                      }));
+                    }}
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-center text-2xl font-bold"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Note: Updating score will automatically update the ranking table.
+              </p>
+            </div>
+          )}
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Match Description
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows={3}
+              placeholder="Detailed information about the match..."
+              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+            />
+          </div>
+
+          {/* Stream URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Globe className="w-4 h-4 inline mr-2" />
+              Live Stream URL
+            </label>
+            <input
+              type="url"
+              name="streamUrl"
+              value={formData.streamUrl}
+              onChange={handleChange}
+              placeholder="https://youtube.com/live/..."
+              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
+          {/* Public Checkbox */}
+          <div className="flex items-start">
+            <input
+              type="checkbox"
+              name="isPublic"
+              id="isPublic"
+              checked={formData.isPublic}
+              onChange={(e) => {
+                setFormData(prev => ({
+                  ...prev,
+                  isPublic: e.target.checked
+                }));
+              }}
+              className="w-4 h-4 text-green-600 bg-gray-50 border-gray-300 rounded focus:ring-green-500 focus:ring-2 mt-0.5"
+            />
+            <label htmlFor="isPublic" className="ml-3 text-sm text-gray-700 font-medium leading-tight">
+              Make match public for viewers
+            </label>
           </div>
 
           {/* Address and Location */}

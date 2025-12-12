@@ -12,6 +12,7 @@ const Ranking = () => {
   // Dữ liệu thực từ API
   const [seasons, setSeasons] = useState([]);
   const [events, setEvents] = useState([]);
+  const [filteredEvents, setFilteredEvents] = useState([]);
   const [leaderboardData, setLeaderboardData] = useState([
     { 
       id: 1, 
@@ -166,6 +167,30 @@ const Ranking = () => {
     fetchEvents();
   }, []);
 
+  // Filter events based on selected season
+  useEffect(() => {
+    if (selectedSeason && events.length > 0) {
+      const filtered = events.filter(event => {
+        // Check if event has seasonId matching selectedSeason
+        const eventSeasonId = event.seasonId?._id || event.seasonId;
+        return eventSeasonId === selectedSeason;
+      });
+      setFilteredEvents(filtered);
+      
+      // Reset selectedEvent if current selection is not in filtered list
+      if (selectedEvent !== 'all' && !filtered.find(e => e._id === selectedEvent)) {
+        setSelectedEvent('all');
+      }
+    } else {
+      setFilteredEvents([]);
+      // Reset to 'all' when no season is selected
+      if (selectedEvent !== 'all') {
+        setSelectedEvent('all');
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSeason, events]);
+
   // Fetch rankings
   useEffect(() => {
     const fetchRankings = async () => {
@@ -252,9 +277,9 @@ const Ranking = () => {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Bảng Xếp Hạng Bóng Đá
+            Football Rankings
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">Quản lý và theo dõi bảng xếp hạng các giải đấu</p>
+          <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">Manage and track tournament rankings</p>
         </div>
 
         {/* Filters */}
@@ -268,7 +293,11 @@ const Ranking = () => {
               <div className="relative">
                 <select
                   value={selectedSeason}
-                  onChange={(e) => setSelectedSeason(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedSeason(e.target.value);
+                    // Reset event filter when season changes
+                    setSelectedEvent('all');
+                  }}
                   className="w-full appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 text-blue-600 dark:text-blue-400 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-300"
                 >
                   {seasons.length === 0 ? (
@@ -289,19 +318,28 @@ const Ranking = () => {
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <Filter className="inline w-4 h-4 mr-1" />
-                Loại giải đấu
+                Event Type
               </label>
               <select
                 value={selectedEvent}
                 onChange={(e) => setSelectedEvent(e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-300"
+                disabled={!selectedSeason || filteredEvents.length === 0}
+                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="all">All Events</option>
-                {events.map(event => (
-                  <option key={event._id} value={event._id}>
-                    {event.name}
-                  </option>
-                ))}
+                {selectedSeason ? (
+                  filteredEvents.length > 0 ? (
+                    filteredEvents.map(event => (
+                      <option key={event._id} value={event._id}>
+                        {event.name || event.title}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>No events in this season</option>
+                  )
+                ) : (
+                  <option value="" disabled>Please select a season first</option>
+                )}
               </select>
             </div>
 
@@ -309,11 +347,11 @@ const Ranking = () => {
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <Search className="inline w-4 h-4 mr-1" />
-                Tìm kiếm
+                Search
               </label>
               <input
                 type="text"
-                placeholder="Nhập tên đội..."
+                placeholder="Enter team name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-300"

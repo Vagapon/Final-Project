@@ -81,9 +81,9 @@ const fetchSeasons = async () => {
       await seasonApi.deleteSeason(deleteModal.season._id);
       setSeasons(prev => prev.filter(s => s._id !== deleteModal.season._id));
       setDeleteModal({ isOpen: false, season: null });
-      message.success('Xóa season thành công!');
+      message.success('Season deleted successfully!');
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi xóa season';
+      const errorMessage = error.response?.data?.message || 'An error occurred while deleting season';
       message.error(errorMessage);
     }
   };

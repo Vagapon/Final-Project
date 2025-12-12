@@ -20,7 +20,7 @@ export default function Register() {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      messageApi.error("Mật khẩu xác nhận không khớp!");
+      messageApi.error("Passwords do not match!");
       return;
     }
     
@@ -33,7 +33,7 @@ export default function Register() {
         phone_number: phone,
       });
       
-      messageApi.success("Đăng ký thành công! Vui lòng đăng nhập.");
+      messageApi.success("Registration successful! Please sign in.");
       navigate("/login");
     } catch (error) {
       const errorMessage = error.message || error.response?.data?.message || "Register failfail!";

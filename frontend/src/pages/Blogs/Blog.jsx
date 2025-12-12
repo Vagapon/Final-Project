@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Heart, MessageCircle, Share2, Send, Home, Users, Calendar, Bell, Settings, User, MapPin, Trophy, X, Edit, Trash2, Loader2, Image, Smile, ChevronDown, MoreHorizontal } from 'lucide-react';
-import { blogApi, commentApi } from '../../api';
+import { Heart, MessageCircle, Send, Home, Users, Calendar, Bell, Settings, User, MapPin, Trophy, X, Edit, Trash2, Loader2, Image, Smile, ChevronDown, MoreHorizontal } from 'lucide-react';
+import { blogApi, commentApi, eventApi, teamApi, userApi, fieldApi } from '../../api';
 import { message, Modal } from 'antd';
 import { useAuth } from '../Authen/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useSocket } from '../../contexts/SocketContext';
 import UserProfileViewModal from '../../components/UserProfileViewModal';
 
 const defaultAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=default';
@@ -31,8 +32,11 @@ const formatRelativeTime = (dateString) => {
 const Blog = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [postFilter, setPostFilter] = useState('all'); // 'all', 'following', 'myPosts'
+  const { isUserOnline } = useSocket();
   const [newPost, setNewPost] = useState('');
   const [newLocation, setNewLocation] = useState('');
   const [showLocationInput, setShowLocationInput] = useState(false);
@@ -64,6 +68,20 @@ const Blog = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedUserData, setSelectedUserData] = useState(null);
   const [openUserMenuId, setOpenUserMenuId] = useState(null);
+  
+  // Sidebar data states
+  const [userStats, setUserStats] = useState({
+    teamsJoined: 0,
+    matches: 0,
+    points: 0
+  });
+  const [featuredEvents, setFeaturedEvents] = useState([]);
+  const [activeUsers, setActiveUsers] = useState([]);
+  const [fields, setFields] = useState([]);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [loadingActiveUsers, setLoadingActiveUsers] = useState(false);
+  const [loadingFields, setLoadingFields] = useState(false);
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -100,7 +118,139 @@ const Blog = () => {
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+    fetchSidebarData();
+  }, [user]);
+
+  // Fetch sidebar data
+  const fetchSidebarData = async () => {
+    await Promise.all([
+      fetchUserStatistics(),
+      fetchFeaturedEvents(),
+      fetchActiveUsers(),
+      fetchFields()
+    ]);
+  };
+
+  // Fetch fields
+  const fetchFields = async () => {
+    setLoadingFields(true);
+    try {
+      const response = await fieldApi.getAllFields();
+      const fieldsData = response.data?.data || response.data || [];
+      setFields(fieldsData.slice(0, 10)); // Limit to 10 fields
+    } catch (error) {
+      console.error('Error fetching fields:', error);
+      setFields([]);
+    } finally {
+      setLoadingFields(false);
+    }
+  };
+
+  // Fetch user statistics
+  const fetchUserStatistics = async () => {
+    if (!user?._id) {
+      setUserStats({ teamsJoined: 0, matches: 0, points: 0 });
+      return;
+    }
+    
+    setLoadingStats(true);
+    try {
+      // Get user's team
+      let teamsJoined = 0;
+      try {
+        const teamResponse = await teamApi.getMyTeam();
+        if (teamResponse.data) {
+          teamsJoined = 1;
+        }
+      } catch (err) {
+        // User has no team
+        teamsJoined = 0;
+      }
+
+      // Get matches and points from user stats API
+      let matches = 0;
+      let points = 0;
+      try {
+        const statsResponse = await userApi.getUserStats();
+        const statsData = statsResponse.data?.data || statsResponse.data || {};
+        matches = statsData.matches || 0;
+        points = statsData.points || 0;
+      } catch (err) {
+        // If no stats API, keep at 0
+        matches = 0;
+        points = 0;
+      }
+
+      setUserStats({
+        teamsJoined,
+        matches,
+        points
+      });
+    } catch (error) {
+      console.error('Error fetching user statistics:', error);
+      setUserStats({ teamsJoined: 0, matches: 0, points: 0 });
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  // Fetch featured events
+  const fetchFeaturedEvents = async () => {
+    setLoadingEvents(true);
+    try {
+      const response = await eventApi.getAllEvents({ 
+        limit: 2,
+        status: 'active' // or 'upcoming', 'ongoing'
+      });
+      const events = response.data?.data || response.data || [];
+      
+      // Get first 2 active/upcoming events
+      const featured = events
+        .filter(event => ['active', 'upcoming', 'ongoing'].includes(event.status?.toLowerCase()))
+        .slice(0, 2)
+        .map(event => ({
+          _id: event._id,
+          name: event.name,
+          startDate: event.startDate,
+          status: event.status,
+          imageUrl: event.imageUrl || event.avatar
+        }));
+      
+      setFeaturedEvents(featured);
+    } catch (error) {
+      console.error('Error fetching featured events:', error);
+      setFeaturedEvents([]);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
+  // Fetch all users (both online and offline)
+  const fetchActiveUsers = async () => {
+    setLoadingActiveUsers(true);
+    try {
+      const response = await userApi.getAllUsers({});
+      const users = response.data?.data || response.data || [];
+      
+      // Get all users (excluding current user)
+      const allUsers = users
+        .filter(u => u._id !== user?._id)
+        .map(u => ({
+          _id: u._id,
+          name: u.name,
+          avatar: u.avatar,
+          isActive: u.isActive !== false, // Consider user active if isActive is not explicitly false
+          lastActive: u.lastActive || u.updatedAt || u.createdAt
+        }));
+      
+      setActiveUsers(allUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setActiveUsers([]);
+    } finally {
+      setLoadingActiveUsers(false);
+    }
+  };
 
   const resetCreateForm = () => {
     setNewPost('');
@@ -506,14 +656,66 @@ const Blog = () => {
     setOpenUserMenuId(null);
   };
 
+  // Navigation handlers
+  const handleNavigate = (path) => {
+    navigate(path);
+    setSidebarOpen(false); // Close mobile sidebar
+  };
+
+  const handleViewMyProfile = () => {
+    if (user?._id) {
+      setSelectedUserId(user._id);
+      setSelectedUserData(user);
+      setShowProfileModal(true);
+    }
+  };
+
+  // Determine active route
+  const isActiveRoute = (path) => {
+    return location.pathname === path;
+  };
+
   const sidebarItems = [
-    { icon: Home, label: "Home", active: true },
-    { icon: Users, label: "Find Team", badge: "3" },
-    { icon: Calendar, label: "Events", badge: "2" },
-    { icon: Trophy, label: "Tournaments" },
-    { icon: Bell, label: "Notifications", badge: "5" },
-    { icon: Settings, label: "Settings" }
+    { 
+      icon: Home, 
+      label: "Home", 
+      path: "/",
+      active: isActiveRoute("/")
+    },
+    { 
+      icon: Users, 
+      label: "My Team", 
+      path: "/myteam",
+      active: isActiveRoute("/myteam")
+    },
+    { 
+      icon: Calendar, 
+      label: "Events", 
+      path: "/challenge",
+      active: isActiveRoute("/challenge")
+    },
+    { 
+      icon: MapPin, 
+      label: "Book Field", 
+      path: "/book",
+      active: isActiveRoute("/book") || location.pathname.startsWith("/booking")
+    },
+    { 
+      icon: MessageCircle, 
+      label: "Chat", 
+      path: "/chat",
+      active: isActiveRoute("/chat")
+    }
   ];
+
+  // Filter posts based on selected filter
+  const filteredPosts = React.useMemo(() => {
+    if (postFilter === 'myPosts') {
+      return posts.filter(post => post.userId?._id === user?._id);
+    }
+    // For 'all' and 'following', return all posts (following can be implemented later with follow feature)
+    return posts;
+  }, [posts, postFilter, user?._id]);
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100">
@@ -530,33 +732,107 @@ const Blog = () => {
                   </button>
                 </div>
                 
-                <div className="flex items-center space-x-3 mb-4 pb-4 border-b">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-gray-50 via-slate-50 to-gray-100 flex items-center justify-center">
-                    <User className="w-6 h-6 text-gray-600" />
-                  </div>
+                {/* Football Fields Section */}
+                <div className="mb-4 pb-4 border-b">
+                  <h3 className="font-semibold text-gray-900 mb-3 text-sm flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-green-600" />
+                    Football Fields
+                  </h3>
+                  {loadingFields ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                    </div>
+                  ) : fields.length === 0 ? (
+                    <div className="text-center py-2 text-gray-500 text-xs">
+                      No fields available
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                      {fields.map((field) => (
+                        <div
+                          key={field._id}
+                          onClick={() => {
+                            navigate(`/book`);
+                            setSidebarOpen(false);
+                          }}
+                          className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                        >
+                          {field.imageUrl ? (
+                            <img
+                              src={field.imageUrl}
+                              alt={field.name}
+                              className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div 
+                            className={`w-8 h-8 rounded-lg bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 ${field.imageUrl ? 'hidden' : ''}`}
+                          >
+                            {field.name?.charAt(0)?.toUpperCase() || 'F'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 text-xs truncate">{field.name || 'Unnamed Field'}</p>
+                            {field.address && (
+                              <p className="text-xs text-gray-500 truncate">{field.address}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                
-                <nav className="space-y-2">
-                  {sidebarItems.map((item, index) => (
-                    <button
-                      key={index}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left hover:bg-gray-100 ${
-                        item.active ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
-                      }`}
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <item.icon className="w-5 h-5" />
-                        <span className="font-medium">{item.label}</span>
-                      </div>
-                      {item.badge && (
-                        <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1">
-                          {item.badge}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </nav>
+
+                {/* Online/Offline Users Section */}
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3 text-sm flex items-center gap-2">
+                    <Users className="w-4 h-4 text-blue-600" />
+                    Users
+                  </h3>
+                  {loadingActiveUsers ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                    </div>
+                  ) : activeUsers.length === 0 ? (
+                    <div className="text-center py-2 text-gray-500 text-xs">
+                      No users found
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                      {activeUsers.map((activeUser) => {
+                        const isOnline = isUserOnline(activeUser._id);
+                        return (
+                          <div 
+                            key={activeUser._id} 
+                            className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                            onClick={() => {
+                              handleViewProfile(activeUser);
+                              setSidebarOpen(false);
+                            }}
+                          >
+                            <div className="relative flex-shrink-0">
+                              <img
+                                src={activeUser.avatar || defaultAvatar}
+                                alt={activeUser.name || 'User'}
+                                className="w-8 h-8 rounded-full object-cover"
+                              />
+                              {isOnline ? (
+                                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                              ) : (
+                                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
+                              )}
+                            </div>
+                            <span className={`text-xs truncate flex-1 ${isOnline ? 'text-gray-700' : 'text-gray-500'}`}>
+                              {activeUser.name || 'User'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -565,47 +841,125 @@ const Blog = () => {
         <div className="flex">
         {/* Desktop Sidebar */}
           <div className="w-64 space-y-4 hidden lg:block flex-shrink-0 p-4">
-            <div className="p-4">
-
-              <nav className="space-y-2">
-                {sidebarItems.map((item, index) => (
-                  <button
-                    key={index}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left hover:bg-gray-100 ${
-                      item.active ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <item.icon className="w-5 h-5" />
-                      <span className="font-medium">{item.label}</span>
+            {/* Football Fields Section */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-green-600" />
+                Football Fields
+              </h3>
+              {loadingFields ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                </div>
+              ) : fields.length === 0 ? (
+                <div className="text-center py-4 text-gray-500 text-sm">
+                  No fields available
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                  {fields.map((field) => (
+                    <div
+                      key={field._id}
+                      onClick={() => navigate(`/book`)}
+                      className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                    >
+                      {field.imageUrl ? (
+                        <img
+                          src={field.imageUrl}
+                          alt={field.name}
+                          className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className={`w-10 h-10 rounded-lg bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 ${field.imageUrl ? 'hidden' : ''}`}
+                      >
+                        {field.name?.charAt(0)?.toUpperCase() || 'F'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm truncate">{field.name || 'Unnamed Field'}</p>
+                        {field.address && (
+                          <p className="text-xs text-gray-500 truncate">{field.address}</p>
+                        )}
+                      </div>
                     </div>
-                    {item.badge && (
-                      <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1">
-                        {item.badge}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </nav>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Online/Offline Users Section */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                Users
+              </h3>
+              {loadingActiveUsers ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                </div>
+              ) : activeUsers.length === 0 ? (
+                <div className="text-center py-4 text-gray-500 text-sm">
+                  No users found
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                  {activeUsers.map((activeUser) => {
+                    const isOnline = isUserOnline(activeUser._id);
+                    return (
+                      <div 
+                        key={activeUser._id} 
+                        className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                        onClick={() => handleViewProfile(activeUser)}
+                      >
+                        <div className="relative flex-shrink-0">
+                          <img
+                            src={activeUser.avatar || defaultAvatar}
+                            alt={activeUser.name || 'User'}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                          {isOnline ? (
+                            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                          ) : (
+                            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
+                          )}
+                        </div>
+                        <span className={`text-sm truncate flex-1 ${isOnline ? 'text-gray-700' : 'text-gray-500'}`}>
+                          {activeUser.name || 'User'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Quick Stats */}
             <div className="p-4">
               <h3 className="font-semibold text-gray-900 mb-3">Statistics</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Teams Joined</span>
-                  <span className="font-semibold text-blue-600">12</span>
+              {loadingStats ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Matches</span>
-                  <span className="font-semibold text-green-600">25</span>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Teams Joined</span>
+                    <span className="font-semibold text-blue-600">{userStats.teamsJoined}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Matches</span>
+                    <span className="font-semibold text-green-600">{userStats.matches}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Points</span>
+                    <span className="font-semibold text-yellow-600">{userStats.points.toLocaleString()}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Points</span>
-                  <span className="font-semibold text-yellow-600">1,450</span>
-                </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -763,12 +1117,17 @@ const Blog = () => {
                   <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
                   Loading posts...
                 </div>
-              ) : posts.length === 0 ? (
+              ) : filteredPosts.length === 0 ? (
                 <div className="bg-white rounded-lg p-6 text-center text-gray-500">
-                  No posts yet. Be the first to share!
+                  {postFilter === 'myPosts' 
+                    ? "You haven't posted anything yet. Be the first to share!"
+                    : postFilter === 'following'
+                    ? "No posts from people you follow yet."
+                    : "No posts yet. Be the first to share!"
+                  }
                 </div>
               ) : (
-                posts.map((post) => {
+                filteredPosts.map((post) => {
                   const author = post.userId || {};
                   const canManage = canManagePost(post);
                   return (
@@ -940,9 +1299,23 @@ const Blog = () => {
                         <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                         <span className="hidden sm:inline">Comment</span>
                       </button>
-                      <button className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-xs sm:text-sm">
-                        <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                        <span className="hidden sm:inline">Share</span>
+                      <button 
+                        onClick={() => {
+                          if (!user) {
+                            message.warning('Please login to send a message');
+                            return;
+                          }
+                          const author = post.userId || {};
+                          if (author._id) {
+                            navigate('/chat', { state: { userId: author._id, userName: author.name } });
+                          } else {
+                            message.warning('Unable to start chat with this user');
+                          }
+                        }}
+                        className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-xs sm:text-sm"
+                      >
+                        <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="hidden sm:inline">Message</span>
                       </button>
                     </div>
                   </div>
@@ -1237,49 +1610,96 @@ const Blog = () => {
 
           {/* Right Sidebar - Hidden on mobile and tablet */}
           <div className="w-80 space-y-4 hidden xl:block flex-shrink-0 p-4">
-            {/* Sponsored Events */}
+            {/* Featured Events */}
             <div className="p-4">
               <h3 className="font-semibold text-gray-900 mb-3">Featured Events</h3>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                    <Trophy className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-gray-900">Street Football Tournament</h4>
-                    <p className="text-sm text-gray-500">Saturday, 3:00 PM</p>
-                  </div>
+              {loadingEvents ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
                 </div>
-                <div className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
-                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-teal-600 rounded-lg flex items-center justify-center">
-                    <Users className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-gray-900">Badminton Friendly Match</h4>
-                    <p className="text-sm text-gray-500">Sunday, 8:00 AM</p>
-                  </div>
+              ) : featuredEvents.length === 0 ? (
+                <div className="text-center py-4 text-gray-500 text-sm">
+                  No featured events available
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-3">
+                  {featuredEvents.map((event) => {
+                    const eventDate = event.startDate ? new Date(event.startDate) : null;
+                    const formattedDate = eventDate 
+                      ? eventDate.toLocaleDateString('en-US', { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+                      : 'TBD';
+                    
+                    return (
+                      <div 
+                        key={event._id} 
+                        className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
+                        onClick={() => navigate(`/challenges/${event._id}`)}
+                      >
+                        {event.imageUrl ? (
+                          <img
+                            src={event.imageUrl}
+                            alt={event.name}
+                            className="w-12 h-12 rounded-lg object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className={`w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center ${event.imageUrl ? 'hidden' : ''}`}
+                        >
+                          <Trophy className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-gray-900 truncate">{event.name}</h4>
+                          <p className="text-sm text-gray-500">{formattedDate}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Active Users */}
             <div className="p-4">
               <h3 className="font-semibold text-gray-900 mb-3">Active Now</h3>
-              <div className="space-y-3">
-                {[1, 2, 3, 4].map((user) => (
-                  <div key={user} className="flex items-center space-x-3">
-                    <div className="relative">
-                      <img
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user + 10}`}
-                        alt={`User ${user}`}
-                        className="w-8 h-8 rounded-full"
-                      />
-                      <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+              {loadingActiveUsers ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                </div>
+              ) : activeUsers.length === 0 ? (
+                <div className="text-center py-4 text-gray-500 text-sm">
+                  No users found
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                  {activeUsers.map((activeUser) => (
+                    <div 
+                      key={activeUser._id} 
+                      className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                      onClick={() => handleViewProfile(activeUser)}
+                    >
+                      <div className="relative flex-shrink-0">
+                        <img
+                          src={activeUser.avatar || defaultAvatar}
+                          alt={activeUser.name || 'User'}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                        {activeUser.isActive ? (
+                          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                        ) : (
+                          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
+                        )}
+                      </div>
+                      <span className={`text-sm truncate flex-1 ${activeUser.isActive ? 'text-gray-700' : 'text-gray-500'}`}>
+                        {activeUser.name || 'User'}
+                      </span>
                     </div>
-                    <span className="text-sm text-gray-700">User {user}</span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Quick Join */}

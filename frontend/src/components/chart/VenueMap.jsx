@@ -1,96 +1,126 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapPin, Calendar, Users, Trophy, Navigation, Activity, Maximize2, Filter } from 'lucide-react';
+import fieldBookingService from '../../api/fieldBooking/fieldBookingService';
+import { eventApi } from '../../api/eventManagement';
+import dayjs from 'dayjs';
 
 const VenueMap = () => {
   const [selectedVenue, setSelectedVenue] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
   const [mapLoaded, setMapLoaded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [venues, setVenues] = useState([]);
+  const [loading, setLoading] = useState(false);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
+  const venueCountControlRef = useRef(null);
 
-  // Dữ liệu venues với tọa độ thật tại TP.HCM
-  const venues = [
-    {
-      id: 1,
-      name: 'Thống Nhất Stadium',
-      type: 'football',
-      location: { lat: 10.7769, lng: 106.6951 },
-      address: '138 Đào Duy Từ, Quận 10, TP.HCM',
-      events: 45,
-      capacity: 15000,
-      status: 'active',
-      nextEvent: '2024-08-20',
-      color: '#3B82F6',
-      description: 'Sân vận động chính của thành phố'
-    },
-    {
-      id: 2,
-      name: 'Phan Đình Phùng Gymnasium',
-      type: 'basketball',
-      location: { lat: 10.7829, lng: 106.6953 },
-      address: '01 Nguyễn Thị Minh Khai, Quận 1, TP.HCM',
-      events: 38,
-      capacity: 3000,
-      status: 'active',
-      nextEvent: '2024-08-18',
-      color: '#10B981',
-      description: 'Nhà thi đấu đa năng hiện đại'
-    },
-    {
-      id: 3,
-      name: 'Lam Sơn Tennis Court',
-      type: 'tennis',
-      location: { lat: 10.7756, lng: 106.7019 },
-      address: '289 Cách Mạng Tháng 8, Quận 10, TP.HCM',
-      events: 32,
-      capacity: 500,
-      status: 'maintenance',
-      nextEvent: '2024-08-25',
-      color: '#F59E0B',
-      description: 'Sân tennis tiêu chuẩn quốc tế'
-    },
-    {
-      id: 4,
-      name: 'Aquatic Center',
-      type: 'swimming',
-      location: { lat: 10.7721, lng: 106.6979 },
-      address: '15 Lê Duẩn, Quận 1, TP.HCM',
-      events: 28,
-      capacity: 1200,
-      status: 'active',
-      nextEvent: '2024-08-22',
-      color: '#8B5CF6',
-      description: 'Trung tâm bơi lội Olympic'
-    },
-    {
-      id: 5,
-      name: 'Multi-Sport Complex',
-      type: 'mixed',
-      location: { lat: 10.7804, lng: 106.6897 },
-      address: '456 Cống Quỳnh, Quận 1, TP.HCM',
-      events: 23,
-      capacity: 5000,
-      status: 'active',
-      nextEvent: '2024-08-19',
-      color: '#EF4444',
-      description: 'Khu liên hợp thể thao đa môn'
-    },
-    {
-      id: 6,
-      name: 'National Sports Complex',
-      type: 'football',
-      location: { lat: 10.7600, lng: 106.7100 },
-      address: 'Quận 2, TP.HCM',
-      events: 52,
-      capacity: 25000,
-      status: 'active',
-      nextEvent: '2024-08-17',
-      color: '#3B82F6',
-      description: 'Khu liên hợp thể thao quốc gia'
-    }
-  ];
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [fieldsRes, eventsRes] = await Promise.allSettled([
+          fieldBookingService.getFields({ page: 1, limit: 500 }),
+          eventApi.getAllEvents({ page: 1, limit: 500 }),
+        ]);
+
+        // Handle fields response structure
+        let fields = [];
+        if (fieldsRes.status === 'fulfilled' && fieldsRes.value) {
+          if (Array.isArray(fieldsRes.value)) {
+            fields = fieldsRes.value;
+          } else if (fieldsRes.value.data) {
+            fields = Array.isArray(fieldsRes.value.data) ? fieldsRes.value.data : [];
+          }
+        }
+
+        // Handle events response structure
+        let events = [];
+        if (eventsRes.status === 'fulfilled' && eventsRes.value) {
+          const eventData = eventsRes.value.data || eventsRes.value;
+          if (Array.isArray(eventData)) {
+            events = eventData;
+          } else if (eventData?.data && Array.isArray(eventData.data)) {
+            events = eventData.data;
+          }
+        }
+
+        const eventsByField = {};
+        events.forEach((ev) => {
+          const fid = ev.fieldId || ev.field || ev.field_id;
+          const key = fid?._id || fid;
+          if (!key) return;
+          eventsByField[key] = eventsByField[key] || [];
+          eventsByField[key].push(ev);
+        });
+
+        const colorMap = {
+          football: '#3B82F6',
+          basketball: '#10B981',
+          tennis: '#F59E0B',
+          swimming: '#8B5CF6',
+          mixed: '#EF4444',
+        };
+
+        const mapped = fields.map((f) => {
+          // Try multiple ways to get coordinates
+          const lat = Number(f.latitude ?? f.lat ?? f.location?.lat);
+          const lng = Number(f.longitude ?? f.lng ?? f.location?.lng);
+          
+          // Skip if no valid coordinates
+          if (Number.isNaN(lat) || Number.isNaN(lng) || lat === 0 || lng === 0) {
+            return null;
+          }
+          
+          const evs = eventsByField[f._id] || [];
+          const nextEvent = evs.length
+            ? evs
+                .map((e) => e.startDate || e.start_time || e.createdAt)
+                .filter(Boolean)
+                .sort((a, b) => dayjs(a).valueOf() - dayjs(b).valueOf())[0]
+            : null;
+          
+          // Better sport type detection
+          const sportName = (f.sportTypeId?.code || f.sportTypeId?.name || f.sportType || '').toLowerCase();
+          let type = 'mixed';
+          
+          if (sportName.includes('football') || sportName.includes('5') || sportName.includes('7') || sportName.includes('11')) {
+            type = 'football';
+          } else if (sportName.includes('basketball')) {
+            type = 'basketball';
+          } else if (sportName.includes('tennis')) {
+            type = 'tennis';
+          } else if (sportName.includes('swimming') || sportName.includes('swim')) {
+            type = 'swimming';
+          }
+          
+          return {
+            id: f._id,
+            name: f.name || 'Unnamed field',
+            type,
+            location: { lat, lng },
+            address: f.address || f.location || '',
+            events: evs.length,
+            capacity: f.capacity || 0,
+            status: f.status || 'active',
+            nextEvent,
+            color: colorMap[type] || '#3B82F6',
+            description: f.description || '',
+          };
+        }).filter(Boolean);
+
+        setVenues(mapped);
+      } catch (err) {
+        console.error('Venue map data error:', err);
+        setVenues([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const sportTypes = [
     { key: 'all', label: 'All Sports', icon: Activity, color: '#6B7280' },
@@ -101,9 +131,11 @@ const VenueMap = () => {
     { key: 'mixed', label: 'Mixed', icon: Activity, color: '#EF4444' }
   ];
 
-  const filteredVenues = activeFilter === 'all' 
-    ? venues 
-    : venues.filter(venue => venue.type === activeFilter);
+  const filteredVenues = useMemo(() => {
+    return activeFilter === 'all' 
+      ? venues 
+      : venues.filter(venue => venue.type === activeFilter);
+  }, [venues, activeFilter]);
 
   // Initialize map using vanilla Leaflet (since we can't install react-leaflet)
   useEffect(() => {
@@ -133,23 +165,21 @@ const VenueMap = () => {
       mapInstanceRef.current = map;
       setMapLoaded(true);
 
-      // Add custom controls
-      const customControl = window.L.Control.extend({
+      // Add custom control for venue count (will be updated dynamically)
+      const VenueCountControl = window.L.Control.extend({
         options: { position: 'topright' },
         onAdd: function() {
           const container = window.L.DomUtil.create('div', 'leaflet-bar leaflet-control');
           container.style.backgroundColor = 'white';
           container.style.padding = '5px';
-          container.innerHTML = `
-            <div style="font-size: 12px; font-weight: bold; color: #374151;">
-              ${filteredVenues.length} venues
-            </div>
-          `;
+          container.id = 'venue-count-control';
+          venueCountControlRef.current = container;
           return container;
         }
       });
       
-      map.addControl(new customControl());
+      const control = new VenueCountControl();
+      map.addControl(control);
     };
 
     document.head.appendChild(script);
@@ -161,6 +191,17 @@ const VenueMap = () => {
       }
     };
   }, []);
+
+  // Update venue count control when filtered venues change
+  useEffect(() => {
+    if (venueCountControlRef.current) {
+      venueCountControlRef.current.innerHTML = `
+        <div style="font-size: 12px; font-weight: bold; color: #374151;">
+          ${filteredVenues.length} venues
+        </div>
+      `;
+    }
+  }, [filteredVenues]);
 
   // Update markers when filter changes
   useEffect(() => {
@@ -388,7 +429,9 @@ const VenueMap = () => {
                   <Trophy className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Next Event</p>
-                <p className="text-sm font-bold text-gray-900 dark:text-white">Aug 20</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">
+                  {selectedVenue.nextEvent ? dayjs(selectedVenue.nextEvent).format('MMM D') : 'N/A'}
+                </p>
               </div>
 
               <div className="text-center">
@@ -413,12 +456,16 @@ const VenueMap = () => {
             <p className="text-xs text-gray-500 dark:text-gray-400">Total Events</p>
           </div>
           <div className="text-center">
-            <p className="text-lg font-bold text-purple-600">{(venues.reduce((acc, v) => acc + v.capacity, 0) / 1000).toFixed(0)}K</p>
+            <p className="text-lg font-bold text-purple-600">
+              {venues.length ? Math.round(venues.reduce((acc, v) => acc + (v.capacity || 0), 0)) : 0}
+            </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">Capacity</p>
           </div>
           <div className="text-center">
-            <p className="text-lg font-bold text-orange-600">{Math.round(venues.reduce((acc, v) => acc + v.capacity, 0) / venues.length / 1000)}K</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Avg Size</p>
+            <p className="text-lg font-bold text-orange-600">
+              {venues.length ? Math.round(venues.reduce((acc, v) => acc + (v.capacity || 0), 0) / venues.length) : 0}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Avg Capacity</p>
           </div>
         </div>
       </div>

@@ -54,9 +54,7 @@ class BookingService extends BaseService {
   // Delete booking
   async deleteBooking(id) {
     const result = await this.makeRequest(bookingApi.deleteBooking, id);
-    if (result.success) {
-      this.showSuccess('Xóa booking thành công!');
-    } else {
+    if (!result.success) {
       this.showError(result.message);
     }
     return result;

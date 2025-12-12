@@ -86,7 +86,7 @@ const User = () => {
       setError(null);
     } catch (error) {
       const errorMessage =
-        error.response?.data?.message || "Có lỗi xảy ra khi tải danh sách user";
+        error.response?.data?.message || "An error occurred while loading user list";
       setError(errorMessage);
       message.error(errorMessage);
       // Set empty array on error to prevent filter issues
@@ -150,10 +150,10 @@ const User = () => {
       if (Array.isArray(users)) {
         setUsers(users.filter((user) => user._id !== userId));
       }
-      message.success("Xóa user thành công!");
+      message.success("User deleted successfully!");
     } catch (error) {
       const errorMessage =
-        error.response?.data?.message || "Có lỗi xảy ra khi xóa user";
+        error.response?.data?.message || "An error occurred while deleting user";
       message.error(errorMessage);
     }
     setDeleteLoading(false);
@@ -182,12 +182,12 @@ const User = () => {
         );
       }
       message.success(
-        `User ${newStatus ? "đã kích hoạt" : "đã vô hiệu hóa"} thành công!`
+        `User ${newStatus ? "activated" : "deactivated"} successfully!`
       );
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
-        "Có lỗi xảy ra khi cập nhật trạng thái user";
+        "An error occurred while updating user status";
       message.error(errorMessage);
     }
   };
@@ -324,9 +324,6 @@ const User = () => {
                     Role
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -388,17 +385,6 @@ const User = () => {
                             : "User"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.isActive
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                            : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                        }`}
-                      >
-                        {user.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
                         <button
@@ -407,13 +393,6 @@ const User = () => {
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEditUser(user)}
-                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200"
-                          title="Edit"
-                        >
-                          <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => confirmDeleteUser(user)}
@@ -490,15 +469,6 @@ const User = () => {
                               ? "Staff"
                               : "User"}
                         </span>
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            user.isActive
-                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                          }`}
-                        >
-                          {user.isActive ? "Active" : "Inactive"}
-                        </span>
                       </div>
                     </div>
                     <div className="flex space-x-1">
@@ -508,13 +478,6 @@ const User = () => {
                         title="View Details"
                       >
                         <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEditUser(user)}
-                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200"
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => confirmDeleteUser(user)}

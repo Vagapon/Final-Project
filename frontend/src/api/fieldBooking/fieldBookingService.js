@@ -117,9 +117,7 @@ class FieldBookingService extends BaseService {
   // Delete booking
   async deleteBooking(bookingId) {
     const result = await this.makeRequest(fieldBookingApi.deleteBooking, bookingId);
-    if (result.success) {
-      this.showSuccess('Xóa booking thành công!');
-    } else {
+    if (!result.success) {
       this.showError(result.message);
     }
     return result;

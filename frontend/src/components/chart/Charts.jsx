@@ -1,24 +1,72 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts';
+import { eventApi } from '../../api/eventManagement';
+import bookingService from '../../api/bookingManagement/bookingService';
+import dayjs from 'dayjs';
 
 const Charts = () => {
   const [activeChart, setActiveChart] = useState('events');
+  const [eventsData, setEventsData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Dữ liệu mẫu cho biểu đồ events
-  const eventsData = [
-    { month: 'Jan', events: 45, participants: 1200, revenue: 8500 },
-    { month: 'Feb', events: 52, participants: 1450, revenue: 9200 },
-    { month: 'Mar', events: 48, participants: 1300, revenue: 8800 },
-    { month: 'Apr', events: 61, participants: 1680, revenue: 11200 },
-    { month: 'May', events: 55, participants: 1520, revenue: 10500 },
-    { month: 'Jun', events: 67, participants: 1850, revenue: 12800 },
-    { month: 'Jul', events: 73, participants: 2100, revenue: 14200 },
-    { month: 'Aug', events: 69, participants: 1950, revenue: 13500 },
-    { month: 'Sep', events: 58, participants: 1680, revenue: 11800 },
-    { month: 'Oct', events: 64, participants: 1820, revenue: 12600 },
-    { month: 'Nov', events: 71, participants: 2050, revenue: 14100 },
-    { month: 'Dec', events: 78, participants: 2200, revenue: 15400 }
-  ];
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [eventsRes, bookingsRes] = await Promise.allSettled([
+          eventApi.getAllEvents({ page: 1, limit: 500 }),
+          bookingService.getAllBookings({ page: 1, limit: 500 }),
+        ]);
+
+        const events =
+          eventsRes.status === 'fulfilled'
+            ? eventsRes.value?.data?.data || eventsRes.value?.data || []
+            : [];
+        const bookings =
+          bookingsRes.status === 'fulfilled'
+            ? bookingsRes.value?.data?.data || bookingsRes.value?.data || []
+            : [];
+
+        const base = Array.from({ length: 12 }).map((_, idx) => ({
+          month: dayjs().month(idx).format('MMM'),
+          events: 0,
+          participants: 0,
+          revenue: 0,
+        }));
+
+        events.forEach((ev) => {
+          const m = dayjs(ev.createdAt).month();
+          if (m >= 0 && m < 12) {
+            base[m].events += 1;
+            const participants =
+              (ev.participants && ev.participants.length) ||
+              (ev.registeredUsers && ev.registeredUsers.length) ||
+              ev.participantsCount ||
+              0;
+            base[m].participants += participants;
+          }
+        });
+
+        bookings.forEach((bk) => {
+          if (bk.paymentStatus !== 'paid') return;
+          const m = dayjs(bk.createdAt).month();
+          if (m >= 0 && m < 12) {
+            const amount = Number(bk.totalPrice) || 0;
+            base[m].revenue += amount;
+          }
+        });
+
+        setEventsData(base);
+      } catch (err) {
+        console.error('Chart data error:', err);
+        setEventsData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -65,6 +113,12 @@ const Charts = () => {
   };
 
   const currentConfig = chartConfigs[activeChart];
+
+  const averageValue = useMemo(() => {
+    if (!eventsData.length) return 0;
+    const total = eventsData.reduce((acc, item) => acc + (item[currentConfig.dataKey] || 0), 0);
+    return Math.round(total / eventsData.length);
+  }, [eventsData, currentConfig]);
 
   return (
     <div className="h-80">
@@ -131,20 +185,25 @@ const Charts = () => {
       <div className="mt-4 grid grid-cols-3 gap-4">
         <div className="text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">Peak Month</p>
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">December</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">
+            {eventsData.length
+              ? eventsData.reduce((peak, item) =>
+                  item[currentConfig.dataKey] > (peak[currentConfig.dataKey] || 0) ? item : peak
+                ).month
+              : 'N/A'}
+          </p>
         </div>
         <div className="text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">Average</p>
           <p className="text-sm font-semibold text-gray-900 dark:text-white">
-            {activeChart === 'revenue' 
-              ? `$${Math.round(eventsData.reduce((acc, item) => acc + item[currentConfig.dataKey], 0) / eventsData.length).toLocaleString()}`
-              : Math.round(eventsData.reduce((acc, item) => acc + item[currentConfig.dataKey], 0) / eventsData.length).toLocaleString()
-            }
+            {activeChart === 'revenue'
+              ? `${(averageValue).toLocaleString('vi-VN')} VND`
+              : averageValue.toLocaleString()}
           </p>
         </div>
         <div className="text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">Growth</p>
-          <p className="text-sm font-semibold text-green-600">+24.5%</p>
+          <p className="text-sm font-semibold text-green-600">—</p>
         </div>
       </div>
     </div>

@@ -207,13 +207,6 @@ const UserDetailModal = ({ isOpen, onClose, user, onEdit, onDelete, onToggleStat
               </Text>
               <Space size="middle">
                 <Tag 
-                  color={statusConfig.color} 
-                  icon={statusConfig.icon}
-                  style={{ fontSize: 12, padding: '4px 8px' }}
-                >
-                  {statusConfig.text}
-                </Tag>
-                <Tag 
                   color={roleConfig.color} 
                   icon={roleConfig.icon}
                   style={{ fontSize: 12, padding: '4px 8px' }}
@@ -253,7 +246,7 @@ const UserDetailModal = ({ isOpen, onClose, user, onEdit, onDelete, onToggleStat
                     </span>
                   }
                 >
-                  {user.email || 'Chưa cập nhật'}
+                  {user.email || 'Not updated'}
                 </Descriptions.Item>
                 <Descriptions.Item 
                   label={
@@ -279,7 +272,7 @@ const UserDetailModal = ({ isOpen, onClose, user, onEdit, onDelete, onToggleStat
                   label={
                     <span>
                       <CalendarOutlined style={{ marginRight: 4 }} />
-                      Ngày tạo
+                      Created Date
                     </span>
                   }
                 >
@@ -289,7 +282,7 @@ const UserDetailModal = ({ isOpen, onClose, user, onEdit, onDelete, onToggleStat
                   label={
                     <span>
                       <CalendarOutlined style={{ marginRight: 4 }} />
-                      Cập nhật lần cuối
+                      Last Updated
                     </span>
                   }
                 >

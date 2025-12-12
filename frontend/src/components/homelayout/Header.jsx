@@ -50,7 +50,27 @@ const formatTimeAgo = (dateString) => {
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long' });
   }
 
-  return date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' });
+  return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+// Basic translation for common Vietnamese notification phrases to English
+const translateNotificationContent = (content = '') => {
+  const replacements = [
+    { vi: 'đã được phê duyệt', en: 'has been approved' },
+    { vi: 'đã bị từ chối', en: 'was rejected' },
+    { vi: 'trong sự kiện', en: 'in event' },
+    { vi: 'sự kiện', en: 'event' },
+    { vi: 'trận đấu', en: 'match' },
+    { vi: 'đã được sắp xếp vào', en: 'has been scheduled on' },
+    { vi: 'lúc', en: 'at' },
+    { vi: 'đội', en: 'team' },
+    { vi: 'Đội', en: 'Team' },
+  ];
+  let translated = content;
+  replacements.forEach(({ vi, en }) => {
+    translated = translated.replaceAll(vi, en);
+  });
+  return translated;
 };
 
 // Get avatar initials
@@ -124,11 +144,11 @@ const NotificationItem = ({ notification, index, onMarkAsRead }) => {
     }
   };
 
-  const senderName = notification.senderId?.name || 'Hệ thống';
+  const senderName = notification.senderId?.name || 'System';
   const senderAvatar = notification.senderId?.avatar;
   const timeAgo = formatTimeAgo(notification.createdAt);
   const timeString = notification.createdAt 
-    ? new Date(notification.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+    ? new Date(notification.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     : '';
 
   return (
@@ -158,7 +178,9 @@ const NotificationItem = ({ notification, index, onMarkAsRead }) => {
               <span className="text-xs text-gray-500">{timeAgo}</span>
             </div>
           </div>
-          <p className="text-sm text-gray-600 mt-0.5">{notification.content}</p>
+          <p className="text-sm text-gray-600 mt-0.5">
+            {translateNotificationContent(notification.content)}
+          </p>
           {notification.teamId && (
             <p className="text-xs text-blue-600 mt-1">Team: {notification.teamId.name}</p>
           )}
@@ -554,7 +576,7 @@ const Header = () => {
       
       if (toastType === 'error') {
         toast.error(getNotificationTitle(), {
-          description: notification.content,
+          description: translateNotificationContent(notification.content),
           duration: 5000,
           action: {
             label: 'View',
@@ -563,7 +585,7 @@ const Header = () => {
         });
       } else {
         toast.success(getNotificationTitle(), {
-          description: notification.content,
+          description: translateNotificationContent(notification.content),
           duration: 5000,
           action: {
             label: 'View',

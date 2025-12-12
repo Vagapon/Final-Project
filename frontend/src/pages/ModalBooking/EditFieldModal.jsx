@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Modal,
   Form,
@@ -22,6 +22,9 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
   const [imagePreviews, setImagePreviews] = useState([]);
   const [selectedPurpose, setSelectedPurpose] = useState('rental');
   const [sportTypes, setSportTypes] = useState([]);
+  const [addressQuery, setAddressQuery] = useState('');
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [addressLoading, setAddressLoading] = useState(false);
 
   // Fetch sport types
   useEffect(() => {
@@ -59,7 +62,10 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
         },
         status: initialValues.status,
         description: initialValues.description,
+        latitude: initialValues.latitude,
+        longitude: initialValues.longitude,
       });
+      setAddressQuery(initialValues.address || '');
       setSelectedPurpose(initialValues.purpose || 'rental');
 
       // Set existing images as previews
@@ -82,7 +88,7 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length + imageFiles.length + imagePreviews.filter(p => p.isExisting).length > 5) {
-      message.error('Tối đa 5 ảnh!');
+      message.error('Maximum 5 images allowed!');
       return;
     }
 
@@ -153,6 +159,14 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
           // Sân event không cần giá thuê (set default 1000 VNĐ)
           formData.append('pricePerHour', 1000);
         }
+
+        // Append geo location if available
+        if (values.latitude) {
+          formData.append('latitude', values.latitude);
+        }
+        if (values.longitude) {
+          formData.append('longitude', values.longitude);
+        }
         
         // Thêm file ảnh mới vào FormData
         imageFiles.forEach((file) => {
@@ -181,20 +195,90 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
       setImageFiles([]);
       setImagePreviews([]);
       setSelectedPurpose('rental');
+      setAddressSuggestions([]);
+      setAddressQuery('');
       onCancel();
     }
+  };
+
+  // Debounced fetch for address suggestions using Nominatim
+  useEffect(() => {
+    if (!addressQuery || addressQuery.trim().length < 3) {
+      setAddressSuggestions([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        setAddressLoading(true);
+        const resp = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            addressQuery
+          )}&addressdetails=1&limit=5`,
+          {
+            headers: { 'Accept-Language': 'en' },
+            signal: controller.signal,
+          }
+        );
+        const data = await resp.json();
+        const suggestions =
+          Array.isArray(data) && data.length
+            ? data.map((item) => ({
+                label: item.display_name,
+                lat: item.lat,
+                lon: item.lon,
+              }))
+            : [];
+        setAddressSuggestions(suggestions);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Address lookup error:', err);
+        }
+      } finally {
+        setAddressLoading(false);
+      }
+    }, 400);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [addressQuery]);
+
+  const selectedLat = Form.useWatch('latitude', form);
+  const selectedLon = Form.useWatch('longitude', form);
+
+  const mapUrl = useMemo(() => {
+    if (!selectedLat || !selectedLon) return null;
+    const latNum = parseFloat(selectedLat);
+    const lonNum = parseFloat(selectedLon);
+    if (Number.isNaN(latNum) || Number.isNaN(lonNum)) return null;
+    const delta = 0.01;
+    const bbox = `${lonNum - delta},${latNum - delta},${lonNum + delta},${latNum + delta}`;
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(
+      bbox
+    )}&layer=mapnik&marker=${encodeURIComponent(latNum)},${encodeURIComponent(lonNum)}`;
+  }, [selectedLat, selectedLon]);
+
+  const handleSelectAddress = (suggestion) => {
+    setAddressQuery(suggestion.label);
+    setAddressSuggestions([]);
+    form.setFieldsValue({
+      address: suggestion.label,
+      latitude: suggestion.lat,
+      longitude: suggestion.lon,
+    });
   };
 
 
 
   return (
     <Modal
-      title="Chỉnh sửa sân bóng"
+      title="Edit Field"
       open={visible}
       onCancel={handleCancel}
       onOk={handleSubmit}
-      okText="Cập nhật"
-      cancelText="Hủy"
+      okText="Update"
+      cancelText="Cancel"
       width={1200}
       destroyOnClose
       confirmLoading={loading}
@@ -207,7 +291,7 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
         padding: '24px'
       }}
     >
-      <Spin spinning={loading} tip="Đang cập nhật sân bóng...">
+      <Spin spinning={loading} tip="Updating field...">
         <Form
           form={form}
           layout="vertical"
@@ -221,50 +305,86 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
                 <Col span={12}>
                   <Form.Item
                     name="name"
-                    label="Tên sân bóng"
+                    label="Field name"
                     rules={[
-                      { required: true, message: 'Vui lòng nhập tên sân bóng!' },
-                      { min: 3, message: 'Tên sân phải có ít nhất 3 ký tự!' },
+                      { required: true, message: 'Please enter a field name!' },
+                      { min: 3, message: 'Field name must be at least 3 characters!' },
                     ]}
                   >
-                    <Input placeholder="Nhập tên sân bóng..." />
+                    <Input placeholder="Enter field name..." />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item
                     name="fieldNumber"
-                    label="Số sân"
-                    rules={[{ required: true, message: 'Vui lòng nhập số sân!' }]}
+                    label="Field number"
+                    rules={[{ required: true, message: 'Please enter field number!' }]}
                   >
-                    <Input placeholder="VD: Sân 1, Sân 2..." />
+                    <Input placeholder="e.g. Field 1, Field 2..." />
                   </Form.Item>
                 </Col>
               </Row>
 
-              <Form.Item
-                name="address"
-                label="Địa chỉ"
-                rules={[{ required: true, message: 'Vui lòng nhập địa chỉ!' }]}
-              >
-                <Input placeholder="Nhập địa chỉ chi tiết..." />
+              <div className="relative">
+                <Form.Item
+                  name="address"
+                  label="Address"
+                  rules={[{ required: true, message: 'Please enter address!' }]}
+                >
+                  <Input
+                    placeholder="Enter full address..."
+                    value={addressQuery}
+                    onChange={(e) => {
+                      setAddressQuery(e.target.value);
+                      form.setFieldsValue({ address: e.target.value });
+                    }}
+                  />
+                </Form.Item>
+                {addressQuery && (
+                  <div className="absolute left-0 right-0 z-10 bg-white border border-gray-200 rounded-lg shadow-sm max-h-60 overflow-auto">
+                    {addressLoading && (
+                      <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>
+                    )}
+                    {!addressLoading && addressSuggestions.length === 0 && addressQuery.length >= 3 && (
+                      <div className="px-3 py-2 text-sm text-gray-500">No results</div>
+                    )}
+                    {addressSuggestions.map((s) => (
+                      <button
+                        type="button"
+                        key={`${s.lat}-${s.lon}-${s.label}`}
+                        className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                        onClick={() => handleSelectAddress(s)}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Form.Item name="latitude" label="Latitude" hidden>
+                <Input />
+              </Form.Item>
+              <Form.Item name="longitude" label="Longitude" hidden>
+                <Input />
               </Form.Item>
 
               <Form.Item
                 name="location"
-                label="Khu vực"
+                label="Area"
               >
-                <Input placeholder="VD: Quận 1, TP.HCM..." />
+                <Input placeholder="e.g. District 1, HCMC..." />
               </Form.Item>
 
               <Form.Item
                 name="sportTypeId"
-                label="Loại bóng"
-                rules={[{ required: true, message: 'Vui lòng chọn loại bóng!' }]}
+                label="Sport type"
+                rules={[{ required: true, message: 'Please select a sport type!' }]}
                 validateTrigger={['onChange', 'onBlur']}
                 hasFeedback
               >
                 <Select 
-                  placeholder="Chọn loại bóng (5, 7, 11 người)"
+                  placeholder="Choose sport type (5, 7, 11 players)"
                   size="large"
                   style={{ borderRadius: '8px' }}
                 >
@@ -397,26 +517,26 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
             </div>
           </Col>
 
-          {/* Cột phải - Chỉ có ảnh và mô tả */}
+          {/* Right column - images and description */}
           <Col span={12}>
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span>📸</span>
-                  Hình ảnh sân bóng
+                  Field images
                 </h3>
                 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <label className="text-gray-700 font-medium">
-                      Hình ảnh sân bóng
+                      Field images
                       <span className="text-gray-500 font-normal ml-2">
                         ({imagePreviews.length}/5)
                       </span>
                     </label>
                     {imagePreviews.length >= 5 && (
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                        Đã đủ 5 ảnh
+                        5 images limit reached
                       </span>
                     )}
                   </div>
@@ -428,7 +548,7 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
                       multiple
                       accept="image/*"
                       onChange={handleImageChange}
-                      className="sr-only" // ẩn input gốc, chỉ để label gọi
+                      className="sr-only"
                     />
 
                     <label
@@ -442,11 +562,11 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
                         <div>
                           <p className="text-sm font-medium text-gray-700 group-hover:text-blue-600">
                             {imagePreviews.length === 0
-                              ? 'Tải lên hình ảnh sân bóng'
-                              : 'Thêm ảnh khác'}
+                              ? 'Upload field images'
+                              : 'Add more images'}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
-                            Kéo thả hoặc click để chọn • PNG, JPG tối đa 5MB
+                            Drag & drop or click to select • PNG, JPG up to 5MB
                           </p>
                         </div>
                       </div>
@@ -456,7 +576,7 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
                   {/* Image Preview Grid */}
                   {imagePreviews.length > 0 && (
                     <div className="space-y-3">
-                      <h4 className="text-sm font-medium text-gray-700">Ảnh đã chọn</h4>
+                      <h4 className="text-sm font-medium text-gray-700">Selected images</h4>
 
                       <div className="grid grid-cols-3 gap-2">
                         {imagePreviews.map((preview, index) => (
@@ -469,25 +589,25 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
                               />
                             </div>
 
-                            {/* Nút xóa ảnh */}
+                            {/* Delete image button */}
                             <button
                               type="button"
                               onClick={() => removeImage(index)}
                               className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 transform scale-75 group-hover:scale-100"
-                              title="Xóa ảnh"
+                              title="Delete image"
                             >
                               ×
                             </button>
 
-                            {/* Index ảnh */}
+                            {/* Image index */}
                             <div className="absolute top-1 left-1 w-4 h-4 bg-black/50 text-white rounded-full flex items-center justify-center text-xs font-bold">
                               {index + 1}
                             </div>
 
-                            {/* Tag "Cũ" nếu ảnh đã tồn tại */}
+                            {/* "Old" tag for existing images */}
                             {preview.isExisting && (
                               <div className="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-1 py-0.5 rounded-full">
-                                Cũ
+                                Old
                               </div>
                             )}
                           </div>
@@ -501,19 +621,36 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span>📝</span>
-                  Mô tả
+                  Description
                 </h3>
                 
                 <Form.Item
                   name="description"
-                  label="Mô tả chi tiết"
+                  label="Detailed description"
                 >
                   <TextArea
                     rows={6}
-                    placeholder="Nhập mô tả chi tiết về sân bóng..."
+                    placeholder="Enter detailed description..."
                   />
                 </Form.Item>
               </div>
+
+              {mapUrl && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-gray-800">Map preview</h4>
+                  <div className="border rounded-lg overflow-hidden">
+                    <iframe
+                      title="Field location map"
+                      src={mapUrl}
+                      width="100%"
+                      height="240"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </Col>
         </Row>

@@ -23,6 +23,7 @@ import { matchScheduleApi } from '../../../api';
 import { eventApi } from '../../../api';
 import EditMatchModal from './EditMatchModal';
 import MatchDetailModal from './MatchDetailModal';
+import UpdateScoreModal from './UpdateScoreModal';
 
 const MatchSchedule = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,6 +42,7 @@ const MatchSchedule = () => {
   // Modal states
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showScoreModal, setShowScoreModal] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
 
   const statusConfig = {
@@ -295,10 +297,30 @@ const MatchSchedule = () => {
     setShowDetailModal(true);
   };
 
+  const handleUpdateScore = (match) => {
+    setSelectedMatch(match);
+    setShowScoreModal(true);
+  };
+
   const handleUpdateMatch = async (matchId, matchData) => {
     try {
-      await matchScheduleApi.updateSingleMatch(matchId, matchData);
-      message.success('Match updated successfully!');
+      // If updating score and status is completed, use updateMatchResult to trigger ranking update
+      if (matchData.score && matchData.status === 'completed') {
+        // First update the match with all other fields
+        const { score, ...otherData } = matchData;
+        if (Object.keys(otherData).length > 0) {
+          await matchScheduleApi.updateSingleMatch(matchId, otherData);
+        }
+        // Then update score and status to trigger ranking update
+        await matchScheduleApi.updateMatchResult(matchId, {
+          score: matchData.score,
+          status: 'completed'
+        });
+        message.success('Match updated successfully! Ranking has been automatically updated.');
+      } else {
+        await matchScheduleApi.updateSingleMatch(matchId, matchData);
+        message.success('Match updated successfully!');
+      }
       setShowEditModal(false);
       setSelectedMatch(null);
       fetchMatches();
@@ -367,6 +389,17 @@ const MatchSchedule = () => {
     // Sử dụng trạng thái đã tính toán để hiển thị nút phù hợp
     const currentStatus = calculateMatchStatus(match);
     
+    // Nút Edit luôn có sẵn cho tất cả các trạng thái
+    const editButton = (
+      <button 
+        onClick={() => handleEditMatch(match)}
+        className="p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+        title="Edit Match"
+      >
+        <Edit className="w-4 h-4" />
+      </button>
+    );
+    
     switch (currentStatus) {
       case 'upcoming':
         return (
@@ -378,6 +411,7 @@ const MatchSchedule = () => {
             >
               <Eye className="w-4 h-4" />
             </button>
+            {editButton}
             <button 
               onClick={() => handleUpdateStatus(match._id, 'ongoing')}
               className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
@@ -397,6 +431,7 @@ const MatchSchedule = () => {
             >
               <Eye className="w-4 h-4" />
             </button>
+            {editButton}
             <button 
               onClick={() => handleUpdateStatus(match._id, 'completed')}
               className="p-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors"
@@ -408,26 +443,39 @@ const MatchSchedule = () => {
         );
       case 'completed':
         return (
-          <button 
-            onClick={() => handleViewDetail(match)}
-            className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-            title="View Details"
-          >
-            <Eye className="w-4 h-4" />
-          </button>
+          <>
+            <button 
+              onClick={() => handleViewDetail(match)}
+              className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+              title="View Details"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+            {editButton}
+            <button 
+              onClick={() => handleUpdateScore(match)}
+              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+              title="Update Score"
+            >
+              <Trophy className="w-4 h-4" />
+            </button>
+          </>
         );
       case 'cancelled':
         return (
-          <button 
-            onClick={() => handleViewDetail(match)}
-            className="p-2 text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-            title="View Details"
-          >
-            <Eye className="w-4 h-4" />
-          </button>
+          <>
+            <button 
+              onClick={() => handleViewDetail(match)}
+              className="p-2 text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              title="View Details"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+            {editButton}
+          </>
         );
       default:
-        return null;
+        return editButton;
     }
   };
 
@@ -815,6 +863,20 @@ const MatchSchedule = () => {
           isOpen={showDetailModal}
           onClose={() => {
             setShowDetailModal(false);
+            setSelectedMatch(null);
+          }}
+          match={selectedMatch}
+          onUpdate={() => {
+            fetchMatches();
+          }}
+        />
+      )}
+
+      {showScoreModal && selectedMatch && (
+        <UpdateScoreModal
+          isOpen={showScoreModal}
+          onClose={() => {
+            setShowScoreModal(false);
             setSelectedMatch(null);
           }}
           match={selectedMatch}

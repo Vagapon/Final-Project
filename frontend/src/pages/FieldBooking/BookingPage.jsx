@@ -32,16 +32,9 @@ const BookingPage = () => {
   const [selectedBookingDate, setSelectedBookingDate] = useState(date);
   const [selectedTimeSlotId, setSelectedTimeSlotId] = useState(timeSlotId);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [bookingId, setBookingId] = useState(() => {
-    return sessionStorage.getItem('currentBookingId') || null;
-  });
-  const [qrData, setQrData] = useState(() => {
-    const saved = sessionStorage.getItem('bookingQrData');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [paymentStatus, setPaymentStatus] = useState(() => {
-    return sessionStorage.getItem('bookingPaymentStatus') || 'unpaid';
-  });
+  const [bookingId, setBookingId] = useState(null);
+  const [qrData, setQrData] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState('unpaid');
   const [validationError, setValidationError] = useState('');
 
   // Lưu state khi thay đổi
@@ -69,7 +62,60 @@ const BookingPage = () => {
     sessionStorage.setItem('bookingNotes', bookingNotes);
   }, [bookingNotes]);
 
+  // Clear old booking data when starting a new booking
   useEffect(() => {
+    if (!fieldId || !date) return;
+    
+    const savedBookingId = sessionStorage.getItem('currentBookingId');
+    const savedFieldId = sessionStorage.getItem('lastBookingFieldId');
+    const savedTimeSlotId = sessionStorage.getItem('lastBookingTimeSlotId');
+    const savedDate = sessionStorage.getItem('lastBookingDate');
+    
+    // Kiểm tra xem có phải booking mới không
+    const isNewBooking = !savedBookingId || 
+                         savedFieldId !== fieldId || 
+                         savedDate !== date ||
+                         (timeSlotId && savedTimeSlotId && savedTimeSlotId !== timeSlotId);
+    
+    if (isNewBooking && savedBookingId) {
+      // Clear booking cũ khi vào booking mới
+      console.log('New booking detected, clearing old booking data');
+      sessionStorage.removeItem('currentBookingId');
+      sessionStorage.removeItem('bookingQrData');
+      sessionStorage.removeItem('bookingPaymentStatus');
+      sessionStorage.removeItem('bookingStep');
+      sessionStorage.removeItem('bookingNotes');
+      setBookingId(null);
+      setQrData(null);
+      setPaymentStatus('unpaid');
+      setCurrentStep(1);
+    } else if (!isNewBooking && savedBookingId) {
+      // Load booking data từ sessionStorage nếu là booking cũ
+      console.log('Loading existing booking data from sessionStorage');
+      setBookingId(savedBookingId);
+      const savedQrData = sessionStorage.getItem('bookingQrData');
+      if (savedQrData) {
+        try {
+          setQrData(JSON.parse(savedQrData));
+        } catch (e) {
+          console.error('Error parsing QR data:', e);
+        }
+      }
+      setPaymentStatus(sessionStorage.getItem('bookingPaymentStatus') || 'unpaid');
+      const savedStep = sessionStorage.getItem('bookingStep');
+      if (savedStep) {
+        setCurrentStep(parseInt(savedStep));
+      }
+    }
+    
+    // Lưu thông tin booking hiện tại
+    sessionStorage.setItem('lastBookingFieldId', fieldId);
+    if (timeSlotId) {
+      sessionStorage.setItem('lastBookingTimeSlotId', timeSlotId);
+    }
+    sessionStorage.setItem('lastBookingDate', date);
+    
+    // Load booking data nếu có đủ thông tin
     if (fieldId && timeSlotId && date) {
       loadBookingData();
     }
@@ -269,14 +315,38 @@ const BookingPage = () => {
         if (!confirmed) return;
         
         try {
-          // Xóa booking đã tạo
+          setLoading(true);
+          // Hủy booking đã tạo để giải phóng timeslot
           const token = localStorage.getItem('token');
-          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${bookingId}`, {
-            method: 'DELETE',
+          if (!token) {
+            throw new Error('No authentication token found');
+          }
+          
+          // Sử dụng cancelBooking thay vì deleteBooking để an toàn hơn
+          const cancelResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${bookingId}/cancel`, {
+            method: 'PATCH',
             headers: {
-              'Authorization': `Bearer ${token}`
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
             }
           });
+          
+          const cancelResult = await cancelResponse.json();
+          
+          if (!cancelResponse.ok || !cancelResult.success) {
+            // Nếu cancel không thành công, thử delete
+            const deleteResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${bookingId}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (!deleteResponse.ok) {
+              const deleteResult = await deleteResponse.json();
+              throw new Error(deleteResult.message || 'Failed to cancel booking');
+            }
+          }
           
           // Reset states và sessionStorage
           setBookingId(null);
@@ -286,11 +356,19 @@ const BookingPage = () => {
           sessionStorage.removeItem('bookingQrData');
           sessionStorage.removeItem('bookingPaymentStatus');
           
-          message.info('Booking cancelled. Please select the time again.');
+          // Reload timeslots để cập nhật trạng thái available
+          if (fieldId && selectedBookingDate) {
+            await loadTimeSlotsForDate(fieldId, selectedBookingDate);
+          }
+          
+          message.success('Booking cancelled. You can select the time again.');
+          setCurrentStep(1);
         } catch (error) {
           console.error('Error canceling booking:', error);
-          message.error('Unable to cancel booking. Please try again.');
-          return;
+          const errorMessage = error.message || 'Unable to cancel booking. Please try again.';
+          message.error(errorMessage);
+        } finally {
+          setLoading(false);
         }
       }
       
@@ -334,6 +412,16 @@ const BookingPage = () => {
               // Clear booking data sau khi hoàn tất
               sessionStorage.removeItem('currentBookingId');
               sessionStorage.removeItem('bookingQrData');
+              sessionStorage.removeItem('bookingPaymentStatus');
+              sessionStorage.removeItem('bookingStep');
+              sessionStorage.removeItem('bookingNotes');
+              sessionStorage.removeItem('lastBookingFieldId');
+              sessionStorage.removeItem('lastBookingTimeSlotId');
+              sessionStorage.removeItem('lastBookingDate');
+              // Reset states
+              setBookingId(null);
+              setQrData(null);
+              setPaymentStatus('unpaid');
             }, 2000);
           }
         } catch (error) {
@@ -393,16 +481,19 @@ const BookingPage = () => {
   // Clear sessionStorage khi hoàn tất (Step 3)
   useEffect(() => {
     if (currentStep === 3) {
-      // Sau 30s tự động clear
-      const clearTimer = setTimeout(() => {
-        sessionStorage.removeItem('bookingStep');
-        sessionStorage.removeItem('currentBookingId');
-        sessionStorage.removeItem('bookingQrData');
-        sessionStorage.removeItem('bookingPaymentStatus');
-        sessionStorage.removeItem('bookingNotes');
-      }, 30000);
-
-      return () => clearTimeout(clearTimer);
+      // Clear ngay lập tức khi hoàn tất
+      sessionStorage.removeItem('bookingStep');
+      sessionStorage.removeItem('currentBookingId');
+      sessionStorage.removeItem('bookingQrData');
+      sessionStorage.removeItem('bookingPaymentStatus');
+      sessionStorage.removeItem('bookingNotes');
+      sessionStorage.removeItem('lastBookingFieldId');
+      sessionStorage.removeItem('lastBookingTimeSlotId');
+      sessionStorage.removeItem('lastBookingDate');
+      // Reset states
+      setBookingId(null);
+      setQrData(null);
+      setPaymentStatus('unpaid');
     }
   }, [currentStep]);
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Modal,
   Form,
@@ -23,6 +23,9 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [selectedPurpose, setSelectedPurpose] = useState('rental');
   const [sportTypes, setSportTypes] = useState([]);
+  const [addressQuery, setAddressQuery] = useState('');
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [addressLoading, setAddressLoading] = useState(false);
 
   // Fetch sport types when modal opens
   useEffect(() => {
@@ -42,7 +45,7 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
       }
     } catch (error) {
       console.error('Error fetching sport types:', error);
-      message.error('Không thể tải loại bóng');
+      message.error('Failed to load field types');
     }
   };
 
@@ -69,21 +72,27 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
       }
       formData.append('status', values.status);
       formData.append('description', values.description || '');
+      if (values.latitude) {
+        formData.append('latitude', values.latitude);
+      }
+      if (values.longitude) {
+        formData.append('longitude', values.longitude);
+      }
       
       // Thêm giá thuê nếu là sân rental
       if (values.purpose === 'rental') {
         if (!values.pricePerHour) {
-          throw new Error('Vui lòng nhập giá thuê cho sân rental!');
+          throw new Error('Please enter rental price for this field!');
         }
         const priceValue = Number(values.pricePerHour);
         console.log('Price per hour value:', priceValue, 'Type:', typeof priceValue);
         
         // Validation giá thuê ở frontend
         if (priceValue < 1000) {
-          throw new Error('Giá thuê tối thiểu 1000 VNĐ!');
+          throw new Error('Minimum rental price is 1,000 VND!');
         }
         if (priceValue > 1000000) {
-          throw new Error('Giá thuê không được vượt quá 1,000,000 VNĐ!');
+          throw new Error('Rental price cannot exceed 1,000,000 VND!');
         }
         
         formData.append('pricePerHour', priceValue);
@@ -106,18 +115,18 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
     } catch (info) {
       console.log('Validate Failed:', info);
       
-      // Hiển thị lỗi validation cho user
+      // Show validation error to user
       if (info.errorFields) {
-        // Lỗi validation từ Ant Design Form
+        // Validation errors from Ant Design Form
         const firstError = info.errorFields[0];
         if (firstError && firstError.errors && firstError.errors[0]) {
           message.error(firstError.errors[0]);
         }
       } else if (info.message) {
-        // Lỗi custom từ validation logic
+        // Custom validation error
         message.error(info.message);
       } else {
-        message.error('Có lỗi xảy ra khi tạo sân. Vui lòng kiểm tra lại thông tin!');
+        message.error('Failed to create field. Please double-check the information.');
       }
     }
   };
@@ -127,14 +136,84 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
     setImageFiles([]);
     setImagePreviews([]);
     setSelectedPurpose('rental');
+    setAddressSuggestions([]);
+    setAddressQuery('');
     onCancel();
+  };
+
+  // Debounced fetch for address suggestions using Nominatim
+  useEffect(() => {
+    if (!addressQuery || addressQuery.trim().length < 3) {
+      setAddressSuggestions([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        setAddressLoading(true);
+        const resp = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            addressQuery
+          )}&addressdetails=1&limit=5`,
+          {
+            headers: { 'Accept-Language': 'en' },
+            signal: controller.signal,
+          }
+        );
+        const data = await resp.json();
+        const suggestions =
+          Array.isArray(data) && data.length
+            ? data.map((item) => ({
+                label: item.display_name,
+                lat: item.lat,
+                lon: item.lon,
+              }))
+            : [];
+        setAddressSuggestions(suggestions);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Address lookup error:', err);
+        }
+      } finally {
+        setAddressLoading(false);
+      }
+    }, 400);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [addressQuery]);
+
+  const selectedLat = Form.useWatch('latitude', form);
+  const selectedLon = Form.useWatch('longitude', form);
+
+  const mapUrl = useMemo(() => {
+    if (!selectedLat || !selectedLon) return null;
+    const latNum = parseFloat(selectedLat);
+    const lonNum = parseFloat(selectedLon);
+    if (Number.isNaN(latNum) || Number.isNaN(lonNum)) return null;
+    const delta = 0.01;
+    const bbox = `${lonNum - delta},${latNum - delta},${lonNum + delta},${latNum + delta}`;
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(
+      bbox
+    )}&layer=mapnik&marker=${encodeURIComponent(latNum)},${encodeURIComponent(lonNum)}`;
+  }, [selectedLat, selectedLon]);
+
+  const handleSelectAddress = (suggestion) => {
+    setAddressQuery(suggestion.label);
+    setAddressSuggestions([]);
+    form.setFieldsValue({
+      address: suggestion.label,
+      latitude: suggestion.lat,
+      longitude: suggestion.lon,
+    });
   };
 
   // Handle image file selection (similar to create staff)
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length + imageFiles.length > 5) {
-      message.error('Chỉ được upload tối đa 5 ảnh!');
+      message.error('You can upload at most 5 images!');
       return;
     }
 
@@ -144,11 +223,11 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
 
     files.forEach((file) => {
       if (!file.type.startsWith('image/')) {
-        message.error(`${file.name} không phải file ảnh!`);
+        message.error(`${file.name} is not an image file!`);
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        message.error(`${file.name} quá lớn! Tối đa 5MB.`);
+        message.error(`${file.name} is too large! Max 5MB.`);
         return;
       }
       
@@ -181,12 +260,12 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
 
   return (
     <Modal
-      title="Thêm sân bóng mới"
+      title="Add new field"
       open={visible}
       onCancel={handleCancel}
       onOk={handleSubmit}
-      okText="Tạo sân"
-      cancelText="Hủy" 
+      okText="Create field"
+      cancelText="Cancel" 
       width={1200}
       destroyOnClose
       style={{ top: 20 }}
@@ -205,7 +284,7 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
         }}
       >
         <Row gutter={24}>
-          {/* Cột trái - Tất cả các input nhập liệu */}
+          {/* Left column - all inputs */}
           <Col span={12}>
             <div className="space-y-6">
               {/* Tên sân và số sân - 1 hàng */}
@@ -213,18 +292,18 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                 <Col span={12}>
                   <Form.Item
                     name="name"
-                    label="Tên sân bóng"
+                    label="Field name"
                     rules={[
-                      { required: true, message: 'Vui lòng nhập tên sân bóng!' },
-                      { min: 3, message: 'Tên sân phải có ít nhất 3 ký tự!' },
-                      { max: 50, message: 'Tên sân không được quá 50 ký tự!' },
-                      { pattern: /^[a-zA-ZÀ-ỹ0-9\s]+$/, message: 'Tên sân chỉ được chứa chữ cái, số và khoảng trắng!' }
+                      { required: true, message: 'Please enter a field name!' },
+                      { min: 3, message: 'Field name must be at least 3 characters!' },
+                      { max: 50, message: 'Field name cannot exceed 50 characters!' },
+                      { pattern: /^[a-zA-ZÀ-ỹ0-9\s]+$/, message: 'Field name can only include letters, numbers, and spaces!' }
                     ]}
                     validateTrigger={['onChange', 'onBlur']}
                     hasFeedback
                   >
                     <Input 
-                      placeholder="Nhập tên sân bóng..." 
+                      placeholder="Enter field name..." 
                       showCount
                       maxLength={50}
                     />
@@ -233,16 +312,16 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                 <Col span={12}>
                   <Form.Item
                     name="fieldNumber"
-                    label="Số sân"
+                    label="Field number"
                     rules={[
-                      { required: true, message: 'Vui lòng nhập số sân!' },
-                      { max: 20, message: 'Số sân không được quá 20 ký tự!' }
+                      { required: true, message: 'Please enter field number!' },
+                      { max: 20, message: 'Field number cannot exceed 20 characters!' }
                     ]}
                     validateTrigger={['onChange', 'onBlur']}
                     hasFeedback
                   >
                     <Input 
-                      placeholder="VD: Sân 1, Sân 2..." 
+                      placeholder="e.g. Field 1, Field 2..." 
                       showCount
                       maxLength={20}
                     />
@@ -250,34 +329,68 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                 </Col>
               </Row>
 
-              <Form.Item
-                name="address"
-                label="Địa chỉ"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập địa chỉ!' },
-                  { min: 10, message: 'Địa chỉ phải có ít nhất 10 ký tự!' },
-                  { max: 200, message: 'Địa chỉ không được quá 200 ký tự!' }
-                ]}
-                validateTrigger={['onChange', 'onBlur']}
-                hasFeedback
-              >
-                <Input 
-                  placeholder="Nhập địa chỉ chi tiết..." 
-                  showCount
-                  maxLength={200}
-                />
+              <div className="relative">
+                <Form.Item
+                  name="address"
+                  label="Address"
+                  rules={[
+                    { required: true, message: 'Please enter address!' },
+                    { min: 10, message: 'Address must be at least 10 characters!' },
+                    { max: 200, message: 'Address cannot exceed 200 characters!' }
+                  ]}
+                  validateTrigger={['onChange', 'onBlur']}
+                  hasFeedback
+                >
+                  <Input 
+                    placeholder="Enter full address..." 
+                    showCount
+                    maxLength={200}
+                    value={addressQuery}
+                    onChange={(e) => {
+                      setAddressQuery(e.target.value);
+                      form.setFieldsValue({ address: e.target.value });
+                    }}
+                  />
+                </Form.Item>
+                {addressQuery && (
+                  <div className="absolute left-0 right-0 z-10 bg-white border border-gray-200 rounded-lg shadow-sm max-h-60 overflow-auto">
+                    {addressLoading && (
+                      <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>
+                    )}
+                    {!addressLoading && addressSuggestions.length === 0 && addressQuery.length >= 3 && (
+                      <div className="px-3 py-2 text-sm text-gray-500">No results</div>
+                    )}
+                    {addressSuggestions.map((s) => (
+                      <button
+                        type="button"
+                        key={`${s.lat}-${s.lon}-${s.label}`}
+                        className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                        onClick={() => handleSelectAddress(s)}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Form.Item name="latitude" label="Latitude" hidden>
+                <Input />
+              </Form.Item>
+              <Form.Item name="longitude" label="Longitude" hidden>
+                <Input />
               </Form.Item>
 
               <Form.Item
                 name="location"
-                label="Khu vực"
+                label="Area"
                 rules={[
-                  { max: 100, message: 'Khu vực không được quá 100 ký tự!' }
+                  { max: 100, message: 'Area cannot exceed 100 characters!' }
                 ]}
                 validateTrigger={['onChange', 'onBlur']}
               >
                 <Input 
-                  placeholder="VD: Quận 1, TP.HCM..." 
+                  placeholder="e.g. District 1, HCMC..." 
                   showCount
                   maxLength={100}
                 />
@@ -285,13 +398,13 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
 
               <Form.Item
                 name="sportTypeId"
-                label="Loại bóng"
-                rules={[{ required: true, message: 'Vui lòng chọn loại bóng!' }]}
+                label="Sport type"
+                rules={[{ required: true, message: 'Please select a sport type!' }]}
                 validateTrigger={['onChange', 'onBlur']}
                 hasFeedback
               >
                 <Select 
-                  placeholder="Chọn loại bóng (5, 7, 11 người)"
+                  placeholder="Choose sport type (5, 7, 11 players)"
                   size="large"
                   style={{ borderRadius: '8px' }}
                 >
@@ -303,18 +416,18 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                 </Select>
               </Form.Item>
 
-              {/* Mục đích sử dụng và giá thuê - 1 hàng */}
+              {/* Purpose and rental price - single row */}
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item
                     name="purpose"
-                    label="Mục đích sử dụng"
-                    rules={[{ required: true, message: 'Vui lòng chọn mục đích sử dụng!' }]}
+                    label="Purpose"
+                    rules={[{ required: true, message: 'Please select purpose!' }]}
                     validateTrigger={['onChange', 'onBlur']}
                     hasFeedback
                   >
                     <Select 
-                      placeholder="Chọn mục đích sử dụng"
+                      placeholder="Choose purpose"
                       size="large"
                       style={{ borderRadius: '8px' }}
                       onChange={(value) => setSelectedPurpose(value)}
@@ -322,13 +435,13 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                       <Option value="event">
                         <div className="flex items-center gap-2">
                           <span>🏆</span>
-                          <span>Sân giải đấu</span>
+                          <span>Tournament field</span>
                         </div>
                       </Option>
                       <Option value="rental">
                         <div className="flex items-center gap-2">
                           <span>💰</span>
-                          <span>Sân thuê</span>
+                          <span>Rental field</span>
                         </div>
                       </Option>
                     </Select>
@@ -338,18 +451,18 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                   {selectedPurpose === 'rental' && (
                     <Form.Item
                       name="pricePerHour"
-                      label="Giá thuê (VNĐ/giờ)"
+                      label="Rental price (VND/hour)"
                       rules={[
-                        { required: true, message: 'Vui lòng nhập giá thuê!' },
+                        { required: true, message: 'Please enter rental price!' },
                         { 
                           type: 'number', 
                           min: 1000, 
-                          message: 'Giá thuê tối thiểu 1,000 VNĐ!' 
+                          message: 'Minimum rental price is 1,000 VND!' 
                         },
                         { 
                           type: 'number', 
                           max: 1000000, 
-                          message: 'Giá thuê không được vượt quá 1,000,000 VNĐ!' 
+                          message: 'Rental price cannot exceed 1,000,000 VND!' 
                         }
                       ]}
                       validateTrigger={['onChange', 'onBlur']}
@@ -357,11 +470,11 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                     >
                       <InputNumber
                         style={{ width: '100%' }}
-                        placeholder="Nhập giá thuê..."
+                        placeholder="Enter rental price..."
                         min={1000}
                         step={10000}
                         precision={0}
-                        addonAfter="VNĐ"
+                        addonAfter="VND"
                       />
                     </Form.Item>
                   )}
@@ -372,9 +485,9 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                 <Col span={12}>
                   <Form.Item
                     name={['openingHours', 'start']}
-                    label="Giờ mở cửa"
+                    label="Opening time"
                     rules={[
-                      { required: true, message: 'Vui lòng nhập giờ mở cửa!' }
+                      { required: true, message: 'Please enter opening time!' }
                     ]}
                     validateTrigger={['onChange', 'onBlur']}
                     hasFeedback
@@ -385,9 +498,9 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                 <Col span={12}>
                   <Form.Item
                     name={['openingHours', 'end']}
-                    label="Giờ đóng cửa"
+                    label="Closing time"
                     rules={[
-                      { required: true, message: 'Vui lòng nhập giờ đóng cửa!' },
+                      { required: true, message: 'Please enter closing time!' },
                       ({ getFieldValue }) => ({
                         validator(_, value) {
                           const startTime = getFieldValue(['openingHours', 'start']);
@@ -395,7 +508,7 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                             const start = new Date(`2000-01-01 ${startTime}`);
                             const end = new Date(`2000-01-01 ${value}`);
                             if (start >= end) {
-                              return Promise.reject(new Error('Giờ đóng cửa phải sau giờ mở cửa!'));
+                              return Promise.reject(new Error('Closing time must be after opening time!'));
                             }
                           }
                           return Promise.resolve();
@@ -445,24 +558,24 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
             </div>
           </Col>
 
-          {/* Cột phải - Chỉ có ảnh và mô tả */}
+          {/* Right column - images, description, map */}
           <Col span={12}>
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span>📸</span>
-                  Hình ảnh sân bóng
+                  Field images
                 </h3>
                 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <label className="text-gray-700 font-medium">
-                      Hình ảnh sân bóng
+                      Field images
                       <span className="text-gray-500 font-normal ml-2">({imageFiles.length}/5)</span>
                     </label>
                     {imageFiles.length >= 5 && (
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                        Đã đủ 5 ảnh
+                        5 images limit reached
                       </span>
                     )}
                   </div>
@@ -474,7 +587,7 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                       multiple
                       accept="image/*"
                       onChange={handleImageChange}
-                      className="sr-only" // ẩn input gốc, chỉ để label gọi
+                      className="sr-only"
                     />
                     <label
                       htmlFor="field-images"
@@ -486,10 +599,10 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-700 group-hover:text-blue-600">
-                            {imageFiles.length === 0 ? 'Tải lên hình ảnh sân bóng' : 'Thêm ảnh khác'}
+                            {imageFiles.length === 0 ? 'Upload field images' : 'Add more images'}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
-                            Kéo thả hoặc click để chọn • PNG, JPG tối đa 5MB
+                            Drag & drop or click to select • PNG, JPG up to 5MB
                           </p>
                         </div>
                       </div>
@@ -499,7 +612,7 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                   {/* Image Preview Grid */}
                   {imagePreviews.length > 0 && (
                     <div className="space-y-3">
-                      <h4 className="text-sm font-medium text-gray-700">Ảnh đã chọn</h4>
+                      <h4 className="text-sm font-medium text-gray-700">Selected images</h4>
                       <div className="grid grid-cols-3 gap-2">
                         {imagePreviews.map((preview, index) => (
                           <div key={index} className="relative group">
@@ -514,7 +627,7 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
                               type="button"
                               onClick={() => removeImage(index)}
                               className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 transform scale-75 group-hover:scale-100"
-                              title="Xóa ảnh"
+                              title="Delete image"
                             >
                               ×
                             </button>
@@ -532,19 +645,36 @@ const CreateFieldModal = ({ visible, onCancel, onCreate }) => {
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span>📝</span>
-                  Mô tả
+                  Description
                 </h3>
                 
                 <Form.Item
                   name="description"
-                  label="Mô tả chi tiết"
+                  label="Detailed description"
                 >
                   <TextArea
                     rows={6}
-                    placeholder="Nhập mô tả chi tiết về sân bóng..."
+                    placeholder="Enter detailed description..."
                   />
                 </Form.Item>
               </div>
+
+              {mapUrl && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-gray-800">Map preview</h4>
+                  <div className="border rounded-lg overflow-hidden">
+                    <iframe
+                      title="Field location map"
+                      src={mapUrl}
+                      width="100%"
+                      height="240"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </Col>
         </Row>
