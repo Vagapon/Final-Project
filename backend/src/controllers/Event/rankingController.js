@@ -154,6 +154,15 @@ const getRankingWithForm = async (req, res) => {
     // Lấy form cho mỗi team
     const rankingsWithForm = await Promise.all(
       rankings.map(async (ranking) => {
+        // Check if teamId exists before accessing
+        if (!ranking.teamId || !ranking.eventId) {
+          console.warn('⚠️ Warning: Missing teamId or eventId for ranking:', ranking._id);
+          return {
+            ...ranking.toObject(),
+            form: []
+          };
+        }
+        
         const form = await getTeamRecentForm(ranking.teamId._id, ranking.eventId._id);
         return {
           ...ranking.toObject(),

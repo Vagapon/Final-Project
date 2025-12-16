@@ -38,12 +38,16 @@ const corsOptions = {
     const allowedOrigins = [
       'http://localhost:5173',        // Local Vite dev
       'http://localhost:3000',        // Local fallback
-      process.env.FRONTEND_URL,       // Production frontend
+      'https://final-project-eight-wheat.vercel.app', // Vercel frontend
+      process.env.FRONTEND_URL,       // Production frontend (from env)
     ].filter(Boolean);
     
+    // Allow requests without origin (mobile apps, curl, etc) or matching origins
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.log('❌ CORS blocked origin:', origin);
+      console.log('   Allowed origins:', allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
