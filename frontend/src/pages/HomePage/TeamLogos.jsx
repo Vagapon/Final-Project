@@ -9,7 +9,7 @@ const Teamlogos = () => {
     {
       id: 1,
       name: 'Thunder Eagles',
-      description: 'Nếu bạn muốn học cách chơi golf chuyên nghiệp, đội của chúng tôi luôn sẵn sàng giúp bạn yêu thích golf và dạy bạn cách chơi ở trình độ cao trong thời gian ngắn.',
+      description: 'If you want to learn how to play football professionally, our team is always ready to help you develop a passion for the game and train you to reach a high level in a short time.',
       members: [
         {
           id: 1,
