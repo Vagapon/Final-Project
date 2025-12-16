@@ -79,19 +79,9 @@ function MatchResults() {
     const fetchCompletedMatches = async () => {
       setLoading(true);
       try {
-        // Fetch all matches first, then filter completed ones
-        const response = await matchScheduleApi.getAllMatches();
-        let matchesData = response.data?.data?.allMatches || response.data?.data || [];
-        
-        // Filter only completed matches with scores
-        matchesData = matchesData.filter(match => {
-          const isCompleted = match.status === 'completed';
-          const hasScore = match.score && (match.score.team1 !== undefined || match.score.team2 !== undefined);
-          return isCompleted && hasScore;
-        });
-        
-        // Limit to 6 latest matches
-        matchesData = matchesData.slice(0, 6);
+        // Fetch completed matches using public API
+        const response = await matchScheduleApi.getCompletedMatches({ limit: 6 });
+        const matchesData = response.data?.data?.allMatches || response.data?.data || [];
         
         // Transform API data to match UI format
         const transformedMatches = matchesData.map((match) => {
@@ -286,15 +276,18 @@ function MatchResults() {
                   </div>
                 </div>
 
-                {/* League and Stadium */}
-                <div className="flex items-center justify-between mb-2 text-sm">
-                  <div className="flex items-center space-x-2 text-gray-600">
-                    <Star className="w-4 h-4" />
-                    <span className="font-semibold">{match.league}</span>
+                {/* League and Stadium - Improved Layout */}
+                <div className="space-y-2 mb-2">
+                  {/* Event/League */}
+                  <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg px-3 py-2 border border-blue-100">
+                    <Star className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                    <span className="text-sm font-semibold text-gray-800 truncate">{match.league}</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-gray-600">
-                    <MapPin className="w-4 h-4" />
-                    <span className="font-medium">{match.stadium}</span>
+                  
+                  {/* Stadium */}
+                  <div className="flex items-start space-x-2 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg px-3 py-2 border border-green-100">
+                    <MapPin className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-xs font-medium text-gray-700 leading-tight line-clamp-2">{match.stadium}</span>
                   </div>
                 </div>
 
@@ -304,14 +297,14 @@ function MatchResults() {
                 </h4>
 
                 {/* Click to view indicator */}
-                <div className="text-center text-gray-500 group-hover:text-gray-700 transition-colors">
+                {/* <div className="text-center text-gray-500 group-hover:text-gray-700 transition-colors">
                   <div className="flex items-center justify-center space-x-2">
                     <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />
                     <span className="text-sm font-medium">
                       Click để xem chi tiết
                     </span>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
             ))

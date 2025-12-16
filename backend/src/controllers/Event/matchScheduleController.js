@@ -807,6 +807,44 @@ const getAllMatches = async (req, res) => {
 };
 
 /**
+ * Lấy các trận đấu đã hoàn thành (public - không cần quyền admin)
+ */
+const getCompletedMatches = async (req, res) => {
+  try {
+    const { limit = 10, eventId } = req.query;
+
+    // Tạo query filter - chỉ lấy các trận đấu đã hoàn thành có điểm
+    const filter = {
+      status: 'completed',
+      score: { $exists: true, $ne: null }
+    };
+    
+    if (eventId) filter.eventId = eventId;
+
+    // Lấy danh sách trận đấu với populate
+    const matches = await Match.find(filter)
+      .populate('team1Id', 'name shortName avatar')
+      .populate('team2Id', 'name shortName avatar')
+      .populate('fieldId', 'name address')
+      .populate('eventId', 'name startDate endDate status')
+      .sort({ matchDate: -1, matchTime: -1 }) // Mới nhất trước
+      .limit(parseInt(limit));
+
+    res.status(200).json({
+      message: 'Lấy danh sách trận đấu đã hoàn thành thành công',
+      data: {
+        totalMatches: matches.length,
+        allMatches: matches
+      }
+    });
+
+  } catch (error) {
+    console.error('Error getting completed matches:', error);
+    res.status(500).json({ message: 'Lỗi server khi lấy danh sách trận đấu', error: error.message });
+  }
+};
+
+/**
  * Lấy danh sách trận đấu của event (cho UI thủ công)
  */
 const getEventMatches = async (req, res) => {
@@ -1047,6 +1085,7 @@ module.exports = {
   deleteSingleMatch,
   getEventMatches,
   getAllMatches,
+  getCompletedMatches,
   getScheduleResources,
   
   // Tự động cập nhật trạng thái

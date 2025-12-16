@@ -1,7 +1,12 @@
 import axiosClient from '../axiosClient';
 
 const matchScheduleApi = {
-  // Lấy tất cả trận đấu (cho trang quản lý trận đấu)
+  // Lấy các trận đấu đã hoàn thành (public - không cần quyền)
+  getCompletedMatches: (params = {}) => {
+    return axiosClient.get(`/event/matches/completed`, { params });
+  },
+
+  // Lấy tất cả trận đấu (cho trang quản lý trận đấu - yêu cầu quyền admin/staff)
   getAllMatches: (params = {}) => {
     return axiosClient.get(`/event/matches/all`, { params });
   },

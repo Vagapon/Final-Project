@@ -32,9 +32,28 @@ const rankingRoutes = require("./src/routes/rankingRoutes");
 const app = express();
 dotenv.config();
 
+// CORS Configuration - support both local and production
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:5173',        // Local Vite dev
+      'http://localhost:3000',        // Local fallback
+      process.env.FRONTEND_URL,       // Production frontend
+    ].filter(Boolean);
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
 
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 

@@ -892,7 +892,7 @@ const Blog = () => {
             </div>
 
             {/* Online/Offline Users Section */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            {/* <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <Users className="w-5 h-5 text-blue-600" />
                 Users
@@ -935,7 +935,7 @@ const Blog = () => {
                   })}
                 </div>
               )}
-            </div>
+            </div> */}
 
             {/* Quick Stats */}
             <div className="p-4">
