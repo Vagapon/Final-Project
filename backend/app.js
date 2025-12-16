@@ -35,19 +35,17 @@ dotenv.config();
 // CORS Configuration - support both local and production
 const corsOptions = {
   origin: function (origin, callback) {
-    const allowedOrigins = [
-      'http://localhost:5173',        // Local Vite dev
-      'http://localhost:3000',        // Local fallback
-      'https://final-project-eight-wheat.vercel.app', // Vercel frontend
-      process.env.FRONTEND_URL,       // Production frontend (from env)
-    ].filter(Boolean);
-    
-    // Allow requests without origin (mobile apps, curl, etc) or matching origins
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Allow requests without origin or matching allowed origins
+    if (
+      !origin || // Allow non-browser requests (curl, mobile, etc)
+      origin === 'http://localhost:5173' ||
+      origin === 'http://localhost:3000' ||
+      origin.includes('vercel.app') ||  // Allow all Vercel deployments
+      origin === process.env.FRONTEND_URL
+    ) {
       callback(null, true);
     } else {
       console.log('❌ CORS blocked origin:', origin);
-      console.log('   Allowed origins:', allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
