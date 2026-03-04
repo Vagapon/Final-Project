@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: premier-league-backend
+    env: node
+    plan: free
+    branch: main
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        fromDatabase:
+          name: premier-league-db
+          property: connectionString
