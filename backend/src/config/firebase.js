@@ -5,10 +5,19 @@ if (!process.env.FIREBASE_PRIVATE_KEY) {
   process.exit(1);
 }
 
+// Handle both escaped and unescaped newlines
+let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+if (typeof privateKey === 'string') {
+  // Remove quotes if they exist
+  privateKey = privateKey.replace(/^"(.*)"$/, '$1');
+  // Replace escaped newlines with actual newlines
+  privateKey = privateKey.replace(/\\n/g, '\n');
+}
+
 admin.initializeApp({
   credential: admin.credential.cert({
     projectId: process.env.FIREBASE_PROJECT_ID,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    privateKey: privateKey,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
   }),
 });
