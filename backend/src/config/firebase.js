@@ -5,14 +5,30 @@ if (!process.env.FIREBASE_PRIVATE_KEY) {
   process.exit(1);
 }
 
-// Handle both escaped and unescaped newlines
-let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-if (typeof privateKey === 'string') {
-  // Remove quotes if they exist
-  privateKey = privateKey.replace(/^"(.*)"$/, '$1');
-  // Replace escaped newlines with actual newlines
-  privateKey = privateKey.replace(/\\n/g, '\n');
+// Parse private key from environment variable
+let privateKey = process.env.FIREBASE_PRIVATE_KEY.trim();
+
+console.log("Private Key Preview:", privateKey.substring(0, 50) + "...");
+
+// If it's a JSON string, parse it
+if (privateKey.startsWith('{')) {
+  try {
+    const keyObj = JSON.parse(privateKey);
+    privateKey = keyObj.private_key;
+  } catch (e) {
+    console.log("Not JSON format, treating as string");
+  }
 }
+
+// Remove outer quotes if they exist
+privateKey = privateKey.replace(/^["'](.*)["']$/, '$1');
+
+// Convert escaped newlines to actual newlines
+// Handle both \\n and \n
+privateKey = privateKey.replace(/\\n/g, '\n');
+
+console.log("Processed Key Preview:", privateKey.substring(0, 50) + "...");
+console.log("Key starts with BEGIN:", privateKey.includes('BEGIN PRIVATE KEY'));
 
 admin.initializeApp({
   credential: admin.credential.cert({
@@ -21,6 +37,8 @@ admin.initializeApp({
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
   }),
 });
+
+console.log("✅ Firebase Admin initialized");
 
 console.log("✅ Firebase Admin initialized");
 
