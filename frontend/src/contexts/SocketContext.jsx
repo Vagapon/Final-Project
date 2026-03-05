@@ -22,11 +22,18 @@ export const SocketProvider = ({ children }) => {
     if (user && user.id) {
       const token = localStorage.getItem('token');
       
-      const newSocket = io('http://localhost:5000', {
+      // Get socket URL from environment or use localhost for dev
+      const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+      
+      const newSocket = io(socketUrl, {
         auth: {
           token: token
         },
-        transports: ['websocket', 'polling']
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 5
       });
 
       // Connection events
