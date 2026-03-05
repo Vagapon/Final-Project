@@ -274,7 +274,7 @@ const ChatApp = () => {
           // console.log('🔑 Token for messages API:', token ? 'Present' : 'Missing');
           // console.log('🔑 Token value:', token);
           
-          const response = await fetch(`http://localhost:5000/api/messages/${chatRoomId}`, {
+          const response = await fetch(`${getApiUrl()}/messages/${chatRoomId}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'

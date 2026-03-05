@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { UserPlus, Eye, EyeOff, Upload, X, User, Mail, Phone, Key, Camera } from "lucide-react";
 import { message, Spin } from "antd";
 
+import { getApiUrl } from '../../../utils/apiConfig';
+
 const CreateStaff = () => {
   const [formData, setFormData] = useState({
     name: "",
@@ -62,7 +64,7 @@ const CreateStaff = () => {
       data.append("phone_number", formData.phone_number);
       data.append("avatar", formData.avatar);
 
-      const response = await fetch("http://localhost:5000/api/auth/create-staff", {
+      const response = await fetch(`${getApiUrl()}/auth/create-staff`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

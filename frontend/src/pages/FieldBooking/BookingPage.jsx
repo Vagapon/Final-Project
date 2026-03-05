@@ -4,6 +4,7 @@ import { ArrowRight, Loader2, Check, ArrowLeft } from 'lucide-react';
 import { fieldBookingService } from '../../api';
 import { message } from 'antd';
 import { useAuth } from '../Authen/AuthContext';
+import { getApiUrl } from '../../utils/apiConfig';
 import ProgressIndicator from '../../components/Booking/ProgressIndicator';
 import Step1Content from '../../components/Booking/Step1Content';
 import Step2Content from '../../components/Booking/Step2Content';
@@ -276,7 +277,8 @@ const BookingPage = () => {
           setBookingId(response.data._id);
           
           // Tạo QR thanh toán
-          const qrResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/payments/qr/${response.data._id}`);
+          const apiUrl = getApiUrl();
+          const qrResponse = await fetch(`${apiUrl}/payments/qr/${response.data._id}`);
           const qrResult = await qrResponse.json();
           
           if (qrResult.success) {
@@ -335,7 +337,7 @@ const BookingPage = () => {
           
           if (!cancelResponse.ok || !cancelResult.success) {
             // Nếu cancel không thành công, thử delete
-            const deleteResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${bookingId}`, {
+            const deleteResponse = await fetch(`${getApiUrl()}/bookings/${bookingId}`, {
               method: 'DELETE',
               headers: {
                 'Authorization': `Bearer ${token}`
@@ -389,7 +391,7 @@ const BookingPage = () => {
       const pollInterval = setInterval(async () => {
         try {
           console.log('📡 Polling payment status...');
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/payments/status/${bookingId}`);
+          const response = await fetch(`${getApiUrl()}/payments/status/${bookingId}`);
           
           if (!response.ok) {
             console.error('❌ Payment status API error:', response.status);
@@ -447,7 +449,7 @@ const BookingPage = () => {
       // Hủy booking khi hết thời gian (chỉ nếu bookingId hợp lệ)
       if (bookingId && isValidObjectId(bookingId)) {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${bookingId}`, {
+        const response = await fetch(`${getApiUrl()}/bookings/${bookingId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`

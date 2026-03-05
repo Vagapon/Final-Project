@@ -18,6 +18,8 @@ const parseTimeToMinutes = (timeStr) => {
   return h * 60 + m;
 };
 
+import { getApiUrl } from '../../utils/apiConfig';
+
 const TimeSlotModal = ({ visible, onCancel, field }) => {
   const [timeSlots, setTimeSlots] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -51,7 +53,7 @@ const TimeSlotModal = ({ visible, onCancel, field }) => {
     
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:5000/api/timeslots/field/${field._id}`);
+      const response = await axios.get(`${getApiUrl()}/timeslots/field/${field._id}`);
       if (response.data.success) {
         setTimeSlots(dedupeSlots(response.data.data));
       }
@@ -67,7 +69,7 @@ const TimeSlotModal = ({ visible, onCancel, field }) => {
       setCreatingDefault(true);
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        `http://localhost:5000/api/timeslots/create-default/${field._id}`,
+        `${getApiUrl()}/timeslots/create-default/${field._id}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -137,8 +139,8 @@ const TimeSlotModal = ({ visible, onCancel, field }) => {
 
       const token = localStorage.getItem('token');
       const url = editingSlot 
-        ? `http://localhost:5000/api/timeslots/${editingSlot._id}`
-        : 'http://localhost:5000/api/timeslots';
+        ? `${getApiUrl()}/timeslots/${editingSlot._id}`
+        : `${getApiUrl()}/timeslots`;
       
       const method = editingSlot ? 'put' : 'post';
       
@@ -170,7 +172,7 @@ const TimeSlotModal = ({ visible, onCancel, field }) => {
   const handleDelete = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`http://localhost:5000/api/timeslots/${id}`, {
+      const response = await axios.delete(`${getApiUrl()}/timeslots/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

@@ -14,6 +14,8 @@ import { ExclamationCircleFilled } from "@ant-design/icons";
 import { useAuth } from "../../Authen/AuthContext";
 import teamApi from "../../../api/teamManagement/teamApi";
 import axios from "axios";
+import { getApiUrl } from '../../../utils/apiConfig';
+
 const Team = () => {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -51,8 +53,8 @@ const Team = () => {
       }
       const roleUpper = (user?.role || '').toString().toUpperCase();
       const url = roleUpper === 'ADMIN'
-        ? 'http://localhost:5000/api/event-registrations'
-        : 'http://localhost:5000/api/event-registrations/mine';
+        ? `${getApiUrl()}/event-registrations`
+        : `${getApiUrl()}/event-registrations/mine`;
 
       const res = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
       setRegistrations(res.data || []);
@@ -67,7 +69,7 @@ const Team = () => {
   const updateRegistrationStatus = async (registrationId, status) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.patch(`http://localhost:5000/api/event-registrations/${registrationId}/status`, { status }, {
+      await axios.patch(`${getApiUrl()}/event-registrations/${registrationId}/status`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       message.success(status === 'approved' ? 'Team approved successfully' : 'Team rejected successfully');
@@ -81,7 +83,7 @@ const Team = () => {
   const deleteRegistration = async (registrationId) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/event-registrations/${registrationId}` , {
+      await axios.delete(`${getApiUrl()}/event-registrations/${registrationId}` , {
         headers: { Authorization: `Bearer ${token}` }
       });
       message.success('Registration deleted successfully');

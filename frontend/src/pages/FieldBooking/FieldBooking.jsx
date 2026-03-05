@@ -7,6 +7,8 @@ import axios from 'axios';
 import { useAuth } from '../Authen/AuthContext';
 import ModernFieldDetailModal from '../ModalBooking/ModernFieldDetailModal';
 
+import { getApiUrl } from '../../utils/apiConfig';
+
 const FieldBooking = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,7 +42,7 @@ const FieldBooking = () => {
   const loadSportTypes = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/season/sport-types', {
+      const response = await axios.get(`${getApiUrl()}/season/sport-types`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data?.data) {

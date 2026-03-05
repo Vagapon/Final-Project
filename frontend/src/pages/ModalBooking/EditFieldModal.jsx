@@ -34,7 +34,7 @@ const EditFieldModal = ({ visible, onCancel, onUpdate, initialValues, loading = 
   const fetchSportTypes = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/season/sport-types', {
+      const response = await axios.get(`${getApiUrl()}/season/sport-types`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data?.data) {

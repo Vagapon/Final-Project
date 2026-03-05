@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Save, Edit3, User, Mail, Phone, MapPin, Calendar, Briefcase } from 'lucide-react';
 import axios from 'axios';
+import { getApiUrl } from '../../../utils/apiConfig';
+
 const ProfileModal = ({ isOpen, onClose, user }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
