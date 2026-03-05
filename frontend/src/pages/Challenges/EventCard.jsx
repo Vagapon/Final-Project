@@ -47,13 +47,18 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
         }
       }
 
+      const payload = { eventId: event._id, teamId: teamIdToUse };
+      console.log('📤 Sending registration:', { url: `${apiUrl}/event-registrations`, payload });
+      
       const response = await axios.post(
         `${apiUrl}/event-registrations`,
-        { eventId: event._id, teamId: teamIdToUse },
+        payload,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
+      console.log('✅ Registration response:', response.data);
 
       if (response.status === 201) {
         setIsAlreadyRegistered(true); // Cập nhật state ngay sau khi đăng ký thành công
@@ -70,7 +75,14 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
         } catch (_) {}
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Registration failed, please try again";
+      const errorMessage = error.response?.data?.message || error.message || "Registration failed, please try again";
+      console.error('❌ Registration error:', {
+        status: error.response?.status,
+        message: errorMessage,
+        data: error.response?.data,
+        fullError: error
+      });
+      
       if (error.response?.status === 400 && errorMessage.includes('already registered')) {
         // Nếu backend báo trùng đăng ký, vẫn cập nhật UI để disable nút
         setIsAlreadyRegistered(true);
