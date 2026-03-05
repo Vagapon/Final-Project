@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate, useLocation, replace } from "react-router-dom";
 import axios from "axios";
+import { getApiUrl } from "../../utils/apiConfig";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -15,8 +16,9 @@ export const AuthProvider = ({ children }) => {
       const storedUser = localStorage.getItem("user");
       if (token && storedUser) {
         try {
+          const apiUrl = getApiUrl();
           const response = await axios.get(
-            "http://localhost:5000/api/auth/me",
+            `${apiUrl}/auth/me`,
             {
               headers: { Authorization: `Bearer ${token}` },
             }

@@ -3,6 +3,7 @@ import { Upload, Calendar, Users, MapPin, Clock, Star, Heart, Save, X } from 'lu
 import BaseModal from '../../components/Modal/BaseModal';
 import axios from 'axios';
 import { message, Spin } from 'antd';
+import { getApiUrl } from '../../utils/apiConfig';
 
 const Edit = ({ isOpen, onClose, event, onUpdateEvent }) => {
   const [formData, setFormData] = useState({
@@ -30,11 +31,12 @@ const Edit = ({ isOpen, onClose, event, onUpdateEvent }) => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
+        const apiUrl = getApiUrl();
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
         const [sportTypesRes, seasonsRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/season/sport-types', { headers }),
-          axios.get('http://localhost:5000/api/season', { headers })
+          axios.get(`${apiUrl}/season/sport-types`, { headers }),
+          axios.get(`${apiUrl}/season`, { headers })
         ]);
 
         setSportTypes(sportTypesRes.data?.data || []);
@@ -170,7 +172,8 @@ const Edit = ({ isOpen, onClose, event, onUpdateEvent }) => {
         'Content-Type': 'multipart/form-data'
       };
 
-      const response = await axios.put(`http://localhost:5000/api/event/${event._id}`, formDataToSend, { headers });
+      const apiUrl = getApiUrl();
+      const response = await axios.put(`${apiUrl}/event/${event._id}`, formDataToSend, { headers });
       
       if (response.status === 200) {
         message.success('Event updated successfully!');

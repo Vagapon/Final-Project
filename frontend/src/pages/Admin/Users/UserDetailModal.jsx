@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { getApiUrl } from '../../../utils/apiConfig';
 import { 
   Modal, 
   Card, 
@@ -58,7 +59,8 @@ const UserDetailModal = ({ isOpen, onClose, user, onEdit, onDelete, onToggleStat
     try {
       setTeamLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/team/manager/${user._id}`, {
+      const apiUrl = getApiUrl();
+      const response = await axios.get(`${apiUrl}/team/manager/${user._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTeamData(response.data);

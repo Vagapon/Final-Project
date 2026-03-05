@@ -16,6 +16,7 @@ import SearchFilter from "./SearchFilter";
 import StatsSection from "./StatsSection";
 import EventCard from "./EventCard";
 import axios from "axios";
+import { getApiUrl } from "../../utils/apiConfig";
 
 const Challenge = () => {
   const [selectedFilter, setSelectedFilter] = useState("all");
@@ -45,7 +46,8 @@ const Challenge = () => {
     const fetchEvents = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:5000/api/event", {
+        const apiUrl = getApiUrl();
+        const response = await axios.get(`${apiUrl}/event`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 

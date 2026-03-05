@@ -9,6 +9,7 @@ import {
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { message } from "antd";
+import { getApiUrl } from "../../utils/apiConfig";
 
 const EventCard = ({ event, index, isJoined = false, participantsOverride }) => {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -31,7 +32,8 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
       let teamIdToUse = myTeamId;
       if (!teamIdToUse) {
         try {
-          const teamRes = await axios.get("http://localhost:5000/api/team/myteam", {
+          const apiUrl = getApiUrl();
+          const teamRes = await axios.get(`${apiUrl}/team/myteam`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           teamIdToUse = teamRes.data?._id || null;
@@ -46,7 +48,7 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
       }
 
       const response = await axios.post(
-        "http://localhost:5000/api/event-registrations",
+        `${apiUrl}/event-registrations`,
         { eventId: event._id, teamId: teamIdToUse },
         {
           headers: { Authorization: `Bearer ${token}` },

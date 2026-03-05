@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Upload, Camera, User, Phone, Mail, Crown } from "lucide-react";
 import teamApi from "../../api/teamManagement/teamApi";
+import { getApiUrl } from "../../utils/apiConfig";
 
 const ModalTeam = ({ isOpen, onClose, team, onUpdated, onSubmit }) => {
   const [user, setUser] = useState(null);
@@ -41,7 +42,8 @@ const ModalTeam = ({ isOpen, onClose, team, onUpdated, onSubmit }) => {
       const fetchUser = async () => {
         try {
           const token = window.localStorage.getItem("token");
-          const res = await fetch("http://localhost:5000/api/auth/me", {
+          const apiUrl = getApiUrl();
+          const res = await fetch(`${apiUrl}/auth/me`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {

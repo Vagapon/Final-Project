@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, User, Mail, Phone, MapPin, Calendar, MessageCircle } from 'lucide-react';
 import { userApi } from '../api';
 import { Loader2 } from 'lucide-react';
+import { getApiUrl } from '../utils/apiConfig';
 
 const UserProfileViewModal = ({ isOpen, onClose, userId, userData: initialUserData, onChatClick }) => {
   const [userData, setUserData] = useState(initialUserData || null);
@@ -31,7 +32,8 @@ const UserProfileViewModal = ({ isOpen, onClose, userId, userData: initialUserDa
     try {
       // Try to get from chat-users API which is available to all authenticated users
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/user/chat-users', {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/user/chat-users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

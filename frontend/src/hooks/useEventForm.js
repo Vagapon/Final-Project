@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { getApiUrl } from "../../utils/apiConfig";
 
 export const useEventForm = () => {
   const [formData, setFormData] = useState({
@@ -28,9 +29,10 @@ export const useEventForm = () => {
     const token = localStorage.getItem('token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
+    const apiUrl = getApiUrl();
     Promise.all([
-      axios.get('http://localhost:5000/api/season/sport-types', { headers }),
-      axios.get('http://localhost:5000/api/season', { headers })
+      axios.get(`${apiUrl}/season/sport-types`, { headers }),
+      axios.get(`${apiUrl}/season`, { headers })
     ])
     .then(([sportTypesRes, seasonsRes]) => {
       setSportTypes(sportTypesRes.data?.data || []);

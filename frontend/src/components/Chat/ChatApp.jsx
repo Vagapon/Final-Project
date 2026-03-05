@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Phone, Video, MoreHorizontal, Paperclip, Smile, Send, MessageCircle, Users, Settings, User, Clock, Globe, ArrowLeft, X } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import { getApiUrl } from '../../utils/apiConfig';
 
 import ChatSidebar from './ChatSidebar';    
 import ChatHeader from './ChatHeader';
@@ -41,7 +42,8 @@ const ChatApp = () => {
                    // console.log('👤 Current user:', user);
                    
                    // Load conversations
-                   const conversationsResponse = await fetch('http://localhost:5000/api/messages/conversations/list', {
+                   const apiUrl = getApiUrl();
+                   const conversationsResponse = await fetch(`${apiUrl}/messages/conversations/list`, {
                      headers: {
                        'Authorization': `Bearer ${token}`,
                        'Content-Type': 'application/json'
@@ -51,7 +53,7 @@ const ChatApp = () => {
                    // console.log('📋 Conversations response status:', conversationsResponse.status);
                    
                    // Load all users
-                   const usersResponse = await fetch('http://localhost:5000/api/user/chat-users', {
+                   const usersResponse = await fetch(`${apiUrl}/user/chat-users`, {
                      headers: {
                        'Authorization': `Bearer ${token}`,
                        'Content-Type': 'application/json'
