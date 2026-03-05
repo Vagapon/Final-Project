@@ -8,15 +8,11 @@ if (!process.env.FIREBASE_PRIVATE_KEY) {
 // Parse private key from environment variable
 let privateKey = process.env.FIREBASE_PRIVATE_KEY.trim();
 
-// If it's base64 encoded, decode it first
-if (!privateKey.startsWith('-----BEGIN')) {
-  try {
-    privateKey = Buffer.from(privateKey, 'base64').toString('utf-8');
-    console.log("✅ Decoded from base64");
-  } catch (e) {
-    console.log("Not base64 format");
-  }
-}
+console.log("=== RAW ENV VALUE ===");
+console.log("Length:", privateKey.length);
+console.log("First 100 chars:", privateKey.substring(0, 100));
+console.log("Contains literal \\n:", privateKey.includes('\\n'));
+console.log("Contains actual newline:", privateKey.includes('\n'));
 
 // If it's a JSON string, parse it
 if (privateKey.startsWith('{')) {
@@ -25,15 +21,27 @@ if (privateKey.startsWith('{')) {
     privateKey = keyObj.private_key;
     console.log("✅ Parsed from JSON");
   } catch (e) {
-    console.log("❌ JSON parse failed");
+    console.log("❌ JSON parse failed:", e.message);
   }
 }
 
 // Remove outer quotes if they exist
+const beforeQuotes = privateKey;
 privateKey = privateKey.replace(/^["'](.*)["']$/, '$1');
+if (beforeQuotes !== privateKey) {
+  console.log("✅ Removed outer quotes");
+}
 
 // Convert escaped newlines to actual newlines
+const beforeNewline = privateKey;
 privateKey = privateKey.replace(/\\n/g, '\n');
+console.log("Converted \\n to actual newline:", beforeNewline !== privateKey);
+
+console.log("=== FINAL KEY ===");
+console.log("Length:", privateKey.length);
+console.log("First 100 chars:", privateKey.substring(0, 100));
+console.log("Last 50 chars:", privateKey.substring(privateKey.length - 50));
+console.log("Contains actual newlines:", (privateKey.match(/\n/g) || []).length);
 
 admin.initializeApp({
   credential: admin.credential.cert({
@@ -42,6 +50,8 @@ admin.initializeApp({
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
   }),
 });
+
+console.log("✅ Firebase Admin initialized");
 
 console.log("✅ Firebase Admin initialized");
 
