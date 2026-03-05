@@ -22,6 +22,7 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
     try {
       setIsRegistering(true);
       const token = localStorage.getItem("token");
+      const apiUrl = getApiUrl();
       
       if (!token) {
         message.error("Please login to register for events");
@@ -32,7 +33,6 @@ const EventCard = ({ event, index, isJoined = false, participantsOverride }) => 
       let teamIdToUse = myTeamId;
       if (!teamIdToUse) {
         try {
-          const apiUrl = getApiUrl();
           const teamRes = await axios.get(`${apiUrl}/team/myteam`, {
             headers: { Authorization: `Bearer ${token}` }
           });
